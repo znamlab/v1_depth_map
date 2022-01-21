@@ -2,6 +2,6 @@ __pycache__/
 slurm*
 .DS_Store
 .idea/
-
+*.ipynb_checkpoints/
 
 
