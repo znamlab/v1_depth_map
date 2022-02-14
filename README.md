@@ -13,4 +13,14 @@ Analysis code for 2p imaging for 3d vision project
 4. Synchronise param loggers. 
 
 ## Step2: Basic visualization.
+
+## Step3: Model fitting  
+1. To use GPU on CAMP:      
+    1. Activate the analysis environment, install the jax wheel for CUDA11-CUDNN8.0.8: `pip install jax[cuda11_cudnn805] -f https://storage.googleapis.com/jax-releases/jax_releases.html`
+    2. In bash script, add:   
+    ```
+    ml CUDA/11.1.1-GCC-10.2.0
+    ml cuDNN/8.0.5.39-CUDA-11.1.1
+    ```
+
   
