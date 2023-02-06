@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="3d_vision_analysis_2p",
+    name="v1_depth_analysis",
     version="v0.1",
     packages=find_packages(),
     url="https://github.com/znamlab/cottage_analysis",
