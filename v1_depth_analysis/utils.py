@@ -19,7 +19,7 @@ def get_sessions(flm_sess=FLM_SESS):
     """
     raw_path = Path(flm.PARAMETERS["data_root"]["raw"])
 
-    sessions = []
+    sessions_list = []
     for mouse, sessions in SESSIONS.items():
         mouse_folder = raw_path / PROJECT / mouse
         assert mouse_folder.is_dir()
@@ -29,8 +29,8 @@ def get_sessions(flm_sess=FLM_SESS):
             sess = flm.get_entity(
                 name=f"{mouse}_S20{session}", flexilims_session=flm_sess
             )
-            sessions.append(sess)
-    return sessions
+            sessions_list.append(sess)
+    return sessions_list
 
 
 def get_recordings(protocol="SpheresPermTubeReward", sessions=None, flm_sess=FLM_SESS):
@@ -89,5 +89,5 @@ def get_datasets(
             datasets = [
                 ds for ds in datasets if dataset_name_contains in ds.dataset_name
             ]
-        all_datasets.append(datasets)
+        all_datasets.extend(datasets)
     return all_datasets
