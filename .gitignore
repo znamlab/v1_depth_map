@@ -3,5 +3,4 @@ slurm*
 .DS_Store
 .idea/
 *.ipynb_checkpoints/
-
-
+*.egg-info
