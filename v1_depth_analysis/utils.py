@@ -1,5 +1,6 @@
 from pathlib import Path
 import flexiznam as flm
+import pandas as pd
 from flexiznam.schema import Dataset
 from v1_depth_analysis.config import SESSIONS, PROJECT
 
@@ -64,7 +65,8 @@ def get_datasets(
     """Get a list of datasets from a recording list
 
     Args:
-        recordings (list): List of recordings as produced by `get_recordings`
+        recordings (list): List of recordings as produced by `get_recordings` or single
+            recording series
         dataset_type (str, optional): If not None, return only datasets of type
             `dataset_type`. Defaults to None.
         dataset_name_contains (str, optional): If not None, return only datasets whose
@@ -74,6 +76,9 @@ def get_datasets(
     Returns:
         list: List of flm.schema.Dataset objects
     """
+    if isinstance(recordings, pd.Series):
+        recordings = [recordings]
+
     all_datasets = []
     for rec in recordings:
         datasets = flm.get_children(
