@@ -4,3 +4,4 @@ slurm*
 .idea/
 *.ipynb_checkpoints/
 *.egg-info
+.vscode/combined.workspace.code-workspace

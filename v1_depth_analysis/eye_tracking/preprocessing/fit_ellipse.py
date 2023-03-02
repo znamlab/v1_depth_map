@@ -5,7 +5,7 @@ This selects the sessions and runs ellipse fit jobs to track eye
 
 DLC must already work.
 """
-
+import os
 import warnings
 from pathlib import Path
 import flexiznam as flm
@@ -14,7 +14,7 @@ from cottage_analysis import eye_tracking
 import v1_depth_analysis as vda
 from v1_depth_analysis.config import PROJECT
 
-REDO = False
+REDO = True
 
 raw_path = Path(flm.PARAMETERS["data_root"]["raw"])
 processed_path = Path(flm.PARAMETERS["data_root"]["processed"])
@@ -35,6 +35,11 @@ for ds in datasets:
         target_file = target_folder / dlc_file.name.replace(".h5", "_ellipse_fits.csv")
         if target_file.exists() and not REDO:
             continue
+        if REDO:
+            previous_runs = target_folder.glob("*_ellipse_fits.csv")
+            for fname in previous_runs:
+                print(f"   Removing previous run: {fname.name}")
+                os.remove(fname)
         process = eye_tracking.find_pupil.fit_ellipses(
             dlc_file=dlc_file, target_folder=target_folder, likelihood_threshold=None
         )
