@@ -7,6 +7,7 @@ Ellipse fit must already been generated.
 """
 import warnings
 from pathlib import Path
+import numpy as np
 import flexiznam as flm
 from flexiznam.schema import Dataset
 from cottage_analysis import eye_tracking
@@ -25,21 +26,28 @@ datasets = vda.get_datasets(
 )
 
 process_list = []
-for ds in datasets:
-    target_folder = Path(processed_path, PROJECT, *ds.genealogy)
+for camera_ds in datasets:
+    if "left" in camera_ds.dataset_name.lower():
+        print("Skipping left camera")
+        continue
+    target_folder = Path(processed_path, PROJECT, *camera_ds.genealogy)
     if not len(list(target_folder.glob("*.h5"))):
         warnings.warn(f"No DLC data for {target_folder}")
         continue
-    for dlc_file in target_folder.glob("*.h5"):
-        ellipse_file = target_folder / dlc_file.name.replace(".h5", "_ellipse_fits.csv")
-        if not ellipse_file.exists():
-            warnings.warn(f"No ellipse fits for {dlc_file}")
-            continue
-        target_file = target_folder / dlc_file.name.replace(".h5", "_ellipse_fits.csv")
-        if target_file.exists() and not REDO:
-            continue
+    dlc_file = list(target_folder.glob("*.h5"))
+    assert len(dlc_file) == 1
+    dlc_file = dlc_file[0]
+    ellipse_file = target_folder / dlc_file.name.replace(".h5", "_ellipse_fits.csv")
+    if not ellipse_file.exists():
+        warnings.warn(f"No ellipse fits for {dlc_file}")
+        continue
 
     process = eye_tracking.find_pupil.reproject_pupils(
-        ds.full_name, project=PROJECT, target_folder=target_folder
+        camera_ds.full_name,
+        project=PROJECT,
+        target_folder=target_folder,
+        theta0=np.deg2rad(20),
+        phi0=0,
     )
     process_list.append(process)
+print(f"Started {len(process_list)} jobs")
