@@ -25,8 +25,8 @@ datasets = vda.get_datasets(
 )
 
 process_list = []
-for ds in datasets:
-    target_folder = Path(processed_path, PROJECT, *ds.genealogy)
+for camera_ds in datasets:
+    target_folder = Path(processed_path, PROJECT, *camera_ds.genealogy)
     if not len(list(target_folder.glob("*.h5"))):
         warnings.warn(f"No DLC data for {target_folder}")
         continue
@@ -40,6 +40,7 @@ for ds in datasets:
             continue
 
     process = eye_tracking.find_pupil.reproject_pupils(
-        ds.full_name, project=PROJECT, target_folder=target_folder
+        camera_ds.full_name, project=PROJECT, target_folder=target_folder
     )
     process_list.append(process)
+print(f"Started {len(process_list)} jobs")
