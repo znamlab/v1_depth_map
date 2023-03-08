@@ -64,20 +64,20 @@ def get_or_load_fit(
         frame_rate=frame_rate,
     )
     gaussian_depth_fit_df = gauss_fit(
-        which_rois,
-        dffs_ast,
-        depth_list,
-        stim_dict_fit,
-        frame_rate,
-        speed_arr_fit,
-        max_depths,
-        speed_thr_cal,
-        batch_num,
-        depth_min,
-        depth_max,
-        min_sigma=min_sigma,
+            which_rois,
+    dffs_ast,
+    depth_list,
+    stim_dict_fit,
+    frame_rate,
+    speed_arr_fit,
+    max_depths,
+    speed_thr_cal,
+    batch_num,
+    depth_min,
+    depth_max,
+    min_sigma,
     )
-    return (gaussian_depth_fit_df,)
+    return gaussian_depth_fit_df
 
 
 def get_or_load_anova(
@@ -303,7 +303,7 @@ def get_max_depth(which_rois, dffs_ast, depth_list, stim_dict):
         max_depths_values[iroi] = depth_list[max_depth[0]]
 
     max_depths[max_depths == 9999] = np.nan
-    return max_depth
+    return max_depths
 
 
 def gauss_fit(
