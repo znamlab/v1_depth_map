@@ -20,15 +20,20 @@ def get_or_load_fit(
     target_folder,
     speed_thr_cal,
     min_sigma,
-    data,
+    data=None,
     redo=False,
+    flm_sess=None,
 ):
 
     fname = f"{'_'.join(recording.genealogy)}_gaussian_fit_{seed}_{prop_fit}.csv"
     target = Path(target_folder / fname)
     if target.exists() and not redo:
         return pd.read_csv(target)
-
+    if data is None:
+        if flm_sess is None:
+            raise IOError("You must provide flm_sess if data is None")
+        data = get_recording_data(recording, flm_sess, two_photon=True)
+    
     # exclude non-cells
     # The ROI no. for all cells (excluding non-cells
     iscell = data["iscell"]
@@ -64,29 +69,43 @@ def get_or_load_fit(
         frame_rate=frame_rate,
     )
     gaussian_depth_fit_df = gauss_fit(
-            which_rois,
-    dffs_ast,
-    depth_list,
-    stim_dict_fit,
-    frame_rate,
-    speed_arr_fit,
-    max_depths,
-    speed_thr_cal,
-    batch_num,
-    depth_min,
-    depth_max,
-    min_sigma,
+        which_rois,
+        dffs_ast,
+        depth_list,
+        stim_dict_fit,
+        frame_rate,
+        speed_arr_fit,
+        max_depths,
+        speed_thr_cal,
+        batch_num,
+        depth_min,
+        depth_max,
+        min_sigma,
     )
+    gaussian_depth_fit_df.to_csv(target)
     return gaussian_depth_fit_df
 
 
 def get_or_load_anova(
-    recording, target_folder, seed, prop_fit, data, stim_dict, speed_thr_cal, redo=False
+    recording,
+    target_folder,
+    seed,
+    prop_fit,
+    stim_dict,
+    speed_thr_cal,
+    data=None,
+    redo=False,
+    flm_sess=None,
 ):
     fname = f"{'_'.join(recording.genealogy)}_anovas_{seed}_{prop_fit}.npy"
     target = Path(target_folder / fname)
     if target.exists() and not redo:
         return np.load(target)
+
+    if data is None:
+        if flm_sess is None:
+            raise IOError("You must provide flm_sess if data is None")
+        data = get_recording_data(recording, flm_sess, two_photon=True)
 
     iscell = data["iscell"]
     dffs_ast = data["dffs_ast"]
@@ -127,13 +146,25 @@ def get_or_load_anova(
 
 
 def get_or_load_psth(
-    recording, target_folder, seed, prop_fit, data, stim_dict_raster, redo=False
+    recording,
+    target_folder,
+    seed,
+    prop_fit,
+    stim_dict_raster,
+    data=None,
+    redo=False,
+    flm_sess=None,
 ):
     # compute psth with other stim dict
     fname = f"{'_'.join(recording.genealogy)}_psth_{seed}_{prop_fit}.npy"
     target = Path(target_folder / fname)
     if target.exists() and not redo:
         return np.load(target)
+
+    if data is None:
+        if flm_sess is None:
+            raise IOError("You must provide flm_sess if data is None")
+        data = get_recording_data(recording, flm_sess, two_photon=True)
 
     # exclude non-cells
     # The ROI no. for all cells (excluding non-cells
