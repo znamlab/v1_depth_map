@@ -2,7 +2,12 @@
 
 DLC_MODEL = "all_eyes_2023"
 PROJECT = "hey2_3d-vision_foodres_20220101"
-SESSIONS = {
+MICE = ["PZAH6.4b", "PZAG3.4f"]
+
+"""
+Original old way of handpicking sessions. Kept to check that they are all included in the new way.
+"""
+HANDPICKED_SESSIONS = {
     "PZAH6.4b": [
         "220419",
         "220421",

@@ -2,22 +2,25 @@ from pathlib import Path
 import flexiznam as flz
 import pandas as pd
 from flexiznam.schema import Dataset
-from v1_depth_analysis.config import SESSIONS, PROJECT
+from v1_depth_analysis.config import MICE, PROJECT
 
 FLM_SESS = flz.get_flexilims_session(project_id=PROJECT)
 
 
-def get_sessions(mice, flm_sess=FLM_SESS):
+def get_sessions(mice=None, flm_sess=FLM_SESS):
     """Get recording sessions from flexilims
 
     Args:
+        mice (list, optional): List of mice to consider. If None will load all mice
         flm_sess (flz.Session, optional): Flexilims session to interact with database.
             Defaults to FLM_SESS.
 
     Returns:
         list: List of session series loaded from flexilims. Will contain only session
-            defined in config.SESSIONS
+            of mice defined in config.MICE
     """
+    if mice is None:
+        mice = MICE
     raw_path = Path(flz.PARAMETERS["data_root"]["raw"])
     if isinstance(mice, str):
         mice = [mice]
@@ -49,7 +52,7 @@ def get_recordings(protocol="SpheresPermTubeReward", sessions=None, flm_sess=FLM
         list: List of recordings series loaded from flexilims
     """
     if sessions is None:
-        session = get_sessions(list(SESSIONS.keys()), flm_sess=flm_sess)
+        session = get_sessions(MICE, flm_sess=flm_sess)
     recordings = []
     for sess_name, sess in session.iterrows():
         recs = flz.get_children(
