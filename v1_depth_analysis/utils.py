@@ -1,6 +1,8 @@
 from pathlib import Path
 import flexiznam as flz
 import pandas as pd
+import yaml
+from flexilims.offline import download_database
 from flexiznam.schema import Dataset
 from v1_depth_analysis.config import MICE, PROJECT
 
@@ -101,3 +103,23 @@ def get_datasets(
             ]
         all_datasets.extend(datasets)
     return all_datasets
+
+
+def download_full_flexilims_database(flexilims_session, target_file=None):
+    """Download the full flexilims database as json and save to file
+
+    Args:
+        flexilims_session (flz.Session): Flexilims session
+        target_file (str, optional): Path to save json file. Defaults to None.
+
+    Returns:
+        dict: The json data
+    """
+
+    json_data = download_database(
+        flexilims_session, root_datatypes=("mouse"), verbose=True
+    )
+    if target_file is not None:
+        with open(target_file, "w") as f:
+            yaml.dump(json_data, f)
+    return json_data
