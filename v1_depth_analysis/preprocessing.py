@@ -24,14 +24,16 @@ flm_sess = flz.get_flexilims_session(project_id=PROJECT)
 sessions = vda.get_sessions(flm_sess=flm_sess)
 
 REDO = False
+log_df = []
 for sess_name, sess in sessions.iterrows():
     print(f"Processing {sess_name}")
     camera_ds_by_rec = flz.get_datasets(
-        sess.id,
+        session_id=sess.id,
         dataset_type="camera",
         flexilims_session=flm_sess,
         return_paths=False,
     )
+    # flatten dict
     camera_ds = []
     for rec_id, camera_ds in camera_ds_by_rec.items():
         camera_ds += camera_ds
@@ -41,36 +43,16 @@ for sess_name, sess in sessions.iterrows():
         # get only eye cam
         if not "eye_camera" in cam_ds.dataset_name:
             continue
-        log = dict(dataset_name=cam_ds.full_name)
-
-        # run uncropped DLC
-        job_id = eye_tracking.run_dlc(
-            cam_ds, flm_sess, dlc_model=DLC_MODEL, crop=False, redo=REDO
-        )
-        log["dlc_uncropped"] = job_id if job_id is not None else "Done"
-
-        # run cropped DLC
-        job_id = eye_tracking.run_dlc(
-            cam_ds,
-            flm_sess,
+        log = eye_tracking.run_all(
+            camera_ds=cam_ds,
+            flexilims_session=flm_sess,
             dlc_model=DLC_MODEL,
-            crop=True,
             redo=REDO,
-            job_dependency=job_id,
-        )
-        log["dlc_cropped"] = job_id if job_id is not None else "Done"
-        log_df.append(log)
-
-        # run ellipse fit
-        process = eye_tracking.run_fit_ellipse(
-            cam_ds,
-            flm_sess,
-            likelihood_threshold=None,
-            job_dependency=job_id,
             use_slurm=True,
         )
-        log["ellipse"] = job_id if job_id is not None else "Done"
-log_df = pd.DataFrame(log_df)
+        log_df.append(log)
+
+log_df = pd.concat(log_df, ignore_index=True)
 log_df.to_csv(
     Path(flz.PARAMETERS["data_root"]["processed"]) / PROJECT / "preprocessing_log.csv",
     index=False,
