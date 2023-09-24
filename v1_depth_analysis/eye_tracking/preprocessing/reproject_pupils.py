@@ -42,7 +42,7 @@ for camera_ds in datasets:
         warnings.warn(f"No ellipse fits for {dlc_file}")
         continue
 
-    process = eye_tracking.find_pupil.reproject_pupils(
+    process = eye_tracking.slurm_job.reproject_pupils(
         camera_ds.full_name,
         project=PROJECT,
         target_folder=target_folder,

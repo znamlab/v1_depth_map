@@ -40,7 +40,7 @@ for ds in datasets:
             for fname in previous_runs:
                 print(f"   Removing previous run: {fname.name}")
                 os.remove(fname)
-        process = eye_tracking.find_pupil.fit_ellipses(
+        process = eye_tracking.slurm_job.fit_ellipses(
             dlc_file=dlc_file, target_folder=target_folder, likelihood_threshold=None
         )
         process_list.append(process)
