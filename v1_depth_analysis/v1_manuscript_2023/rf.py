@@ -193,3 +193,79 @@ def plot_rf_centers(fig,
         ax.set_xlim([0,120])
         ax.set_ylim([-40,40])
         ax.tick_params(axis='both', labelsize=fontsize_dict['tick'])
+        
+        
+def load_sig_rf(flexilims_session, session_list, depth_neuron_thr=0.04, n_std=5):
+    all_sig = []
+    all_sig_ipsi = []
+    for isess, session in enumerate(session_list):
+        # Load neurons_df
+        neurons_ds = pipeline_utils.create_neurons_ds(
+        session_name=session,
+        flexilims_session=flexilims_session,
+        project=None,
+        conflicts="skip",
+        )
+        neurons_df = pd.read_pickle(neurons_ds.path_full)
+        
+        # Load iscell
+        suite2p_ds = flz.get_datasets(
+            flexilims_session=flexilims_session,
+            origin_name=session,
+            dataset_type="suite2p_rois",
+            filter_datasets={"anatomical_only": 3},
+            allow_multiple=False,
+            return_dataseries=False,
+            )   
+        iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+        neurons_df["iscell"] = iscell
+        
+        # Load RF significant % 
+        coef = np.stack(neurons_df["rf_coef"].values)
+        coef_ipsi = np.stack(neurons_df["rf_coef_ipsi"].values)
+        sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
+                                            np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
+                                            n_std=n_std)
+        select_neurons = (neurons_df["iscell"]==1) & (neurons_df["depth_tuning_test_rsq_closedloop"]>depth_neuron_thr)
+        sig = sig[select_neurons]
+        sig_ipsi = sig_ipsi[select_neurons]
+        all_sig.append(np.mean(sig))
+        all_sig_ipsi.append(np.mean(sig_ipsi))
+        
+    return all_sig, all_sig_ipsi
+
+
+def plot_sig_rf_perc(fig,
+                     all_sig,
+                     all_sig_ipsi,
+                     bar_color='k',
+                     scatter_color='k',
+                     scatter_size=10,
+                     plot_x=0,
+                     plot_y=1,
+                     plot_width=1,
+                     plot_height=1,
+                     fontsize_dict={'title': 15, 'label': 10, 'tick': 5}
+):
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    ax.bar(x=[0,1], 
+           height=[np.mean(all_sig), np.mean(all_sig_ipsi)], 
+           yerr=[scipy.stats.sem(all_sig), scipy.stats.sem(all_sig_ipsi)], 
+           capsize=10,
+           color=bar_color, 
+           alpha=0.5)
+    ax.scatter(x=np.zeros(len(all_sig)), 
+               y=all_sig, 
+               color=scatter_color, 
+               s=scatter_size)
+    ax.scatter(x=np.ones(len(all_sig_ipsi)), 
+               y=all_sig_ipsi, 
+               color=scatter_color, 
+               s=scatter_size)
+    ax.set_xticks([0,1])
+    ax.set_xticklabels(['Contra-\nlateral', 'Ipsi-\nlateral'], fontsize=fontsize_dict['label'])
+    ax.set_ylabel('Proportion of neurons with \nsignificant receptive field', fontsize=fontsize_dict['label'])
+    ax.set_ylim([0,1])
+    plotting_utils.despine()
+    ax.tick_params(axis='y', which='major', labelsize=fontsize_dict['tick'])
+    plt.tight_layout()
