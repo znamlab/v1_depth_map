@@ -322,8 +322,9 @@ def plot_PSTH(
     plot_y=0,
     plot_width=1,
     plot_height=1,
-    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
     linewidth=3,
+    legend_on=False,
 ):
     """PSTH of a neuron for each depth and blank period.
 
@@ -390,6 +391,9 @@ def plot_PSTH(
         rotation=45,
     )
     plt.yticks(fontsize=fontsize_dict["tick"])
+    
+    if legend_on:
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False)
     plotting_utils.despine()
     
     
