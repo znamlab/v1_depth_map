@@ -1,11 +1,13 @@
 import functools
+
 print = functools.partial(print, flush=True)
 
 import os
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42 # for pdfs
+
+matplotlib.rcParams["pdf.fonttype"] = 42  # for pdfs
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from pathlib import Path
@@ -15,7 +17,13 @@ import scipy
 
 import flexiznam as flz
 from cottage_analysis.preprocessing import synchronisation
-from cottage_analysis.analysis import spheres, find_depth_neurons, common_utils, fit_gaussian_blob, size_control
+from cottage_analysis.analysis import (
+    spheres,
+    find_depth_neurons,
+    common_utils,
+    fit_gaussian_blob,
+    size_control,
+)
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 
@@ -172,9 +180,11 @@ def plot_speed_tuning(
         speed_ci[-1] = ci
 
     # Plotting
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     for idepth, depth in enumerate(depth_list):
-        linecolor = basic_vis_plots.get_depth_color(depth, depth_list, cmap=cm.cool.reversed())
+        linecolor = basic_vis_plots.get_depth_color(
+            depth, depth_list, cmap=cm.cool.reversed()
+        )
         ax.plot(
             bin_centers[idepth, :],
             speed_tuning[idepth, :],
@@ -194,7 +204,9 @@ def plot_speed_tuning(
 
         if which_speed == "OF":
             ax.set_xscale("log")
-            ax.set_xlabel("Optic flow speed \n(degrees/s)", fontsize=fontsize_dict["label"])
+            ax.set_xlabel(
+                "Optic flow speed \n(degrees/s)", fontsize=fontsize_dict["label"]
+            )
 
     # Plot tuning to gray period
     if which_speed == "RS":
@@ -217,12 +229,17 @@ def plot_speed_tuning(
         ax.set_xlabel("Running speed \n(cm/s)", fontsize=fontsize_dict["label"])
         ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
         ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-        
+
     if legend_on:
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False)
+        ax.legend(
+            loc="upper left",
+            bbox_to_anchor=(1, 1),
+            fontsize=fontsize_dict["legend"],
+            frameon=False,
+        )
     plotting_utils.despine()
-    
-    
+
+
 def plot_RS_OF_matrix(
     fig,
     trials_df,
@@ -273,7 +290,7 @@ def plot_RS_OF_matrix(
         x=rs_arr, y=of_arr, values=dff_arr, statistic="mean", bins=[rs_bins, of_bins]
     )
 
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     im = ax.imshow(
         bin_means[1:, 1:].T,
         origin="lower",
@@ -283,7 +300,12 @@ def plot_RS_OF_matrix(
         vmin=0,
         vmax=np.nanmax(bin_means[1:, 1:]),
     )
-    ticks_select1, ticks_select2, bin_edges1, bin_edges2 = basic_vis_plots.get_RS_OF_heatmap_axis_ticks(
+    (
+        ticks_select1,
+        ticks_select2,
+        bin_edges1,
+        bin_edges2,
+    ) = basic_vis_plots.get_RS_OF_heatmap_axis_ticks(
         log_range=log_range, fontsize_dict=fontsize_dict
     )
     plt.xticks(
@@ -294,10 +316,10 @@ def plot_RS_OF_matrix(
         fontsize=fontsize_dict["tick"],
     )
     plt.yticks(ticks_select2, bin_edges2, fontsize=fontsize_dict["tick"])
-    
-    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
+
+    ax2 = fig.add_axes([plot_x + plot_width * 0.75, plot_y, cbar_width, plot_height])
     fig.colorbar(im, cax=ax2, label="\u0394F/F")
-    
+
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
 

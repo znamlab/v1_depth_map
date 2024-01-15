@@ -1,11 +1,13 @@
 import functools
+
 print = functools.partial(print, flush=True)
 
 import os
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42 # for pdfs
+
+matplotlib.rcParams["pdf.fonttype"] = 42  # for pdfs
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from pathlib import Path
@@ -15,13 +17,19 @@ import scipy
 
 import flexiznam as flz
 from cottage_analysis.preprocessing import synchronisation
-from cottage_analysis.analysis import spheres, find_depth_neurons, common_utils, fit_gaussian_blob, size_control
+from cottage_analysis.analysis import (
+    spheres,
+    find_depth_neurons,
+    common_utils,
+    fit_gaussian_blob,
+    size_control,
+)
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 
 
 def plot_raster_all_depths(
-    fig, 
+    fig,
     neurons_df,
     trials_df,
     roi,
@@ -92,9 +100,16 @@ def plot_raster_all_depths(
     # plot each depth as a heatmap
     if plot:
         plot_prop = 0.75
-        each_plot_width = (plot_width-cbar_width)/ len(depth_list)
+        each_plot_width = (plot_width - cbar_width) / len(depth_list)
         for idepth, depth in enumerate(depth_list):
-            ax = fig.add_axes([plot_x+idepth*each_plot_width, plot_y, each_plot_width*plot_prop, plot_height]) 
+            ax = fig.add_axes(
+                [
+                    plot_x + idepth * each_plot_width,
+                    plot_y,
+                    each_plot_width * plot_prop,
+                    plot_height,
+                ]
+            )
             im = ax.imshow(
                 dffs_binned[idepth], aspect="auto", cmap=WhRdcmap, vmin=0, vmax=vmax
             )
@@ -123,12 +138,22 @@ def plot_raster_all_depths(
                     labelsize=fontsize_dict["tick"],
                 )
                 ax.tick_params(axis="x", rotation=45)
-            if idepth == len(depth_list)//2:
+            if idepth == len(depth_list) // 2:
                 ax.set_xlabel("Virtual distance (cm)", fontsize=fontsize_dict["label"])
 
-        ax2 = fig.add_axes([plot_x + (len(depth_list)-1)*each_plot_width + each_plot_width*plot_prop + 0.01, plot_y, cbar_width*0.8, plot_height]) 
+        ax2 = fig.add_axes(
+            [
+                plot_x
+                + (len(depth_list) - 1) * each_plot_width
+                + each_plot_width * plot_prop
+                + 0.01,
+                plot_y,
+                cbar_width * 0.8,
+                plot_height,
+            ]
+        )
         fig.colorbar(im, cax=ax2, label="\u0394F/F")
-                
+
     return dffs_binned
 
 
@@ -181,7 +206,7 @@ def plot_depth_tuning_curve(
         )
 
     # Plotting
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     ax.plot(np.log(depth_list), mean_arr, color=linecolor, linewidth=linewidth)
     ax.fill_between(
         np.log(depth_list),
@@ -205,8 +230,8 @@ def plot_depth_tuning_curve(
     ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
 
     plotting_utils.despine()
-    
-    
+
+
 def get_PSTH(
     trials_df,
     roi,
@@ -306,9 +331,9 @@ def get_PSTH(
     ci = z * bin_stds / np.sqrt(bin_counts)
     ci[np.isnan(ci)] = 0
     all_ci[-1, :] = ci
-    
+
     return all_means, all_ci, bin_centers
-    
+
 
 def plot_PSTH(
     fig,
@@ -336,17 +361,21 @@ def plot_PSTH(
         nbins (int, optional): number of bins to bin the activity. Defaults to 20.
         frame_rate (int, optional): imaging frame rate. Defaults to 15.
     """
-    all_means, all_ci, bin_centers = get_PSTH(trials_df=trials_df, 
-                                              roi=roi, 
-                                              is_closed_loop=is_closed_loop, 
-                                              max_distance=max_distance, 
-                                              nbins=nbins, 
-                                              frame_rate=frame_rate)
-    
-    depth_list = find_depth_neurons.find_depth_list(trials_df)  
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    all_means, all_ci, bin_centers = get_PSTH(
+        trials_df=trials_df,
+        roi=roi,
+        is_closed_loop=is_closed_loop,
+        max_distance=max_distance,
+        nbins=nbins,
+        frame_rate=frame_rate,
+    )
+
+    depth_list = find_depth_neurons.find_depth_list(trials_df)
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     for idepth, depth in enumerate(depth_list):
-        linecolor = basic_vis_plots.get_depth_color(depth, depth_list, cmap=cm.cool.reversed())
+        linecolor = basic_vis_plots.get_depth_color(
+            depth, depth_list, cmap=cm.cool.reversed()
+        )
         ax.plot(
             bin_centers,
             all_means[idepth, :],
@@ -391,16 +420,21 @@ def plot_PSTH(
         rotation=45,
     )
     plt.yticks(fontsize=fontsize_dict["tick"])
-    
+
     if legend_on:
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False)
+        ax.legend(
+            loc="upper left",
+            bbox_to_anchor=(1, 1),
+            fontsize=fontsize_dict["legend"],
+            frameon=False,
+        )
     plotting_utils.despine()
-    
-    
+
+
 def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10):
     for isess, session_name in enumerate(session_list):
         print(f"Calculating PSTH for {session_name}")
-        
+
         # Load all data
         if ("PZAH6.4b" or "PZAG3.4f") in session_name:
             photodiode_protocol = 2
@@ -410,34 +444,39 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10):
             session_name=session_name,
             flexilims_session=flexilims_session,
             project=None,
-            filter_datasets={'anatomical_only':3},
+            filter_datasets={"anatomical_only": 3},
             recording_type="two_photon",
             protocol_base="SpheresPermTubeReward",
             photodiode_protocol=photodiode_protocol,
             return_volumes=True,
-            )
+        )
 
         neurons_ds = pipeline_utils.create_neurons_ds(
-            session_name=session_name, flexilims_session=flexilims_session, project=None, conflicts="skip"
+            session_name=session_name,
+            flexilims_session=flexilims_session,
+            project=None,
+            conflicts="skip",
         )
         neurons_df = pd.read_pickle(neurons_ds.path_full)
-        neurons_df['session'] = session_name
-        
+        neurons_df["session"] = session_name
+
         # Create dataframe to store results
         results = pd.DataFrame(
-        columns = [
-            'session',
-            'roi',
-            'iscell',
-            'preferred_depth_crossval',
-            'preferred_depth_rsq',
-            'psth_crossval',
-            ]   
-    )
+            columns=[
+                "session",
+                "roi",
+                "iscell",
+                "preferred_depth_crossval",
+                "preferred_depth_rsq",
+                "psth_crossval",
+            ]
+        )
         # Add roi, preferred depth, iscell to results
         results["roi"] = np.arange(len(neurons_df))
         results["session"] = session_name
-        results["preferred_depth_crossval"] = neurons_df["preferred_depth_closedloop_crossval"]
+        results["preferred_depth_crossval"] = neurons_df[
+            "preferred_depth_closedloop_crossval"
+        ]
         results["preferred_depth_rsq"] = neurons_df["depth_tuning_test_rsq_closedloop"]
         exp_session = flz.get_entity(
             datatype="session", name=session_name, flexilims_session=flexilims_session
@@ -450,28 +489,37 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10):
             allow_multiple=False,
             return_dataseries=False,
         )
-        iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+        iscell = np.load(
+            suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
+        )[:, 0]
         results["iscell"] = iscell
-        results["psth_crossval"] = [[np.nan]]*len(neurons_df)
-    
+        results["psth_crossval"] = [[np.nan]] * len(neurons_df)
+
         # Get the responses for this session that are not included for calculating the cross-validated preferred depth
-        choose_trials_resp = list(set(neurons_df.depth_tuning_trials_closedloop.iloc[0])-set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0]))
-        trials_df_resp, _, _ = common_utils.choose_trials_subset(trials_df, choose_trials_resp)
-        
+        choose_trials_resp = list(
+            set(neurons_df.depth_tuning_trials_closedloop.iloc[0])
+            - set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0])
+        )
+        trials_df_resp, _, _ = common_utils.choose_trials_subset(
+            trials_df, choose_trials_resp
+        )
+
         for roi in tqdm(range(len(neurons_df))):
-            psth, _, _ = get_PSTH(trials_df=trials_df_resp, 
-                                                    roi=roi, 
-                                                    is_closed_loop=1, 
-                                                    max_distance=6, 
-                                                    nbins=nbins, 
-                                                    frame_rate=15)
+            psth, _, _ = get_PSTH(
+                trials_df=trials_df_resp,
+                roi=roi,
+                is_closed_loop=1,
+                max_distance=6,
+                nbins=nbins,
+                frame_rate=15,
+            )
             results.at[roi, "psth_crossval"] = psth
-        
+
         if isess == 0:
             results_all = results.copy()
         else:
             results_all = pd.concat([results_all, results], axis=0, ignore_index=True)
-        
+
     return results_all
 
 
@@ -486,24 +534,33 @@ def plot_preferred_depth_hist(
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    depth_bins = np.geomspace(np.nanmin(results_df[use_col])*100,np.nanmax(results_df[use_col])*100,num=nbins)
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    n, _, _ = ax.hist(results_df[use_col]*100, bins=depth_bins, weights=np.ones(len(results_df)) / len(results_df), color='dimgrey')
-    ax.set_xscale('log')
-    ax.set_ylabel('Proportion of neurons', fontsize = fontsize_dict['label'])
-    ax.set_xlabel('Preferred depth (cm)', fontsize = fontsize_dict['label'])
-    plt.xticks(fontsize=fontsize_dict['tick'])
+    depth_bins = np.geomspace(
+        np.nanmin(results_df[use_col]) * 100,
+        np.nanmax(results_df[use_col]) * 100,
+        num=nbins,
+    )
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    n, _, _ = ax.hist(
+        results_df[use_col] * 100,
+        bins=depth_bins,
+        weights=np.ones(len(results_df)) / len(results_df),
+        color="dimgrey",
+    )
+    ax.set_xscale("log")
+    ax.set_ylabel("Proportion of neurons", fontsize=fontsize_dict["label"])
+    ax.set_xlabel("Preferred depth (cm)", fontsize=fontsize_dict["label"])
+    plt.xticks(fontsize=fontsize_dict["tick"])
     yticks = plt.gca().get_yticks()
-    plt.yticks(yticks[0::2], fontsize=fontsize_dict['tick'])
+    plt.yticks(yticks[0::2], fontsize=fontsize_dict["tick"])
     plotting_utils.despine()
-    
-    
+
+
 def plot_psth_raster(
     fig,
     results_df,
     depth_list,
     use_cols=["preferred_depth_crossval", "psth_crossval", "preferred_depth_rsq"],
-    depth_rsq_thr = 0.04,
+    depth_rsq_thr=0.04,
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -511,35 +568,42 @@ def plot_psth_raster(
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     # Filter neurons with a depth tuning fit rsq threshold
-    results_df = results_df[(results_df[use_cols[2]]>depth_rsq_thr) & (results_df["iscell"]==1)]
-    psths = np.stack(results_df[use_cols[1]])[:,:-1,:] # exclude blank
-    ndepths = psths.shape[1]-1
+    results_df = results_df[
+        (results_df[use_cols[2]] > depth_rsq_thr) & (results_df["iscell"] == 1)
+    ]
+    psths = np.stack(results_df[use_cols[1]])[:, :-1, :]  # exclude blank
+    ndepths = psths.shape[1] - 1
     nbins = psths.shape[2]
-    
+
     # Sort neurons by preferred depth
     preferred_depths = results_df[use_cols[0]].values
     order = preferred_depths.argsort()
     psths = psths[order]
     psths = psths.reshape(psths.shape[0], -1)
-    
+
     # Normalize PSTHs
     neuron_max = np.nanmax(psths, axis=1)[:, np.newaxis]
     neuron_min = np.nanmin(psths, axis=1)[:, np.newaxis]
-    normed_psth = (psths - neuron_min) / (neuron_max-neuron_min)
-    
+    normed_psth = (psths - neuron_min) / (neuron_max - neuron_min)
+
     # Plot PSTHs
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.imshow(normed_psth, vmax=1, aspect='auto', cmap=plotting_utils.generate_cmap(cmap_name="WhRd"))
-    
+    ax.imshow(
+        normed_psth,
+        vmax=1,
+        aspect="auto",
+        cmap=plotting_utils.generate_cmap(cmap_name="WhRd"),
+    )
+
     # Plot vertical lines to separate different depths
     for i in range(ndepths):
-        ax.axvline((i+1)*nbins, color='k', linewidth=0.5)
-        
+        ax.axvline((i + 1) * nbins, color="k", linewidth=0.5)
+
     # Change xticks positions to the middle of current ticks and show depth at the tick position
-    xticks = np.arange(0+0.5,ndepths+1+0.5)*nbins
+    xticks = np.arange(0 + 0.5, ndepths + 1 + 0.5) * nbins
     ax.set_xticks(xticks)
     ax.set_xticklabels(np.round(depth_list))
-    ax.set_xlabel('Preferred depth (cm)', fontsize=fontsize_dict['label'])
-    ax.tick_params(axis='x', labelsize=fontsize_dict['tick'])
-    ax.set_ylabel('Neuron no.', fontsize=fontsize_dict['label'])
-    ax.tick_params(axis='y', labelsize=fontsize_dict['tick'])
+    ax.set_xlabel("Preferred depth (cm)", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="x", labelsize=fontsize_dict["tick"])
+    ax.set_ylabel("Neuron no.", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])

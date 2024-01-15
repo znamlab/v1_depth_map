@@ -33,7 +33,7 @@ def get_or_load_fit(
         if flm_sess is None:
             raise IOError("You must provide flm_sess if data is None")
         data = get_recording_data(recording, flm_sess, two_photon=True)
-    
+
     # exclude non-cells
     # The ROI no. for all cells (excluding non-cells
     iscell = data["iscell"]
