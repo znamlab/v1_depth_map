@@ -14,7 +14,7 @@ import flexiznam as flz
 from cottage_analysis.pipelines import pipeline_utils
 
 
-def concatenate_all_neurons_df(flexilims_session, session_list, iscell=True):
+def concatenate_all_neurons_df(flexilims_session, session_list, read_iscell=True):
     for isess, session in enumerate(session_list):
         neurons_ds = pipeline_utils.create_neurons_ds(
         session_name=session,
@@ -31,7 +31,7 @@ def concatenate_all_neurons_df(flexilims_session, session_list, iscell=True):
             allow_multiple=False,
             return_dataseries=False,
             )   
-        if iscell:
+        if read_iscell:
             iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
             neurons_df["iscell"] = iscell
             
