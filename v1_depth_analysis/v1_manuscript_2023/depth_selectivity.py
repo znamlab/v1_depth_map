@@ -268,7 +268,7 @@ def get_PSTH(
                 if rs_thr_max is None: # use not running data but didn't set rs_thr
                     print("ERROR: calculating under not_running condition without rs_thr_max to determine max speed")
                 else: # take frames with running speed < rs_thr for x seconds
-                    take_idx = common_utils.find_thresh_sequence(rs_arr, rs_thr_max, int(still_time*frame_rate))
+                    take_idx = common_utils.find_thresh_sequence(array=rs_arr, threshold_max=rs_thr_max, length=int(still_time*frame_rate), shift=int(still_time*frame_rate))
                     
             dff = dff[take_idx]
             rs_arr = rs_arr[take_idx]
