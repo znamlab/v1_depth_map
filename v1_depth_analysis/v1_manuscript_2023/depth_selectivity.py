@@ -137,16 +137,23 @@ def plot_depth_tuning_curve(
     neurons_df,
     trials_df,
     roi,
-    rs_thr=0.2,
+    rs_thr=None,
+    rs_thr_max=None,
+    still_only=False,
+    still_time=0,
+    frame_rate=15,
     plot_fit=True,
     linewidth=3,
     linecolor="k",
     fit_linecolor="r",
     closed_loop=1,
+    overwrite_ax=True,
+    ax=None,
     plot_x=0,
     plot_y=0,
     plot_width=1,
     plot_height=1,
+    label=None,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     """
@@ -157,6 +164,9 @@ def plot_depth_tuning_curve(
         trials_df (pd.DataFrame): dataframe with info of all trials.
         roi (int): ROI number
         rs_thr (float, optional): Threshold to cut off non-running frames. Defaults to 0.2. (m/s)
+        still_only (bool, optional): Whether to use only frames when the mouse stay still for x frames. Defaults to False.
+        still_time (int, optional): Number of seconds to use when the mouse stay still. Defaults to 0.
+        frame_rate (int, optional): Imaging frame rate. Defaults to 15.
         plot_fit (bool, optional): Whether to plot fitted tuning curve or not. Defaults to True.
         linewidth (int, optional): linewidth. Defaults to 3.
         linecolor (str, optional): linecolor of true data. Defaults to "k".
@@ -166,10 +176,10 @@ def plot_depth_tuning_curve(
     # Load average activity and confidence interval for this roi
     depth_list = np.array(find_depth_neurons.find_depth_list(trials_df))
     mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(
-        trials_df, rs_thr=rs_thr
+        trials_df, rs_thr=rs_thr, rs_thr_max=rs_thr_max, still_only=still_only, still_time=still_time, frame_rate=frame_rate,
     )[:, :, roi]
     CI_low, CI_high = common_utils.get_confidence_interval(mean_dff_arr)
-    mean_arr = np.mean(mean_dff_arr, axis=1)
+    mean_arr = np.nanmean(mean_dff_arr, axis=1)
 
     # Load gaussian fit params for this roi
     if plot_fit:
@@ -181,8 +191,9 @@ def plot_depth_tuning_curve(
         )
 
     # Plotting
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    ax.plot(np.log(depth_list), mean_arr, color=linecolor, linewidth=linewidth)
+    if overwrite_ax:
+        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax.plot(np.log(depth_list), mean_arr, color=linecolor, linewidth=linewidth, label=label)
     ax.fill_between(
         np.log(depth_list),
         CI_low,
@@ -206,12 +217,18 @@ def plot_depth_tuning_curve(
 
     plotting_utils.despine()
     
+    return ax
+    
     
 def get_PSTH(
     trials_df,
     roi,
     is_closed_loop,
-    max_distance=6,
+    rs_thr_min=None, #m/s
+    rs_thr_max=None, #m/s
+    still_only=False,
+    still_time=1, #s
+    max_distance=6, #m
     nbins=20,
     frame_rate=15,
 ):
@@ -235,6 +252,26 @@ def get_PSTH(
         for itrial in np.arange(trial_number):
             dff = grouped_trials.get_group(depth).dff_stim.values[itrial][:, roi]
             rs_arr = grouped_trials.get_group(depth).RS_stim.values[itrial]
+
+            # threshold running speed according to rs_thr 
+            if not still_only: # take running frames
+                if (rs_thr_min is None) and (rs_thr_max is None): # take all frames
+                    take_idx = np.arange(len(rs_arr))
+                else:
+                    if rs_thr_max is None: # take frames with running speed > rs_thr
+                        take_idx = rs_arr > rs_thr_min
+                    elif rs_thr_min is None: # take frames with running speed < rs_thr
+                        take_idx = rs_arr < rs_thr_max
+                    else: # take frames with running speed between rs_thr_min and rs_thr_max
+                        take_idx = (rs_arr > rs_thr_min) & (rs_arr < rs_thr_max)
+            else: # take still frames
+                if rs_thr_max is None: # use not running data but didn't set rs_thr
+                    print("ERROR: calculating under not_running condition without rs_thr_max to determine max speed")
+                else: # take frames with running speed < rs_thr for x seconds
+                    take_idx = common_utils.find_thresh_sequence(rs_arr, rs_thr_max, int(still_time*frame_rate))
+                    
+            dff = dff[take_idx]
+            rs_arr = rs_arr[take_idx]
             distance = np.cumsum(rs_arr / frame_rate)
             all_dff.append(dff)
             all_distance.append(distance)
@@ -317,6 +354,10 @@ def plot_PSTH(
     is_closed_loop,
     max_distance=6,
     nbins=20,
+    rs_thr_min=None,
+    rs_thr_max=None,
+    still_only=False,
+    still_time=1,
     frame_rate=15,
     plot_x=0,
     plot_y=0,
@@ -339,6 +380,10 @@ def plot_PSTH(
     all_means, all_ci, bin_centers = get_PSTH(trials_df=trials_df, 
                                               roi=roi, 
                                               is_closed_loop=is_closed_loop, 
+                                              rs_thr_min=rs_thr_min,
+                                              rs_thr_max=rs_thr_max,
+                                              still_only=still_only,
+                                              still_time=still_time,
                                               max_distance=max_distance, 
                                               nbins=nbins, 
                                               frame_rate=frame_rate)
@@ -397,7 +442,7 @@ def plot_PSTH(
     plotting_utils.despine()
     
     
-def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10):
+def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, closed_loop=1, rs_thr_min=None, rs_thr_max=None, still_only=False, still_time=1):
     for isess, session_name in enumerate(session_list):
         print(f"Calculating PSTH for {session_name}")
         
@@ -416,6 +461,7 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10):
             photodiode_protocol=photodiode_protocol,
             return_volumes=True,
             )
+        trials_df = trials_df[trials_df.closed_loop==closed_loop]
 
         neurons_ds = pipeline_utils.create_neurons_ds(
             session_name=session_name, flexilims_session=flexilims_session, project=None, conflicts="skip"
@@ -464,6 +510,10 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10):
                                                     is_closed_loop=1, 
                                                     max_distance=6, 
                                                     nbins=nbins, 
+                                                    rs_thr_min=rs_thr_min,
+                                                    rs_thr_max=rs_thr_max,
+                                                    still_only=still_only,
+                                                    still_time=still_time,
                                                     frame_rate=15)
             results.at[roi, "psth_crossval"] = psth
         
