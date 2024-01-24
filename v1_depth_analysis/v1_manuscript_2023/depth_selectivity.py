@@ -442,7 +442,7 @@ def plot_PSTH(
     plotting_utils.despine()
     
     
-def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, closed_loop=1, rs_thr_min=None, rs_thr_max=None, still_only=False, still_time=1):
+def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, closed_loop=1, use_cols=["preferred_depth_closedloop_crossval","depth_tuning_test_rsq_closedloop"], rs_thr_min=None, rs_thr_max=None, still_only=False, still_time=1, verbose=1):
     for isess, session_name in enumerate(session_list):
         print(f"Calculating PSTH for {session_name}")
         
@@ -451,76 +451,88 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, cl
             photodiode_protocol = 2
         else:
             photodiode_protocol = 5
-        _, trials_df = spheres.sync_all_recordings(
-            session_name=session_name,
-            flexilims_session=flexilims_session,
-            project=None,
-            filter_datasets={'anatomical_only':3},
-            recording_type="two_photon",
-            protocol_base="SpheresPermTubeReward",
-            photodiode_protocol=photodiode_protocol,
-            return_volumes=True,
-            )
-        trials_df = trials_df[trials_df.closed_loop==closed_loop]
-
+            
         neurons_ds = pipeline_utils.create_neurons_ds(
             session_name=session_name, flexilims_session=flexilims_session, project=None, conflicts="skip"
         )
         neurons_df = pd.read_pickle(neurons_ds.path_full)
-        neurons_df['session'] = session_name
+        if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
+            if use_cols is None:
+                neurons_df = neurons_df
+            else:
+                neurons_df = neurons_df[use_cols]
         
-        # Create dataframe to store results
-        results = pd.DataFrame(
-        columns = [
-            'session',
-            'roi',
-            'iscell',
-            'preferred_depth_crossval',
-            'preferred_depth_rsq',
-            'psth_crossval',
-            ]   
-    )
-        # Add roi, preferred depth, iscell to results
-        results["roi"] = np.arange(len(neurons_df))
-        results["session"] = session_name
-        results["preferred_depth_crossval"] = neurons_df["preferred_depth_closedloop_crossval"]
-        results["preferred_depth_rsq"] = neurons_df["depth_tuning_test_rsq_closedloop"]
-        exp_session = flz.get_entity(
-            datatype="session", name=session_name, flexilims_session=flexilims_session
+            _, trials_df = spheres.sync_all_recordings(
+                session_name=session_name,
+                flexilims_session=flexilims_session,
+                project=None,
+                filter_datasets={'anatomical_only':3},
+                recording_type="two_photon",
+                protocol_base="SpheresPermTubeReward",
+                photodiode_protocol=photodiode_protocol,
+                return_volumes=True,
+                )
+            trials_df = trials_df[trials_df.closed_loop==closed_loop]
+
+            neurons_df['session'] = session_name
+            
+            # Create dataframe to store results
+            results = pd.DataFrame(
+            columns = [
+                'session',
+                'roi',
+                'iscell',
+                'preferred_depth_crossval',
+                'preferred_depth_rsq',
+                'psth_crossval',
+                ]   
         )
-        suite2p_ds = flz.get_datasets(
-            flexilims_session=flexilims_session,
-            origin_name=exp_session.name,
-            dataset_type="suite2p_rois",
-            filter_datasets={"anatomical_only": 3},
-            allow_multiple=False,
-            return_dataseries=False,
-        )
-        iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
-        results["iscell"] = iscell
-        results["psth_crossval"] = [[np.nan]]*len(neurons_df)
-    
-        # Get the responses for this session that are not included for calculating the cross-validated preferred depth
-        choose_trials_resp = list(set(neurons_df.depth_tuning_trials_closedloop.iloc[0])-set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0]))
-        trials_df_resp, _, _ = common_utils.choose_trials_subset(trials_df, choose_trials_resp)
+            # Add roi, preferred depth, iscell to results
+            results["roi"] = np.arange(len(neurons_df))
+            results["session"] = session_name
+            results["preferred_depth_crossval"] = neurons_df["preferred_depth_closedloop_crossval"]
+            results["preferred_depth_rsq"] = neurons_df["depth_tuning_test_rsq_closedloop"]
+            exp_session = flz.get_entity(
+                datatype="session", name=session_name, flexilims_session=flexilims_session
+            )
+            suite2p_ds = flz.get_datasets(
+                flexilims_session=flexilims_session,
+                origin_name=exp_session.name,
+                dataset_type="suite2p_rois",
+                filter_datasets={"anatomical_only": 3},
+                allow_multiple=False,
+                return_dataseries=False,
+            )
+            iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+            results["iscell"] = iscell
+            results["psth_crossval"] = [[np.nan]]*len(neurons_df)
         
-        for roi in tqdm(range(len(neurons_df))):
-            psth, _, _ = get_PSTH(trials_df=trials_df_resp, 
-                                                    roi=roi, 
-                                                    is_closed_loop=1, 
-                                                    max_distance=6, 
-                                                    nbins=nbins, 
-                                                    rs_thr_min=rs_thr_min,
-                                                    rs_thr_max=rs_thr_max,
-                                                    still_only=still_only,
-                                                    still_time=still_time,
-                                                    frame_rate=15)
-            results.at[roi, "psth_crossval"] = psth
-        
-        if isess == 0:
-            results_all = results.copy()
+            # Get the responses for this session that are not included for calculating the cross-validated preferred depth
+            choose_trials_resp = list(set(neurons_df.depth_tuning_trials_closedloop.iloc[0])-set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0]))
+            trials_df_resp, _, _ = common_utils.choose_trials_subset(trials_df, choose_trials_resp)
+            
+            for roi in tqdm(range(len(neurons_df))):
+                psth, _, _ = get_PSTH(trials_df=trials_df_resp, 
+                                                        roi=roi, 
+                                                        is_closed_loop=1, 
+                                                        max_distance=6, 
+                                                        nbins=nbins, 
+                                                        rs_thr_min=rs_thr_min,
+                                                        rs_thr_max=rs_thr_max,
+                                                        still_only=still_only,
+                                                        still_time=still_time,
+                                                        frame_rate=15)
+                results.at[roi, "psth_crossval"] = psth
+            
+            if isess == 0:
+                results_all = results.copy()
+            else:
+                results_all = pd.concat([results_all, results], axis=0, ignore_index=True)
+            
+            if verbose:
+                print(f"Finished concat neurons_df from session {session_name}")
         else:
-            results_all = pd.concat([results_all, results], axis=0, ignore_index=True)
+            print(f"ERROR: SESSION {session_name}: specified cols not all in neurons_df")
         
     return results_all
 
@@ -536,9 +548,10 @@ def plot_preferred_depth_hist(
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
+    results_df = results_df[results_df['iscell'] ==1]
     depth_bins = np.geomspace(np.nanmin(results_df[use_col])*100,np.nanmax(results_df[use_col])*100,num=nbins)
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    n, _, _ = ax.hist(results_df[use_col]*100, bins=depth_bins, weights=np.ones(len(results_df)) / len(results_df), color='dimgrey')
+    n, _, _ = ax.hist(results_df[use_col]*100, bins=depth_bins, weights=np.ones(len(results_df)) / len(results_df), color='k')
     ax.set_xscale('log')
     ax.set_ylabel('Proportion of neurons', fontsize = fontsize_dict['label'])
     ax.set_xlabel('Preferred depth (cm)', fontsize = fontsize_dict['label'])
@@ -590,6 +603,30 @@ def plot_psth_raster(
     ax.set_xticks(xticks)
     ax.set_xticklabels(np.round(depth_list))
     ax.set_xlabel('Preferred depth (cm)', fontsize=fontsize_dict['label'])
-    ax.tick_params(axis='x', labelsize=fontsize_dict['tick'])
+    ax.tick_params(axis='x', labelsize=fontsize_dict['tick'], rotation=60)
     ax.set_ylabel('Neuron no.', fontsize=fontsize_dict['label'])
     ax.tick_params(axis='y', labelsize=fontsize_dict['tick'])
+    
+    
+def plot_depth_neuron_perc_hist(
+    fig,
+    results_df,
+    use_col=["depth_tuning_test_spearmanr_pval_closedloop"],
+    bins=50,
+    plot_x=0,
+    plot_y=0,
+    plot_width=1,
+    plot_height=1,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+):
+    results_df = results_df[results_df['iscell'] ==1]
+    neuron_sum = results_df.groupby('session')[['roi']].agg(['count']).values.flatten()
+    prop = results_df.groupby('session').apply(lambda x: x[x[use_col] < 0.05][['roi']].agg(['count'])).values.flatten()
+    
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    ax.hist(prop/neuron_sum, bins=bins, color='k')
+    xlim = ax.get_xlim()
+    ax.set_xlim([0, xlim[1]])
+    ax.set_xlabel('Proportion of depth-tuned neurons', fontsize=fontsize_dict['label'])
+    ax.set_ylabel('Session number', fontsize=fontsize_dict['label'])
+    plotting_utils.despine()

@@ -195,7 +195,14 @@ def plot_rf_centers(fig,
         ax.tick_params(axis='both', labelsize=fontsize_dict['tick'])
         
         
-def load_sig_rf(flexilims_session, session_list, depth_neuron_thr=0.04, n_std=5):
+def load_sig_rf(flexilims_session, 
+                session_list, 
+                use_cols=['roi', 'is_depth_neuron', 'best_depth', 'preferred_depth_closedloop', 'preferred_depth_closedloop_crossval',
+                                                                   'depth_tuning_test_rsq_closedloop', 'depth_tuning_test_spearmanr_rval_closedloop', 'depth_tuning_test_spearmanr_pval_closedloop',
+                                                                   'rf_coef', 'rf_coef_ipsi', 'rf_rsq', 'rf_rsq_ipsi',
+                                                                   ], 
+                n_std=5, 
+                verbose=1):
     all_sig = []
     all_sig_ipsi = []
     for isess, session in enumerate(session_list):
@@ -208,29 +215,41 @@ def load_sig_rf(flexilims_session, session_list, depth_neuron_thr=0.04, n_std=5)
         )
         neurons_df = pd.read_pickle(neurons_ds.path_full)
         
-        # Load iscell
-        suite2p_ds = flz.get_datasets(
-            flexilims_session=flexilims_session,
-            origin_name=session,
-            dataset_type="suite2p_rois",
-            filter_datasets={"anatomical_only": 3},
-            allow_multiple=False,
-            return_dataseries=False,
-            )   
-        iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
-        neurons_df["iscell"] = iscell
+        if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
+            if use_cols is None:
+                neurons_df = neurons_df
+            else:
+                neurons_df = neurons_df[use_cols]
         
-        # Load RF significant % 
-        coef = np.stack(neurons_df["rf_coef"].values)
-        coef_ipsi = np.stack(neurons_df["rf_coef_ipsi"].values)
-        sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
-                                            np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
-                                            n_std=n_std)
-        select_neurons = (neurons_df["iscell"]==1) & (neurons_df["depth_tuning_test_rsq_closedloop"]>depth_neuron_thr)
-        sig = sig[select_neurons]
-        sig_ipsi = sig_ipsi[select_neurons]
-        all_sig.append(np.mean(sig))
-        all_sig_ipsi.append(np.mean(sig_ipsi))
+            # Load iscell
+            suite2p_ds = flz.get_datasets(
+                flexilims_session=flexilims_session,
+                origin_name=session,
+                dataset_type="suite2p_rois",
+                filter_datasets={"anatomical_only": 3},
+                allow_multiple=False,
+                return_dataseries=False,
+                )   
+            iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+            neurons_df["iscell"] = iscell
+            
+            # Load RF significant % 
+            coef = np.stack(neurons_df["rf_coef"].values)
+            coef_ipsi = np.stack(neurons_df["rf_coef_ipsi"].values)
+            sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
+                                                np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
+                                                n_std=n_std)
+            select_neurons = (neurons_df["iscell"]==1) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)
+            sig = sig[select_neurons]
+            sig_ipsi = sig_ipsi[select_neurons]
+            all_sig.append(np.mean(sig))
+            all_sig_ipsi.append(np.mean(sig_ipsi))
+            
+            if verbose:
+                print(f"SESSION {session} concatenated")
+        
+        else:
+            print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
         
     return all_sig, all_sig_ipsi
 
@@ -264,7 +283,7 @@ def plot_sig_rf_perc(fig,
                s=scatter_size)
     ax.set_xticks([0,1])
     ax.set_xticklabels(['Contra-\nlateral', 'Ipsi-\nlateral'], fontsize=fontsize_dict['label'])
-    ax.set_ylabel('Proportion of neurons with \nsignificant receptive field', fontsize=fontsize_dict['label'])
+    ax.set_ylabel('Proportion of depth neurons \nwith significant receptive field', fontsize=fontsize_dict['label'])
     ax.set_ylim([0,1])
     plotting_utils.despine()
     ax.tick_params(axis='y', which='major', labelsize=fontsize_dict['tick'])
