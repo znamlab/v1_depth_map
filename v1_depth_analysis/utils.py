@@ -4,7 +4,7 @@ import pandas as pd
 import yaml
 from flexilims.offline import download_database
 from flexiznam.schema import Dataset
-from v1_depth_analysis.config import MICE, PROJECT
+from v1_depth_analysis.config import PROJECT, MOUSE_LIST
 
 FLM_SESS = flz.get_flexilims_session(project_id=PROJECT)
 
@@ -22,7 +22,7 @@ def get_sessions(mice=None, flm_sess=FLM_SESS):
             of mice defined in config.MICE
     """
     if mice is None:
-        mice = MICE
+        mice = MOUSE_LIST
     raw_path = Path(flz.PARAMETERS["data_root"]["raw"])
     if isinstance(mice, str):
         mice = [mice]
@@ -47,16 +47,16 @@ def get_recordings(protocol="SpheresPermTubeReward", sessions=None, flm_sess=FLM
     Args:
         protocol (str, optional): Protocol to keep. Defaults to "SpheresPermTubeReward".
         sessions (list, optional): List of session to consider. If None will load all
-            sessions defiend in config.SESSION. Defaults to None.
+            sessions defined in config.SESSION. Defaults to None.
         flm_sess (flz.Session, optional): Flexilims session. Defaults to FLM_SESS.
 
     Returns:
         list: List of recordings series loaded from flexilims
     """
     if sessions is None:
-        session = get_sessions(MICE, flm_sess=flm_sess)
+        sessions = get_sessions(MOUSE_LIST, flm_sess=flm_sess)
     recordings = []
-    for sess_name, sess in session.iterrows():
+    for sess_name, sess in sessions.iterrows():
         recs = flz.get_children(
             sess.id, children_datatype="recording", flexilims_session=flm_sess
         )
