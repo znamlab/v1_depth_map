@@ -137,6 +137,8 @@ def plot_depth_tuning_curve(
     neurons_df,
     trials_df,
     roi,
+    param="depth",
+    use_col="depth_tuning_popt_closedloop",
     rs_thr=None,
     rs_thr_max=None,
     still_only=False,
@@ -174,18 +176,28 @@ def plot_depth_tuning_curve(
     """
 
     # Load average activity and confidence interval for this roi
-    depth_list = np.array(find_depth_neurons.find_depth_list(trials_df))
-    mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(
-        trials_df, rs_thr=rs_thr, rs_thr_max=rs_thr_max, still_only=still_only, still_time=still_time, frame_rate=frame_rate,
-    )[:, :, roi]
+    trials_df = trials_df[trials_df.closed_loop == closed_loop]
+    trials_df = size_control.get_physical_size(trials_df, use_cols=["size", "depth"], k=1)
+    if param == "depth":
+        param_list = np.array(find_depth_neurons.find_depth_list(trials_df))
+    elif param == "size":
+        param_list = np.sort(trials_df["physical_size"].unique())
+    mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(trials_df=trials_df,
+                                                rs_thr=rs_thr, 
+                                                rs_thr_max=rs_thr_max, 
+                                                still_only=still_only, 
+                                                still_time=still_time, 
+                                                frame_rate=frame_rate, 
+                                                closed_loop=closed_loop, 
+                                                param=param)[:, :, roi]
     CI_low, CI_high = common_utils.get_confidence_interval(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
 
     # Load gaussian fit params for this roi
     if plot_fit:
         min_sigma = 0.5
-        [a, x0, log_sigma, b] = neurons_df.loc[roi, "depth_tuning_popt_closedloop"]
-        x = np.geomspace(depth_list[0], depth_list[-1], num=100)
+        [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col]
+        x = np.geomspace(param_list[0], param_list[-1], num=100)
         gaussian_arr = find_depth_neurons.gaussian_func(
             np.log(x), a, x0, log_sigma, b, min_sigma
         )
@@ -193,9 +205,9 @@ def plot_depth_tuning_curve(
     # Plotting
     if overwrite_ax:
         ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    ax.plot(np.log(depth_list), mean_arr, color=linecolor, linewidth=linewidth, label=label)
+    ax.plot(np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label)
     ax.fill_between(
-        np.log(depth_list),
+        np.log(param_list),
         CI_low,
         CI_high,
         color=linecolor,
@@ -205,14 +217,23 @@ def plot_depth_tuning_curve(
     )
     if plot_fit:
         ax.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
-    plt.xticks(
-        np.log(depth_list),
-        (np.array(depth_list) * 100).astype("int"),
-        fontsize=fontsize_dict["tick"],
-        rotation=45,
-    )
+    if param=="depth":
+        plt.xticks(
+            np.log(param_list),
+            (np.array(param_list) * 100).astype("int"),
+            fontsize=fontsize_dict["tick"],
+            rotation=45,
+        )
+        plt.xlabel(f"Virtual depth (cm)", fontsize=fontsize_dict["label"])
+    elif param=="size":
+        plt.xticks(
+            np.log(param_list),
+            np.round(np.array(param_list)*0.87/10*20,1),
+            fontsize=fontsize_dict["tick"],
+            rotation=45,
+        )
+        plt.xlabel(f"Actual radius (cm)", fontsize=fontsize_dict["label"])
     plt.yticks(fontsize=fontsize_dict["tick"])
-    ax.set_xlabel("Virtual depth (cm)", fontsize=fontsize_dict["label"])
     ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
 
     plotting_utils.despine()
