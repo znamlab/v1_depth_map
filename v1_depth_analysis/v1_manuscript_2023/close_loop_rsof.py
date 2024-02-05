@@ -12,6 +12,7 @@ from pathlib import Path
 import pickle
 from tqdm import tqdm
 import scipy
+import seaborn as sns
 
 import flexiznam as flz
 from cottage_analysis.preprocessing import synchronisation
@@ -303,3 +304,100 @@ def plot_RS_OF_matrix(
 
     extended_matrix = bin_means
     return extended_matrix
+
+
+def plot_speed_depth_scatter(
+    fig,
+    neurons_df,
+    xcol,
+    ycol,
+    xlabel="Running speed (cm/s)",
+    ylabel="Preferred depth (cm)",
+    s=10,
+    alpha=0.2,
+    c='g',
+    plot_x=0,
+    plot_y=0,
+    plot_width=1,
+    plot_height=1,
+    cbar_width=0.01,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},):
+    
+    # Filter neurons_df
+    neurons_df = neurons_df[(neurons_df["iscell"] == 1) & 
+                            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) &
+                            (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
+                            ]
+    
+    # Plot scatter
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    X = neurons_df[xcol].values
+    y = neurons_df[ycol].values
+    ax.scatter(X, y, s=s, alpha=alpha, c=c,  edgecolors="none")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
+    ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    # ax.set_aspect("equal")
+    plotting_utils.despine()
+
+
+def plot_speed_colored_by_depth(
+    fig,
+    neurons_df,
+    xcol,
+    ycol,
+    zcol,
+    xlabel="Running speed (cm/s)",
+    ylabel="Optic flow speed (degree/s)",
+    zlabel="Preferred depth (cm)",
+    s=10,
+    alpha=0.2,
+    cmap='cool_r',
+    plot_x=0,
+    plot_y=0,
+    plot_width=1,
+    plot_height=1,
+    cbar_width=0.01,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    ):
+    
+    # Filter neurons_df
+    neurons_df = neurons_df[(neurons_df["iscell"] == 1) & 
+                            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) &
+                            (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
+                            ]
+    
+    # Plot scatter
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    sns.scatterplot(
+        neurons_df, 
+        x=xcol, 
+        y=ycol, 
+        hue=np.log(neurons_df[zcol]),
+        # hue_norm = (np.log(6), np.log(600)),
+        palette="cool_r",
+        s=s, 
+        ax=ax)
+    sns.despine()
+    ax.set_aspect("equal", "box")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.get_legend().remove()
+    ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
+    ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    
+    norm = matplotlib.colors.LogNorm(np.nanmin(neurons_df[zcol]), np.nanmax(neurons_df[zcol]))
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    
+    # Remove the legend and add a colorbar
+    cbar = ax.figure.colorbar(sm)
+    cbar.ax.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['legend'])
+    cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
+    cbar.ax.get_yaxis().labelpad = 25
+    yticks = cbar.ax.get_yticks()
+    
+    
