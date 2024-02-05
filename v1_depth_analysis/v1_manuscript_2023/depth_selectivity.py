@@ -177,10 +177,10 @@ def plot_depth_tuning_curve(
 
     # Load average activity and confidence interval for this roi
     trials_df = trials_df[trials_df.closed_loop == closed_loop]
-    trials_df = size_control.get_physical_size(trials_df, use_cols=["size", "depth"], k=1)
     if param == "depth":
         param_list = np.array(find_depth_neurons.find_depth_list(trials_df))
     elif param == "size":
+        trials_df = size_control.get_physical_size(trials_df, use_cols=["size", "depth"], k=1)
         param_list = np.sort(trials_df["physical_size"].unique())
     mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(trials_df=trials_df,
                                                 rs_thr=rs_thr, 
@@ -459,7 +459,7 @@ def plot_PSTH(
     plt.yticks(fontsize=fontsize_dict["tick"])
     
     if legend_on:
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False)
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False, handlelength=1)
     plotting_utils.despine()
     
     
@@ -651,3 +651,35 @@ def plot_depth_neuron_perc_hist(
     ax.set_xlabel('Proportion of depth-tuned neurons', fontsize=fontsize_dict['label'])
     ax.set_ylabel('Session number', fontsize=fontsize_dict['label'])
     plotting_utils.despine()
+    
+    
+def get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=1, before_onset=0.5, frame_rate=15):
+    trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
+    
+    # Find the mean response of each trial for all ROIs
+    trials_df["trial_mean_response"] = trials_df.apply(
+        lambda x: np.nanmean(x.dff_stim, axis=0), axis=1
+    )    
+    
+    # Find the mean response of the blank period before the next trial for all ROIs
+    trials_df["trial_mean_onset"] = trials_df.apply(
+        lambda x: np.nanmean(x.dff_blank[-int(frame_rate*before_onset):], axis=0), axis=1
+    )   
+    # Shift blank response down 1 to put it to the correct trial
+    trials_df["trial_mean_onset"] = trials_df["trial_mean_onset"].shift(1)
+    
+    all_response = np.stack(trials_df.trial_mean_response[1:].values)
+    all_onset = np.stack(trials_df.trial_mean_onset[1:].values)
+    
+    # Check whether the response is significantly higher than the blank period
+    for iroi, roi in enumerate(neurons_df.roi):
+        response = all_response[:, iroi]
+        onset = all_onset[:, iroi]
+        pval = scipy.stats.wilcoxon(response, onset).pvalue
+        neurons_df.at[roi, "visually_responsive"] = (pval < 0.05) & (np.nanmean(response-onset)>0)
+    
+    return neurons_df
+    
+    
+
+    
