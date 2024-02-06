@@ -306,6 +306,130 @@ def plot_RS_OF_matrix(
     return extended_matrix
 
 
+def plot_RS_OF_fitted_tuning(
+    fig,
+    neurons_df,
+    roi,
+    model="gaussian_2d",
+    min_sigma=0.25,
+    log_range={
+        "rs_bin_log_min": 0,
+        "rs_bin_log_max": 2.5,
+        "rs_bin_num": 6,
+        "of_bin_log_min": -1.5,
+        "of_bin_log_max": 3.5,
+        "of_bin_num": 11,
+        "log_base": 10,
+    },
+    plot_x=0,
+    plot_y=0,
+    plot_width=1,
+    plot_height=1,
+    cbar_width=0.01,
+    xlabel="Running speed (cm/s)",
+    ylabel="Optical flow speed \n(degrees/s)",
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+):
+
+    """
+    Plot the fitted tuning of a neuron.
+    """
+    rs = (
+        np.logspace(
+            log_range["rs_bin_log_min"], log_range["rs_bin_log_max"], 100, base=10
+        )
+        / 100
+    )  # cm/s --> m/s
+    of = np.logspace(
+        log_range["of_bin_log_min"], log_range["of_bin_log_max"], 100, base=10
+    )  # deg/s
+
+    rs_grid, of_grid = np.meshgrid(np.log(rs), np.log(of))
+    if model == "gaussian_2d":
+        resp_pred = fit_gaussian_blob.gaussian_2d(
+            (rs_grid, of_grid),
+            *neurons_df["rsof_popt_closedloop_g2d"].iloc[roi],
+            min_sigma=0.25,
+        )
+    elif model == "gaussian_additive":
+        resp_pred = fit_gaussian_blob.gaussian_additive(
+            (rs_grid, of_grid),
+            *neurons_df["rsof_popt_closedloop_gadd"].iloc[roi],
+            min_sigma=0.25,
+        )
+    elif model == "gaussian_OF":
+        resp_pred = fit_gaussian_blob.gaussian_1d(
+            of_grid, *neurons_df["rsof_popt_closedloop_gof"].iloc[roi], min_sigma=0.25
+        )
+    resp_pred = resp_pred.reshape((len(of), len(rs)))
+
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    im = ax.imshow(
+        resp_pred,
+        origin="lower",
+        extent=[rs.min() * 100,rs.max() * 100, of.min(), of.max()],
+        aspect=rs.max()
+        * 100
+        / of.max()
+        * log_range["of_bin_num"]
+        / log_range["rs_bin_num"],
+        cmap="Reds",
+    )
+    ticks_select1 = ax.get_xticks()[:-1]
+    ticks_select2 = ax.get_yticks()[:-1]
+    plt.xticks(
+        ticks_select1,
+        np.round(np.geomspace(rs.min() * 100, rs.max() * 100, len(ticks_select1))),
+        rotation=45,
+        ha="center",
+        fontsize=fontsize_dict["tick"],
+    )
+    plt.yticks(ticks_select2, 
+               np.round(np.geomspace(of.min(), of.max(), len(ticks_select2))), 
+               fontsize=fontsize_dict["tick"])
+    
+    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
+    fig.colorbar(im, cax=ax2, label="\u0394F/F")
+    
+    ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
+    ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+
+
+def plot_r2_comparison(
+    fig,
+    neurons_df,
+    use_cols,
+    labels,
+    plot_x=0,
+    plot_y=0,
+    plot_width=1,
+    plot_height=1,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+):
+    results = pd.DataFrame(columns=["model","rsq"])
+    neurons_df = neurons_df[
+        (neurons_df["iscell"] == 1) & 
+        (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) 
+        ]
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    for i, col in enumerate(use_cols):
+        neurons_df[col][neurons_df[col]<-2] = 0
+        results = pd.concat([results, pd.DataFrame({"model": labels[i], 
+                                                    "rsq": neurons_df[col]}, )
+                             ],
+                            ignore_index=True)
+    sns.violinplot(data=results, x="model", y="rsq", ax=ax)
+    ax.set_ylabel("R-squared", fontsize=fontsize_dict["label"])
+    ax.set_xlabel("Model", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    plotting_utils.despine()
+    
+    print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[1]])}")
+    print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[2]])}")
+        
+
+
+
 def plot_speed_depth_scatter(
     fig,
     neurons_df,
