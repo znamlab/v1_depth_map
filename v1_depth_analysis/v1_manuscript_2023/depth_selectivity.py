@@ -632,7 +632,8 @@ def plot_psth_raster(
 def plot_depth_neuron_perc_hist(
     fig,
     results_df,
-    use_col=["depth_tuning_test_spearmanr_pval_closedloop"],
+    numerator_filter=None,
+    denominator_filter=None,
     bins=50,
     plot_x=0,
     plot_y=0,
@@ -641,8 +642,15 @@ def plot_depth_neuron_perc_hist(
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     results_df = results_df[results_df['iscell'] ==1]
-    neuron_sum = results_df.groupby('session')[['roi']].agg(['count']).values.flatten()
-    prop = results_df.groupby('session').apply(lambda x: x[x[use_col] < 0.05][['roi']].agg(['count'])).values.flatten()
+    if denominator_filter is None:
+        neuron_sum = results_df.groupby('session')[['roi']].agg(['count']).values.flatten()
+    else:
+        neuron_sum = results_df[denominator_filter].groupby('session')[['roi']].agg(['count']).values.flatten()
+        
+    if numerator_filter is None:
+        prop = results_df.groupby('session').apply(lambda x: x[['roi']].agg(['count'])).values.flatten()
+    else:
+        prop = results_df.groupby('session').apply(lambda x: x[numerator_filter][['roi']].agg(['count'])).values.flatten()
     
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     ax.hist(prop/neuron_sum, bins=bins, color='k')
@@ -681,5 +689,64 @@ def get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=1, bef
     return neurons_df
     
     
+def get_visually_responsive_all_sessions(flexilims_session, session_list, use_cols, is_closed_loop=1, before_onset=0.5, frame_rate=15,):
+    isess=0
+    for session_name in session_list:
+        print(f"Calculating visually responsive neurons for {session_name}")
+        
+        # Load all data
+        if ("PZAH6.4b" or "PZAG3.4f") in session_name:
+            photodiode_protocol = 2
+        else:
+            photodiode_protocol = 5
+            
+        neurons_ds = pipeline_utils.create_neurons_ds(
+            session_name=session_name, flexilims_session=flexilims_session, project=None, conflicts="skip"
+        )
+        neurons_df = pd.read_pickle(neurons_ds.path_full)   
+        _, trials_df = spheres.sync_all_recordings(
+            session_name=session_name,
+            flexilims_session=flexilims_session,
+            project=None,
+            filter_datasets={'anatomical_only':3},
+            recording_type="two_photon",
+            protocol_base="SpheresPermTubeReward",
+            photodiode_protocol=photodiode_protocol,
+            return_volumes=True,
+            )
+        trials_df = trials_df[trials_df.closed_loop==is_closed_loop]
+        neurons_df = get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=is_closed_loop, before_onset=before_onset, frame_rate=frame_rate)
+        if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
+            if use_cols is None:
+                neurons_df = neurons_df
+            else:
+                neurons_df = neurons_df[use_cols]
+            neurons_df = neurons_df[use_cols]
+            
+            neurons_df["session"] = session_name
+            exp_session = flz.get_entity(
+                datatype="session", name=session_name, flexilims_session=flexilims_session
+            )
+            suite2p_ds = flz.get_datasets(
+                flexilims_session=flexilims_session,
+                origin_name=exp_session.name,
+                dataset_type="suite2p_rois",
+                filter_datasets={"anatomical_only": 3},
+                allow_multiple=False,
+                return_dataseries=False,
+            )
+            iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+            neurons_df["iscell"] = iscell
+                
+            if isess == 0:
+                results_all = neurons_df.copy()
+            else:
+                results_all = pd.concat([results_all, neurons_df], axis=0, ignore_index=True)
+            isess+=1
+        else:
+            print(f"ERROR: SESSION {session_name}: specified cols not all in neurons_df")
+            
+    return results_all
+
 
     
