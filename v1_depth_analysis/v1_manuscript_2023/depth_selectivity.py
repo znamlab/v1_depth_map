@@ -18,6 +18,7 @@ from cottage_analysis.preprocessing import synchronisation
 from cottage_analysis.analysis import spheres, find_depth_neurons, common_utils, fit_gaussian_blob, size_control
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
+from v1_depth_analysis.v1_manuscript_2023 import rf
 
 
 def plot_raster_all_depths(
@@ -232,7 +233,7 @@ def plot_depth_tuning_curve(
             fontsize=fontsize_dict["tick"],
             rotation=45,
         )
-        plt.xlabel(f"Actual radius (cm)", fontsize=fontsize_dict["label"])
+        plt.xlabel(f"Virtual radius (cm)", fontsize=fontsize_dict["label"])
     plt.yticks(fontsize=fontsize_dict["tick"])
     ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
 
@@ -749,4 +750,86 @@ def get_visually_responsive_all_sessions(flexilims_session, session_list, use_co
     return results_all
 
 
+def get_color(value, value_min, value_max, log=False, cmap=cm.cool.reversed()):
+    if log:
+        norm = matplotlib.colors.Normalize(vmin=np.log(value_min), vmax=np.log(value_max))
+        rgba_color = cmap(norm(np.log(value)),bytes=True)
+    else:
+        norm = matplotlib.colors.Normalize(vmin=value_min, vmax=value_max)
+        rgba_color = cmap(norm(value),bytes=True)
+    rgba_color = tuple(it/255 for it in rgba_color)
     
+    return rgba_color
+
+
+def plot_example_fov(
+    fig,
+    flexilims_session,
+    session,
+    neurons_df,
+    ndepths=8,
+    param="preferred_depth",
+    cmap=cm.cool.reversed(),
+    background_color = np.array([0.133,0.545,0.133]),
+    plot_x=0,
+    plot_y=0,
+    plot_width=1,
+    plot_height=1,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    
+):
+    # Load suite2p ops files
+    suite2p_ds = flz.get_datasets(
+        flexilims_session=flexilims_session,
+        origin_name=session,
+        dataset_type="suite2p_rois",
+        filter_datasets={"anatomical_only": 3},
+        allow_multiple=False,
+        return_dataseries=False,
+    )
+    iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+    neurons_df["iscell"] = iscell
+    stat = np.load(suite2p_ds.path_full / "plane0" / "stat.npy", allow_pickle=True)
+    ops = np.load(suite2p_ds.path_full / "plane0" / "ops.npy", allow_pickle=True)
+    ops = ops.item()   
+    
+    # Find neuronal masks and assign on the background image
+    im = np.zeros((ops['Ly'], ops['Lx'],3))
+    im_back = np.swapaxes(np.swapaxes(np.tile(ops['meanImg'],(3,1,1)),0,2),0,1)/np.max(ops['meanImg'])
+    im_back = np.multiply(im_back,background_color.reshape(1,-1))
+
+    # depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)&
+    #                            (neurons_df["iscell"]==1)].roi.values
+    # non_depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)&
+    #                            (neurons_df["iscell"]==1)].roi.values
+    # for n in non_depth_neurons:
+    #     ypix = stat[n]['ypix'][~stat[n]['overlap']]
+    #     xpix = stat[n]['xpix'][~stat[n]['overlap']]
+    #     if len(xpix) > 0 and len(ypix) > 0:
+    #         im[ypix,xpix,:] = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']]), (3,1)).T
+
+    neurons = neurons_df[neurons_df.iscell==1].roi.values
+    azi, ele, _ = rf.find_rf_centers(neurons_df, 
+                    ndepths=ndepths,
+                    frame_shape=(16,24),
+                    is_closed_loop=1,
+                    jitter=False,
+                    resolution=5,
+                    )
+
+    for i, n in enumerate(neurons):
+        ypix = stat[n]['ypix'][~stat[n]['overlap']]
+        xpix = stat[n]['xpix'][~stat[n]['overlap']]
+        lam_mat = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']]), (3,1)).T
+        if param == "preferred_depth":
+            rgba_color = get_color(neurons_df.at[n, "preferred_depth_closedloop"], 0.02, 20, log=True, cmap=cmap)
+        elif param == "preferred_azimuth":
+            rgba_color = get_color(azi[n], np.percentile(azi,10), np.percentile(azi,90), log=False, cmap=cmap)
+        elif param == "preferred_elevation":
+            rgba_color = get_color(ele[n], np.percentile(ele,10), np.percentile(ele,90), log=False, cmap=cmap) 
+        im[ypix,xpix,:] =((np.asarray(rgba_color)[:-1].reshape(-1,1))@(lam_mat[:,0].reshape(1,-1))).T
+
+    # Plot spatial distribution
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
+    plt.axis('off')
