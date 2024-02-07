@@ -690,10 +690,12 @@ def get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=1, bef
     return neurons_df
     
     
-def get_visually_responsive_all_sessions(flexilims_session, session_list, use_cols, is_closed_loop=1, before_onset=0.5, frame_rate=15,):
+def get_visually_responsive_all_sessions(flexilims_session, session_list, use_cols, is_closed_loop=1, protocol_base="SpheresPermTubeReward", protocol_base_list=[], before_onset=0.5, frame_rate=15,):
     isess=0
-    for session_name in session_list:
+    for i, session_name in enumerate(session_list):
         print(f"Calculating visually responsive neurons for {session_name}")
+        if len(protocol_base_list)>0:
+            protocol_base = protocol_base_list[i]
         
         # Load all data
         if ("PZAH6.4b" or "PZAG3.4f") in session_name:
@@ -711,7 +713,7 @@ def get_visually_responsive_all_sessions(flexilims_session, session_list, use_co
             project=None,
             filter_datasets={'anatomical_only':3},
             recording_type="two_photon",
-            protocol_base="SpheresPermTubeReward",
+            protocol_base=protocol_base,
             photodiode_protocol=photodiode_protocol,
             return_volumes=True,
             )
@@ -722,7 +724,6 @@ def get_visually_responsive_all_sessions(flexilims_session, session_list, use_co
                 neurons_df = neurons_df
             else:
                 neurons_df = neurons_df[use_cols]
-            neurons_df = neurons_df[use_cols]
             
             neurons_df["session"] = session_name
             exp_session = flz.get_entity(
@@ -775,6 +776,7 @@ def plot_example_fov(
     plot_y=0,
     plot_width=1,
     plot_height=1,
+    cbar_width=0.1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
     
 ):
@@ -798,17 +800,21 @@ def plot_example_fov(
     im_back = np.swapaxes(np.swapaxes(np.tile(ops['meanImg'],(3,1,1)),0,2),0,1)/np.max(ops['meanImg'])
     im_back = np.multiply(im_back,background_color.reshape(1,-1))
 
-    # depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)&
-    #                            (neurons_df["iscell"]==1)].roi.values
-    # non_depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)&
-    #                            (neurons_df["iscell"]==1)].roi.values
-    # for n in non_depth_neurons:
-    #     ypix = stat[n]['ypix'][~stat[n]['overlap']]
-    #     xpix = stat[n]['xpix'][~stat[n]['overlap']]
-    #     if len(xpix) > 0 and len(ypix) > 0:
-    #         im[ypix,xpix,:] = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']]), (3,1)).T
+    depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)&
+                               (neurons_df["iscell"]==1)].roi.values
+    non_depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)&
+                               (neurons_df["iscell"]==1)].roi.values
+    if param == "preferred_depth":
+        select_neurons = depth_neurons
+        for n in non_depth_neurons:
+            ypix = stat[n]['ypix'][~stat[n]['overlap']]
+            xpix = stat[n]['xpix'][~stat[n]['overlap']]
+            if len(xpix) > 0 and len(ypix) > 0:
+                im[ypix,xpix,:] = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']])*0.3, (3,1)).T
 
-    neurons = neurons_df[neurons_df.iscell==1].roi.values
+    else:
+        select_neurons = neurons_df.roi.values
+        
     azi, ele, _ = rf.find_rf_centers(neurons_df, 
                     ndepths=ndepths,
                     frame_shape=(16,24),
@@ -817,7 +823,7 @@ def plot_example_fov(
                     resolution=5,
                     )
 
-    for i, n in enumerate(neurons):
+    for i, n in enumerate(select_neurons):
         ypix = stat[n]['ypix'][~stat[n]['overlap']]
         xpix = stat[n]['xpix'][~stat[n]['overlap']]
         lam_mat = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']]), (3,1)).T
@@ -831,5 +837,14 @@ def plot_example_fov(
 
     # Plot spatial distribution
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
+    im = ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
     plt.axis('off')
+    
+    # ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
+    # fig.colorbar(im, cax=ax2, label=param)
+    if (param == "preferred_azimuth"):
+        print(f"{param} min {azi.min()}, max {azi.max()}")
+    elif (param == "preferred_elevation"):
+        print(f"{param} min {ele.min()}, max {ele.max()}")
+        
+    return azi, ele

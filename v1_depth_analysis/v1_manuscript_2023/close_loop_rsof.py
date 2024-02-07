@@ -237,6 +237,7 @@ def plot_RS_OF_matrix(
         "of_bin_num": 11,
         "log_base": 10,
     },
+    is_closed_loop=1,
     xlabel="Running speed (cm/s)",
     ylabel="Optical flow speed \n(degrees/s)",
     plot_x=0,
@@ -246,7 +247,7 @@ def plot_RS_OF_matrix(
     cbar_width=0.01,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    extended_matrix = np.zeros((log_range["rs_bin_num"], log_range["of_bin_num"]))
+    trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
     rs_bins = (
         np.logspace(
             log_range["rs_bin_log_min"],
@@ -275,15 +276,26 @@ def plot_RS_OF_matrix(
     )
 
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    im = ax.imshow(
-        bin_means[1:, 1:].T,
-        origin="lower",
-        aspect="equal",
-        # cmap=generate_cmap(cmap_name="WhRd"),
-        cmap="Reds",
-        vmin=0,
-        vmax=np.nanmax(bin_means[1:, 1:]),
-    )
+    if is_closed_loop:
+        im = ax.imshow(
+            bin_means[1:, 1:].T,
+            origin="lower",
+            aspect="equal",
+            # cmap=generate_cmap(cmap_name="WhRd"),
+            cmap="Reds",
+            vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
+            vmax=np.nanmax(bin_means[1:,1:].flatten()),
+        )
+    else:
+        im = ax.imshow(
+            bin_means.T,
+            origin="lower",
+            aspect="equal",
+            # cmap=generate_cmap(cmap_name="WhRd"),
+            cmap="Reds",
+            vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
+            vmax=np.nanmax(bin_means.flatten()),
+        )
     ticks_select1, ticks_select2, bin_edges1, bin_edges2 = basic_vis_plots.get_RS_OF_heatmap_axis_ticks(
         log_range=log_range, fontsize_dict=fontsize_dict
     )
@@ -298,6 +310,7 @@ def plot_RS_OF_matrix(
     
     ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
     fig.colorbar(im, cax=ax2, label="\u0394F/F")
+    ax2.tick_params(labelsize=fontsize_dict["legend"])
     
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
@@ -413,7 +426,7 @@ def plot_r2_comparison(
         ]
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
     for i, col in enumerate(use_cols):
-        neurons_df[col][neurons_df[col]<-2] = 0
+        neurons_df[col][neurons_df[col]<-1] = 0
         results = pd.concat([results, pd.DataFrame({"model": labels[i], 
                                                     "rsq": neurons_df[col]}, )
                              ],
@@ -427,8 +440,6 @@ def plot_r2_comparison(
     print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[1]])}")
     print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[2]])}")
         
-
-
 
 def plot_speed_depth_scatter(
     fig,
@@ -465,6 +476,7 @@ def plot_speed_depth_scatter(
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
     # ax.set_aspect("equal")
     plotting_utils.despine()
+    print(f"Correlation between {xcol} and {ycol}: {scipy.stats.spearmanr(X, y)}")
 
 
 def plot_speed_colored_by_depth(
@@ -523,5 +535,3 @@ def plot_speed_colored_by_depth(
     cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
     cbar.ax.get_yaxis().labelpad = 25
     yticks = cbar.ax.get_yticks()
-    
-    

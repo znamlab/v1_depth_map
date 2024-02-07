@@ -55,5 +55,5 @@ def plot_speeds_scatter(
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-    # ax.set_aspect("equal")
+    ax.set_aspect("equal")
     plotting_utils.despine()

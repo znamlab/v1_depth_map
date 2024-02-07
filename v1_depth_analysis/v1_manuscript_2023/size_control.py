@@ -41,14 +41,15 @@ def plot_depth_size_fit_comparison(
         ax.plot([0, 1], [0, 1], c="k", linestyle="dotted", linewidth=1)
         ax.set_aspect("equal")
         
-        ax.set_xlabel("Depth fit r-squared")
-        ax.set_ylabel("Size fit r-squared")
+        ax.set_xlabel("Depth fit r-squared", fontsize=fontsize_dict["label"])
+        ax.set_ylabel("Size fit r-squared", fontsize=fontsize_dict["label"])
         ax.set_xscale("log")
         ax.set_yscale("log")
         
     elif plot_type == "hist":
         diff = filtered_neurons_df[use_cols["depth_fit_r2"]] - filtered_neurons_df[use_cols["size_fit_r2"]]
         ax.hist(diff, bins=30, color=c, alpha=alpha)
+        ax.set_xlabel("Difference between depth and \nsize tuning r-squared", fontsize=fontsize_dict["label"])
         print(f"median {np.median(diff)}")
     
     plotting_utils.despine()  
