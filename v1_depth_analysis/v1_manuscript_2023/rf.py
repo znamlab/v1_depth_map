@@ -234,7 +234,7 @@ def load_sig_rf(flexilims_session,
                 session_list, 
                 use_cols=['roi', 'is_depth_neuron', 'best_depth', 'preferred_depth_closedloop', 'preferred_depth_closedloop_crossval',
                                                                    'depth_tuning_test_rsq_closedloop', 'depth_tuning_test_spearmanr_rval_closedloop', 'depth_tuning_test_spearmanr_pval_closedloop',
-                                                                   'rf_coef_closedloop', 'rf_coef_ipsi_closeloop', 'rf_rsq_closedloop', 'rf_rsq_ipsi_closedloop',
+                                                                   'rf_coef_closedloop', 'rf_coef_ipsi_closedloop', 'rf_rsq_closedloop', 'rf_rsq_ipsi_closedloop',
                                                                    ], 
                 n_std=5, 
                 verbose=1):
@@ -271,17 +271,20 @@ def load_sig_rf(flexilims_session,
             # Load RF significant % 
             coef = np.stack(neurons_df["rf_coef_closedloop"].values)
             coef_ipsi = np.stack(neurons_df["rf_coef_ipsi_closedloop"].values)
-            sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
-                                                np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
-                                                n_std=n_std)
-            select_neurons = (neurons_df["iscell"]==1) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)
-            sig = sig[select_neurons]
-            sig_ipsi = sig_ipsi[select_neurons]
-            all_sig.append(np.mean(sig))
-            all_sig_ipsi.append(np.mean(sig_ipsi))
-            
-            if verbose:
-                print(f"SESSION {session} concatenated")
+            if coef_ipsi.ndim == 3:
+                sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
+                                                    np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
+                                                    n_std=n_std)
+                select_neurons = (neurons_df["iscell"]==1) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)
+                sig = sig[select_neurons]
+                sig_ipsi = sig_ipsi[select_neurons]
+                all_sig.append(np.mean(sig))
+                all_sig_ipsi.append(np.mean(sig_ipsi))
+                
+                if verbose:
+                    print(f"SESSION {session} concatenated")
+            else:
+                print(f"ERROR: SESSION {session}: rf_coef_closedloop and rf_coef_ipsi_closedloop not all 3D")
         
         else:
             print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
@@ -295,6 +298,7 @@ def plot_sig_rf_perc(fig,
                      bar_color='k',
                      scatter_color='k',
                      scatter_size=10,
+                     scatter_alpha=0.3,
                      plot_x=0,
                      plot_y=1,
                      plot_width=1,
@@ -311,15 +315,16 @@ def plot_sig_rf_perc(fig,
     ax.scatter(x=np.zeros(len(all_sig)), 
                y=all_sig, 
                color=scatter_color, 
-               s=scatter_size)
+               s=scatter_size,
+               alpha=scatter_alpha)
     ax.scatter(x=np.ones(len(all_sig_ipsi)), 
                y=all_sig_ipsi, 
                color=scatter_color, 
-               s=scatter_size)
+               s=scatter_size,
+               alpha=scatter_alpha)
     ax.set_xticks([0,1])
     ax.set_xticklabels(['Contra-\nlateral', 'Ipsi-\nlateral'], fontsize=fontsize_dict['label'])
     ax.set_ylabel('Proportion of depth neurons \nwith significant receptive field', fontsize=fontsize_dict['label'])
     ax.set_ylim([0,1])
     plotting_utils.despine()
     ax.tick_params(axis='y', which='major', labelsize=fontsize_dict['tick'])
-    plt.tight_layout()

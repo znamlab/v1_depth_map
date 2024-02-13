@@ -667,12 +667,12 @@ def get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=1, bef
     
     # Find the mean response of each trial for all ROIs
     trials_df["trial_mean_response"] = trials_df.apply(
-        lambda x: np.nanmean(x.dff_stim, axis=0), axis=1
+        lambda x: np.mean(x.dff_stim, axis=0), axis=1
     )    
     
     # Find the mean response of the blank period before the next trial for all ROIs
     trials_df["trial_mean_onset"] = trials_df.apply(
-        lambda x: np.nanmean(x.dff_blank[-int(frame_rate*before_onset):], axis=0), axis=1
+        lambda x: np.mean(x.dff_blank[-int(frame_rate*before_onset):], axis=0), axis=1
     )   
     # Shift blank response down 1 to put it to the correct trial
     trials_df["trial_mean_onset"] = trials_df["trial_mean_onset"].shift(1)
@@ -685,7 +685,9 @@ def get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=1, bef
         response = all_response[:, iroi]
         onset = all_onset[:, iroi]
         pval = scipy.stats.wilcoxon(response, onset).pvalue
-        neurons_df.at[roi, "visually_responsive"] = (pval < 0.05) & (np.nanmean(response-onset)>0)
+        neurons_df.at[roi, "visually_responsive"] = (pval < 0.05) & (np.mean(response-onset)>0)
+        neurons_df.at[roi, "visually_responsive_pval"] = pval
+        neurons_df.at[roi, "mean_resp"] = np.mean(response-onset)
     
     return neurons_df
     
@@ -698,7 +700,7 @@ def get_visually_responsive_all_sessions(flexilims_session, session_list, use_co
             protocol_base = protocol_base_list[i]
         
         # Load all data
-        if ("PZAH6.4b" or "PZAG3.4f") in session_name:
+        if ("PZAH6.4b" in session_name) |  ("PZAG3.4f" in session_name):
             photodiode_protocol = 2
         else:
             photodiode_protocol = 5
@@ -772,6 +774,7 @@ def plot_example_fov(
     param="preferred_depth",
     cmap=cm.cool.reversed(),
     background_color = np.array([0.133,0.545,0.133]),
+    n_std=6,
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -806,14 +809,26 @@ def plot_example_fov(
                                (neurons_df["iscell"]==1)].roi.values
     if param == "preferred_depth":
         select_neurons = depth_neurons
-        for n in non_depth_neurons:
-            ypix = stat[n]['ypix'][~stat[n]['overlap']]
-            xpix = stat[n]['xpix'][~stat[n]['overlap']]
-            if len(xpix) > 0 and len(ypix) > 0:
-                im[ypix,xpix,:] = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']])*0.3, (3,1)).T
-
-    else:
-        select_neurons = neurons_df.roi.values
+        null_neurons = non_depth_neurons
+                
+    if (param == "preferred_azimuth") | (param == "preferred_elevation"):
+        # Find cells with significant RF
+        coef = np.stack(neurons_df[f"rf_coef_closedloop"].values)
+        coef_ipsi = np.stack(neurons_df[f"rf_coef_ipsi_closedloop"].values)
+        sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
+                                             np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
+                                             n_std=n_std)
+        select_neurons = neurons_df[(sig==1)&
+                               (neurons_df["iscell"]==1)].roi.values
+        null_neurons = neurons_df[(sig==0)&
+                                 (neurons_df["iscell"]==1)].roi.values
+        
+    for n in null_neurons:
+        ypix = stat[n]['ypix'][~stat[n]['overlap']]
+        xpix = stat[n]['xpix'][~stat[n]['overlap']]
+        if len(xpix) > 0 and len(ypix) > 0:
+            im[ypix,xpix,:] = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']])*0.3, (3,1)).T
+        
         
     azi, ele, _ = rf.find_rf_centers(neurons_df, 
                     ndepths=ndepths,
@@ -837,8 +852,20 @@ def plot_example_fov(
 
     # Plot spatial distribution
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    im = ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
+    ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
     plt.axis('off')
+    
+    # Add scalebar
+    scalebar_length_px = im.shape[0]/572.867*100 # Scale bar length in pixels
+    scalebar_physical_length = "100 um"  # Physical length represented by the scale bar
+    scalebar_x = 10  # x position in pixels from the left to place scale bar
+    scalebar_y = im.shape[0]*0.95 # y position in pixels from the bottom to place scale bar
+    rect = plt.Rectangle((scalebar_x, scalebar_y), scalebar_length_px, 1, color='white')
+    ax.add_patch(rect)
+
+    # Annotate the scale bar with its physical size
+    ax.text(scalebar_x + scalebar_length_px / 2, scalebar_y - 7, scalebar_physical_length, color='white', ha='center', va='bottom', fontsize=fontsize_dict['legend'])
+
     
     # ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
     # fig.colorbar(im, cax=ax2, label=param)
