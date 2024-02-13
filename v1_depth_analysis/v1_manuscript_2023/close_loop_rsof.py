@@ -216,8 +216,8 @@ def plot_speed_tuning(
             linewidth=linewidth,
         )
         ax.set_xlabel("Running speed \n(cm/s)", fontsize=fontsize_dict["label"])
-        ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
-        ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
         
     if legend_on:
         ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False)
@@ -275,7 +275,7 @@ def plot_RS_OF_matrix(
         x=rs_arr, y=of_arr, values=dff_arr, statistic="mean", bins=[rs_bins, of_bins]
     )
 
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width*0.9, plot_height*0.9]) 
     if is_closed_loop:
         im = ax.imshow(
             bin_means[1:, 1:].T,
@@ -307,13 +307,13 @@ def plot_RS_OF_matrix(
         fontsize=fontsize_dict["tick"],
     )
     plt.yticks(ticks_select2, bin_edges2, fontsize=fontsize_dict["tick"])
-    
-    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
-    fig.colorbar(im, cax=ax2, label="\u0394F/F")
-    ax2.tick_params(labelsize=fontsize_dict["legend"])
-    
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+    
+    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height*0.9]) 
+    fig.colorbar(im, cax=ax2, label="\u0394F/F")
+    ax2.tick_params(labelsize=fontsize_dict["legend"])
+    ax2.set_ylabel("\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"])
 
     extended_matrix = bin_means
     return extended_matrix
@@ -376,7 +376,7 @@ def plot_RS_OF_fitted_tuning(
         )
     resp_pred = resp_pred.reshape((len(of), len(rs)))
 
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width*0.9, plot_height*0.9]) 
     im = ax.imshow(
         resp_pred,
         origin="lower",
@@ -401,8 +401,10 @@ def plot_RS_OF_fitted_tuning(
                np.round(np.geomspace(of.min(), of.max(), len(ticks_select2))), 
                fontsize=fontsize_dict["tick"])
     
-    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
+    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height*0.9]) 
     fig.colorbar(im, cax=ax2, label="\u0394F/F")
+    ax2.tick_params(labelsize=fontsize_dict["legend"])
+    ax2.set_ylabel("\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"])
     
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
@@ -413,33 +415,86 @@ def plot_r2_comparison(
     neurons_df,
     use_cols,
     labels,
+    plot_type="violin",
+    markersize=10,
+    alpha=0.3,
+    color='k',
     plot_x=0,
     plot_y=0,
     plot_width=1,
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    results = pd.DataFrame(columns=["model","rsq"])
-    neurons_df = neurons_df[
-        (neurons_df["iscell"] == 1) & 
-        (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) 
-        ]
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    for i, col in enumerate(use_cols):
-        neurons_df[col][neurons_df[col]<-1] = 0
-        results = pd.concat([results, pd.DataFrame({"model": labels[i], 
-                                                    "rsq": neurons_df[col]}, )
-                             ],
-                            ignore_index=True)
-    sns.violinplot(data=results, x="model", y="rsq", ax=ax)
-    ax.set_ylabel("R-squared", fontsize=fontsize_dict["label"])
-    ax.set_xlabel("Model", fontsize=fontsize_dict["label"])
-    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-    plotting_utils.despine()
-    
-    print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[1]])}")
-    print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[2]])}")
+    if plot_type == "violin":
+        results = pd.DataFrame(columns=["model","rsq"])
+        neurons_df = neurons_df[
+            (neurons_df["iscell"] == 1) & 
+            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) 
+            ]
+        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+        for i, col in enumerate(use_cols):
+            neurons_df[col][neurons_df[col]<-1] = 0
+            results = pd.concat([results, pd.DataFrame({"model": labels[i], 
+                                                        "rsq": neurons_df[col]}, )
+                                ],
+                                ignore_index=True)
+        sns.violinplot(data=results, x="model", y="rsq", ax=ax)
+        ax.set_ylabel("R-squared", fontsize=fontsize_dict["label"])
+        ax.set_xlabel("Model", fontsize=fontsize_dict["label"])
+        ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+        plotting_utils.despine()
         
+        print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[1]])}")
+        print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[2]])}")
+    
+    elif plot_type == "bar":
+        # Find the best model for each neuron
+        neurons_df["best_model"] = neurons_df[use_cols].idxmax(axis=1)
+        name_mapping = {
+            use_cols[0]: "g2d",
+            use_cols[1]: "gadd",
+            use_cols[2]: "gof",
+        }
+        neurons_df["best_model"] = neurons_df["best_model"].map(name_mapping)
+        
+        # Filter depth neurons
+        neurons_df_filtered = neurons_df[
+            (neurons_df["iscell"] == 1) & 
+            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) 
+            ]
+        
+        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+        # Calculate percentage of neurons that have the best model
+        neuron_sum = neurons_df_filtered.groupby('session')[['roi']].agg(['count']).values.flatten()
+        props = []
+        for i, model in enumerate(["g2d", "gadd", "gof"]):
+            prop = (neurons_df_filtered.groupby('session').apply(lambda x: x[x["best_model"]==model][['roi']].agg(['count'])).values.flatten())/neuron_sum
+            props.append(prop)
+            # Plot bar plot 
+            ax.bar(x=0.5*i, 
+                height=prop.mean(), 
+                width=0.2,
+                yerr=scipy.stats.sem(prop),
+                capsize=10,
+                color=color, 
+                alpha=0.5,)
+        
+            ax.scatter(x=np.ones(len(prop))*0.5*i, 
+                    y=prop, 
+                    color=color, 
+                    s=markersize,
+                    alpha=alpha)
+
+        ax.set_xticks([0,0.5,1])
+        ax.set_xticklabels(labels, fontsize=fontsize_dict["label"])
+        ax.set_ylabel('Proportion of depth neurons\' \nbest model', fontsize=fontsize_dict['label'])
+        ax.set_ylim([0,1])
+        plotting_utils.despine()
+        ax.tick_params(axis='y', which='major', labelsize=fontsize_dict['tick'])
+        print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(props[0],props[1])}")
+        print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(props[0],props[2])}")
+
+            
 
 def plot_speed_depth_scatter(
     fig,
@@ -456,6 +511,8 @@ def plot_speed_depth_scatter(
     plot_width=1,
     plot_height=1,
     cbar_width=0.01,
+    aspect_equal=False,
+    plot_diagonal=False,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},):
     
     # Filter neurons_df
@@ -469,13 +526,18 @@ def plot_speed_depth_scatter(
     X = neurons_df[xcol].values
     y = neurons_df[ycol].values
     ax.scatter(X, y, s=s, alpha=alpha, c=c,  edgecolors="none")
+    if plot_diagonal:
+        ax.plot(np.geomspace(y.min(),y.max(),1000), np.geomspace(y.min(),y.max(),1000), c='y', linestyle="dotted", linewidth=2)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-    # ax.set_aspect("equal")
+    if aspect_equal:
+        ax.set_aspect("equal")
     plotting_utils.despine()
+    r, p = scipy.stats.spearmanr(X, y)
+    ax.set_title(f"R = {r:.2f}, p = {p:.2f}", fontsize=fontsize_dict["title"])
     print(f"Correlation between {xcol} and {ycol}: {scipy.stats.spearmanr(X, y)}")
 
 
@@ -515,7 +577,9 @@ def plot_speed_colored_by_depth(
         # hue_norm = (np.log(6), np.log(600)),
         palette="cool_r",
         s=s, 
-        ax=ax)
+        alpha=alpha,
+        ax=ax,
+        linewidth=0,)
     sns.despine()
     ax.set_aspect("equal", "box")
     ax.set_xscale("log")
@@ -530,8 +594,14 @@ def plot_speed_colored_by_depth(
     sm.set_array([])
     
     # Remove the legend and add a colorbar
-    cbar = ax.figure.colorbar(sm)
-    cbar.ax.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['legend'])
-    cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
-    cbar.ax.get_yaxis().labelpad = 25
-    yticks = cbar.ax.get_yticks()
+    ax2 = fig.add_axes([plot_x + plot_width + cbar_width, plot_y+0.05, cbar_width, plot_height*0.88]) 
+    ax2.figure.colorbar(sm, cax=ax2)
+    ax2.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['label'])
+    ax2.tick_params(labelsize=fontsize_dict['legend'])
+    ax2.get_yaxis().labelpad = 15
+
+    # cbar = ax.figure.colorbar(sm)
+    # cbar.ax.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['legend'])
+    # cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
+    # cbar.ax.get_yaxis().labelpad = 25
+    # yticks = cbar.ax.get_yticks()
