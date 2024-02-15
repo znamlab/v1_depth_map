@@ -92,7 +92,7 @@ def get_datasets(
             rec.id, children_datatype="dataset", flexilims_session=flm_sess
         )
         datasets = [
-            Dataset.from_flexilims(data_series=ds, flexilims_session=flm_sess)
+            Dataset.from_dataseries(ds, flexilims_session=flm_sess)
             for _, ds in datasets.iterrows()
         ]
         if dataset_type is not None:
