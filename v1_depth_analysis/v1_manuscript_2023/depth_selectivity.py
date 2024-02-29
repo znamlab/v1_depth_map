@@ -471,7 +471,7 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, cl
         print(f"Calculating PSTH for {session_name}")
         
         # Load all data
-        if ("PZAH6.4b" or "PZAG3.4f") in session_name:
+        if ("PZAH6.4b" in session_name) or ("PZAG3.4f" in session_name):
             photodiode_protocol = 2
         else:
             photodiode_protocol = 5
