@@ -20,6 +20,7 @@ def plot_depth_size_fit_comparison(
     s=5,
     c="k",
     alpha=0.5,
+    nbins=20,
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -31,7 +32,8 @@ def plot_depth_size_fit_comparison(
         filtered_neurons_df = neurons_df
     else:
         filtered_neurons_df = neurons_df[filter]
-        
+    
+    print(scipy.stats.wilcoxon(filtered_neurons_df[use_cols["depth_fit_r2"]], filtered_neurons_df[use_cols["size_fit_r2"]]))
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     
     if plot_type == "scatter":
@@ -43,14 +45,20 @@ def plot_depth_size_fit_comparison(
         
         ax.set_xlabel("Depth fit r-squared", fontsize=fontsize_dict["label"])
         ax.set_ylabel("Size fit r-squared", fontsize=fontsize_dict["label"])
-        ax.set_xscale("log")
-        ax.set_yscale("log")
+        # ax.set_xscale("log")
+        # ax.set_yscale("log")
         
     elif plot_type == "hist":
         diff = filtered_neurons_df[use_cols["depth_fit_r2"]] - filtered_neurons_df[use_cols["size_fit_r2"]]
-        ax.hist(diff, bins=30, color=c, alpha=alpha)
+        weights = np.ones_like(diff) / len(diff)
+        ax.hist(diff, bins=nbins, color=c, alpha=alpha, weights=weights)
         ax.set_xlabel("Difference between depth and \nsize tuning r-squared", fontsize=fontsize_dict["label"])
+        ax.set_ylabel("Proportion of neurons", fontsize=fontsize_dict["label"])
+        ylim = ax.get_ylim()
+        ax.vlines(0, 0, ylim[1], color="r", linestyle="dotted", linewidth=1)
+        ax.set_title(f"median {np.median(diff):.4f}, p = {scipy.stats.wilcoxon(diff)[1]:.2e}", fontsize=fontsize_dict["title"])
         print(f"median {np.median(diff)}")
     
     plotting_utils.despine()  
-    print(scipy.stats.wilcoxon(filtered_neurons_df[use_cols["depth_fit_r2"]], filtered_neurons_df[use_cols["size_fit_r2"]]))
+    
+    

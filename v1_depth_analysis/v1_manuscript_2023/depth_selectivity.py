@@ -125,10 +125,12 @@ def plot_raster_all_depths(
                 )
                 ax.tick_params(axis="x", rotation=45)
             if idepth == len(depth_list)//2:
-                ax.set_xlabel("Virtual distance (cm)", fontsize=fontsize_dict["label"])
+                ax.set_xlabel("Corridor position (cm)", fontsize=fontsize_dict["label"])
 
         ax2 = fig.add_axes([plot_x + (len(depth_list)-1)*each_plot_width + each_plot_width*plot_prop + 0.01, plot_y, cbar_width*0.8, plot_height]) 
         fig.colorbar(im, cax=ax2, label="\u0394F/F")
+        ax2.tick_params(labelsize=fontsize_dict["tick"])
+        ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
                 
     return dffs_binned
 
@@ -436,7 +438,7 @@ def plot_PSTH(
         bin_centers,
         all_means[-1, :],
         color="gray",
-        label=f"{int(depth_list[idepth] * 100)} cm",
+        label=f"blank",
         linewidth=linewidth,
     )
     ax.fill_between(
@@ -449,7 +451,7 @@ def plot_PSTH(
         rasterized=False,
     )
 
-    ax.set_xlabel("Virtual distance (m)", fontsize=fontsize_dict["label"])
+    ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
     ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
     plt.xticks(
         # np.linspace(0, nbins, 3),
@@ -460,7 +462,7 @@ def plot_PSTH(
     plt.yticks(fontsize=fontsize_dict["tick"])
     
     if legend_on:
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False, handlelength=1)
+        ax.legend(loc='upper left', bbox_to_anchor=(0.1, 1.4), fontsize=fontsize_dict["legend"], frameon=False, handlelength=1)
     plotting_utils.despine()
     
     
@@ -659,6 +661,7 @@ def plot_depth_neuron_perc_hist(
     ax.set_xlim([0, xlim[1]])
     ax.set_xlabel('Proportion of depth-tuned neurons', fontsize=fontsize_dict['label'])
     ax.set_ylabel('Session number', fontsize=fontsize_dict['label'])
+    ax.tick_params(axis='both', labelsize=fontsize_dict['tick'])
     plotting_utils.despine()
     
     
@@ -819,7 +822,12 @@ def plot_example_fov(
                                              np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
                                              n_std=n_std)
         select_neurons = neurons_df[(sig==1)&
-                               (neurons_df["iscell"]==1)].roi.values
+                               (neurons_df["iscell"]==1)
+                            #    &(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)
+                               ].roi.values
+        # null_neurons = neurons_df[~((neurons_df["iscell"]==1)
+        #                        &(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05))&
+        #                          (neurons_df["iscell"]==1)].roi.values
         null_neurons = neurons_df[(sig==0)&
                                  (neurons_df["iscell"]==1)].roi.values
         
@@ -852,9 +860,28 @@ def plot_example_fov(
 
     # Plot spatial distribution
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
+    img=ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
     plt.axis('off')
     
+    ax_dummy = fig.add_axes([plot_x+plot_width*0.17, plot_y*(1+0.01), plot_width, plot_height])
+    dummy_img = ax_dummy.imshow(np.flip(im[20:,20:,:], axis=1), cmap=cmap)
+    dummy_img.remove()  # Remove the dummy plot from the figure
+    
+
+    # Add a colorbar for the dummy plot with the new colormap
+    cbar=ax_dummy.figure.colorbar(dummy_img, ax=ax_dummy, orientation='vertical', cmap=cmap)
+    cbar.set_ticks(np.linspace(0, 1, 3))
+    if param == "preferred_depth":
+        cbar.set_ticklabels((np.geomspace(0.02, 20, 3)*100).astype('int'))
+    elif param == "preferred_azimuth":
+        cbar.set_ticklabels(np.linspace(np.percentile(azi,10), np.percentile(azi,90), 3).astype('int'))
+        
+    elif param == "preferred_elevation":
+        cbar.set_ticklabels(np.linspace(np.percentile(ele,10), np.percentile(ele,90), 3).astype('int'))
+    # ax_dummy.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['label'])
+    cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
+    ax_dummy.remove()
+    # ax_dummy.get_yaxis().labelpad = 15
     # Add scalebar
     scalebar_length_px = im.shape[0]/572.867*100 # Scale bar length in pixels
     scalebar_physical_length = "100 um"  # Physical length represented by the scale bar

@@ -181,6 +181,7 @@ def plot_speed_tuning(
             speed_tuning[idepth, :],
             color=linecolor,
             label=f"{int(depth_list[idepth] * 100)} cm",
+            linewidth=linewidth,
         )
         ax.errorbar(
             x=bin_centers[idepth, :],
@@ -195,7 +196,7 @@ def plot_speed_tuning(
 
         if which_speed == "OF":
             ax.set_xscale("log")
-            ax.set_xlabel("Optic flow speed \n(degrees/s)", fontsize=fontsize_dict["label"])
+            ax.set_xlabel("Optic flow speed "+u'(\N{DEGREE SIGN}/s)', fontsize=fontsize_dict["label"])
 
     # Plot tuning to gray period
     if which_speed == "RS":
@@ -204,6 +205,7 @@ def plot_speed_tuning(
             speed_tuning[-1, :],
             color="gray",
             label=f"blank",
+            linewidth=linewidth,
         )
         ax.errorbar(
             x=bin_centers[-1, :],
@@ -215,12 +217,12 @@ def plot_speed_tuning(
             markersize=markersize,
             linewidth=linewidth,
         )
-        ax.set_xlabel("Running speed \n(cm/s)", fontsize=fontsize_dict["label"])
+        ax.set_xlabel("Running speed (cm/s)", fontsize=fontsize_dict["label"])
     ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
         
     if legend_on:
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False)
+        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False, handlelength=1)
     plotting_utils.despine()
     
     
@@ -238,6 +240,8 @@ def plot_RS_OF_matrix(
         "log_base": 10,
     },
     is_closed_loop=1,
+    vmin=None,
+    vmax=None,
     xlabel="Running speed (cm/s)",
     ylabel="Optical flow speed \n(degrees/s)",
     plot_x=0,
@@ -274,28 +278,22 @@ def plot_RS_OF_matrix(
     bin_means, rs_edges, of_egdes, _ = scipy.stats.binned_statistic_2d(
         x=rs_arr, y=of_arr, values=dff_arr, statistic="mean", bins=[rs_bins, of_bins]
     )
-
+    
+    if vmin is None:
+        vmin = np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)])
+    if vmax is None:
+        vmax = np.nanmax(bin_means[1:, 1:].flatten())
     ax = fig.add_axes([plot_x, plot_y, plot_width*0.9, plot_height*0.9]) 
-    if is_closed_loop:
-        im = ax.imshow(
-            bin_means[1:, 1:].T,
-            origin="lower",
-            aspect="equal",
-            # cmap=generate_cmap(cmap_name="WhRd"),
-            cmap="Reds",
-            vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
-            vmax=np.nanmax(bin_means[1:,1:].flatten()),
-        )
-    else:
-        im = ax.imshow(
-            bin_means.T,
-            origin="lower",
-            aspect="equal",
-            # cmap=generate_cmap(cmap_name="WhRd"),
-            cmap="Reds",
-            vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
-            vmax=np.nanmax(bin_means.flatten()),
-        )
+    im = ax.imshow(
+        bin_means[1:,1:].T,
+        origin="lower",
+        aspect="equal",
+        # cmap=generate_cmap(cmap_name="WhRd"),
+        cmap="Reds",
+        vmin=vmin,
+        vmax=vmax,
+    )
+
     ticks_select1, ticks_select2, bin_edges1, bin_edges2 = basic_vis_plots.get_RS_OF_heatmap_axis_ticks(
         log_range=log_range, fontsize_dict=fontsize_dict
     )
@@ -306,10 +304,76 @@ def plot_RS_OF_matrix(
         ha="center",
         fontsize=fontsize_dict["tick"],
     )
+
     plt.yticks(ticks_select2, bin_edges2, fontsize=fontsize_dict["tick"])
-    ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
-    ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     
+    if is_closed_loop:
+        ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
+        ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+    if not is_closed_loop:
+        ax.set_xticklabels('')
+        ax.set_yticklabels('')
+        ax_left = fig.add_axes([plot_x+0.15*plot_width, 
+                                plot_y, 
+                                plot_width*0.9/(log_range["of_bin_num"]-1), 
+                                plot_height*0.9])
+        ax_left.imshow(
+            bin_means[0,1:].reshape(1,-1).T,
+            origin="lower",
+            aspect="equal",
+            # cmap=generate_cmap(cmap_name="WhRd"),
+            cmap="Reds",
+            vmin=vmin,
+            vmax=vmax,
+            
+        )
+        plt.yticks(ticks_select2, bin_edges2)
+        plt.xticks(ax_left.get_xticks(), "")
+        
+        ax_down = fig.add_axes([plot_x, 
+                                plot_y-plot_height*0.9/(log_range["of_bin_num"]-1)*1.5, 
+                                plot_width*0.9, 
+                                plot_height*0.9/(log_range["of_bin_num"]-1)])
+        ax_down.imshow(
+            bin_means[1:,0].reshape(-1,1).T,
+            origin="lower",
+            aspect="equal",
+            # cmap=generate_cmap(cmap_name="WhRd"),
+            cmap="Reds",
+            vmin=vmin,
+            vmax=vmax,
+            
+        )
+        plt.xticks(
+            ticks_select1,
+            bin_edges1,
+            rotation=45,
+            ha="center",
+            fontsize=fontsize_dict["tick"],
+        )
+        plt.yticks(ax_down.get_yticks(), "")
+        
+        ax_corner = fig.add_axes([plot_x+0.15*plot_width,
+                                  plot_y-plot_height*0.9/(log_range["of_bin_num"]-1)*1.5,
+                                  plot_height*0.9/(log_range["of_bin_num"]-1),
+                                  plot_height*0.9/(log_range["of_bin_num"]-1)])
+        ax_corner.imshow(
+            bin_means[0,0].reshape(1,1),
+            origin="lower",
+            aspect="equal",
+            cmap="Reds",
+            vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
+            vmax=np.nanmax(bin_means[1:,1:].flatten()),
+        )
+        plt.yticks(ax_corner.get_yticks()[1::2], ["< 0.03"])
+        plt.xticks(ax_corner.get_xticks()[1::2], ["< 1"])
+    
+        ax_down.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
+        ax_left.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+        ax_left.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+        ax_down.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+        ax_corner.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+        
     ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height*0.9]) 
     fig.colorbar(im, cax=ax2, label="\u0394F/F")
     ax2.tick_params(labelsize=fontsize_dict["legend"])
@@ -325,6 +389,8 @@ def plot_RS_OF_fitted_tuning(
     roi,
     model="gaussian_2d",
     min_sigma=0.25,
+    vmin=0,
+    vmax=None,
     log_range={
         "rs_bin_log_min": 0,
         "rs_bin_log_max": 2.5,
@@ -387,6 +453,8 @@ def plot_RS_OF_fitted_tuning(
         * log_range["of_bin_num"]
         / log_range["rs_bin_num"],
         cmap="Reds",
+        vmin=vmin,
+        vmax=vmax,
     )
     ticks_select1 = ax.get_xticks()[:-1]
     ticks_select2 = ax.get_yticks()[:-1]
@@ -408,6 +476,7 @@ def plot_RS_OF_fitted_tuning(
     
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+    return resp_pred.min(), resp_pred.max()
 
 
 def plot_r2_comparison(
@@ -537,7 +606,7 @@ def plot_speed_depth_scatter(
         ax.set_aspect("equal")
     plotting_utils.despine()
     r, p = scipy.stats.spearmanr(X, y)
-    ax.set_title(f"R = {r:.2f}, p = {p:.2f}", fontsize=fontsize_dict["title"])
+    ax.set_title(f"R = {r:.2f}, p = {p:.2e}", fontsize=fontsize_dict["title"])
     print(f"Correlation between {xcol} and {ycol}: {scipy.stats.spearmanr(X, y)}")
 
 

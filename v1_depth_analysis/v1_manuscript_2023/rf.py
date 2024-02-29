@@ -175,7 +175,7 @@ def find_rf_centers(neurons_df,
             ele = ele + np.random.normal(0,1,size=ele.shape)
         return azi, ele
     azi, ele = index_to_deg(max_idx, jitter=jitter)
-    return azi, ele, coef, 
+    return azi, ele, coef
 
 def plot_rf_centers(fig,
                     results, 
@@ -240,7 +240,8 @@ def load_sig_rf(flexilims_session,
                 verbose=1):
     all_sig = []
     all_sig_ipsi = []
-    for isess, session in enumerate(session_list):
+    isess=0
+    for session in session_list:
         # Load neurons_df
         neurons_ds = pipeline_utils.create_neurons_ds(
         session_name=session,
@@ -267,6 +268,7 @@ def load_sig_rf(flexilims_session,
                 )   
             iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
             neurons_df["iscell"] = iscell
+            neurons_df['session'] = session
             
             # Load RF significant % 
             coef = np.stack(neurons_df["rf_coef_closedloop"].values)
@@ -275,30 +277,55 @@ def load_sig_rf(flexilims_session,
                 sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
                                                     np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
                                                     n_std=n_std)
+                neurons_df['rf_sig'] = sig
+                neurons_df['rf_sig_ipsi'] = sig_ipsi
                 select_neurons = (neurons_df["iscell"]==1) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)
                 sig = sig[select_neurons]
                 sig_ipsi = sig_ipsi[select_neurons]
                 all_sig.append(np.mean(sig))
                 all_sig_ipsi.append(np.mean(sig_ipsi))
                 
+                # find rf centers
+                if ("PZAH6.4b" in session) or ("PZAG3.4f" in session):
+                    ndepths = 5
+                else:
+                    ndepths = 8
+                azi, ele, _ = find_rf_centers(neurons_df, 
+                    ndepths=ndepths,
+                    frame_shape=(16,24),
+                    is_closed_loop=1,
+                    jitter=False,
+                    resolution=5,
+                    )
+                neurons_df['rf_azi'] = azi
+                neurons_df['rf_ele'] = ele
+                
+                if isess==0:
+                    neurons_df_all = neurons_df
+                else:
+                    neurons_df_all = pd.concat([neurons_df_all, neurons_df], axis=0, ignore_index=True)
                 if verbose:
                     print(f"SESSION {session} concatenated")
+                isess+=1
             else:
                 print(f"ERROR: SESSION {session}: rf_coef_closedloop and rf_coef_ipsi_closedloop not all 3D")
         
         else:
             print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
         
-    return all_sig, all_sig_ipsi
+    return all_sig, all_sig_ipsi, neurons_df_all
 
 
 def plot_sig_rf_perc(fig,
                      all_sig,
                      all_sig_ipsi,
+                     plot_type='bar',
                      bar_color='k',
+                     hist_colors=['r','k'],
                      scatter_color='k',
                      scatter_size=10,
                      scatter_alpha=0.3,
+                     nbins=10,
                      plot_x=0,
                      plot_y=1,
                      plot_width=1,
@@ -306,25 +333,33 @@ def plot_sig_rf_perc(fig,
                      fontsize_dict={'title': 15, 'label': 10, 'tick': 5}
 ):
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.bar(x=[0,1], 
-           height=[np.mean(all_sig), np.mean(all_sig_ipsi)], 
-           yerr=[scipy.stats.sem(all_sig), scipy.stats.sem(all_sig_ipsi)], 
-           capsize=10,
-           color=bar_color, 
-           alpha=0.5)
-    ax.scatter(x=np.zeros(len(all_sig)), 
-               y=all_sig, 
-               color=scatter_color, 
-               s=scatter_size,
-               alpha=scatter_alpha)
-    ax.scatter(x=np.ones(len(all_sig_ipsi)), 
-               y=all_sig_ipsi, 
-               color=scatter_color, 
-               s=scatter_size,
-               alpha=scatter_alpha)
-    ax.set_xticks([0,1])
-    ax.set_xticklabels(['Contra-\nlateral', 'Ipsi-\nlateral'], fontsize=fontsize_dict['label'])
-    ax.set_ylabel('Proportion of depth neurons \nwith significant receptive field', fontsize=fontsize_dict['label'])
-    ax.set_ylim([0,1])
+    if plot_type=='bar':
+        ax.bar(x=[0,1], 
+            height=[np.mean(all_sig), np.mean(all_sig_ipsi)], 
+            yerr=[scipy.stats.sem(all_sig), scipy.stats.sem(all_sig_ipsi)], 
+            capsize=10,
+            color=bar_color, 
+            alpha=0.5)
+        ax.scatter(x=np.zeros(len(all_sig)), 
+                y=all_sig, 
+                color=scatter_color, 
+                s=scatter_size,
+                alpha=scatter_alpha)
+        ax.scatter(x=np.ones(len(all_sig_ipsi)), 
+                y=all_sig_ipsi, 
+                color=scatter_color, 
+                s=scatter_size,
+                alpha=scatter_alpha)
+        ax.set_xticks([0,1])
+        ax.set_xticklabels(['Contra-\nlateral', 'Ipsi-\nlateral'], fontsize=fontsize_dict['label'])
+        ax.set_ylabel('Proportion of depth neurons \nwith significant receptive field', fontsize=fontsize_dict['label'])
+        ax.set_ylim([0,1])
+    elif plot_type=='hist':
+        # bins = np.linspace(0,np.max(all_sig),(nbins+1))
+        ax.hist(all_sig, bins=nbins, color=hist_colors[0], alpha=0.5, label='Contralateral')
+        ax.hist(all_sig_ipsi, bins=nbins, color=hist_colors[1], alpha=0.5, label='Ipsilateral')
+        ax.set_xlabel('Proportion of depth neurons \nwith significant receptive field', fontsize=fontsize_dict['label'])
+        ax.set_ylabel('Session number', fontsize=fontsize_dict['label'])
+        ax.legend(fontsize=fontsize_dict['tick'],frameon=False)
     plotting_utils.despine()
     ax.tick_params(axis='y', which='major', labelsize=fontsize_dict['tick'])

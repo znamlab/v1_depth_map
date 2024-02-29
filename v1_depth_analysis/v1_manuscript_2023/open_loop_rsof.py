@@ -13,6 +13,7 @@ import pickle
 from tqdm import tqdm
 import scipy
 import seaborn as sns
+from scipy.stats import spearmanr
 
 import flexiznam as flz
 from cottage_analysis.preprocessing import synchronisation
@@ -36,6 +37,7 @@ def plot_speeds_scatter(
     plot_width=1,
     plot_height=1,
     cbar_width=0.01,
+    plot_diagonal=False,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},):
     
     # Filter neurons_df
@@ -50,10 +52,18 @@ def plot_speeds_scatter(
     X = neurons_df[xcol].values
     y = neurons_df[ycol].values
     ax.scatter(X, y, s=s, alpha=alpha, c=c,  edgecolors="none")
+    r, p = spearmanr(X, y)
+    if plot_diagonal:
+        ax.plot(np.geomspace(X.min(),X.max(),1000), 
+                np.geomspace(X.min(),X.max(),1000),
+                'k',
+                linestyle="dotted",
+                linewidth=1)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    ax.set_title(f"R = {r:.2f}, p = {p:.2e}", fontsize=fontsize_dict["title"])
     ax.set_aspect("equal")
     plotting_utils.despine()
