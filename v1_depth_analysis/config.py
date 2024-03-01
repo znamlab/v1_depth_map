@@ -1,7 +1,14 @@
 PROJECT = "hey2_3d-vision_foodres_20220101"
+
+# For each mouse, session, corresponding calibration session, mirrored or not.
 EYE_TRACKING_SESSIONS = [
-    ("PZAH6.4b", "S20220419"),
-    ("PZAG3.4f", "S20220524"),
+    ("PZAH6.4b", "S20220419", "20220818", "mirrored"),
+    ("PZAG3.4f", "S20220524", "20220818", "mirrored"),
+    ("PZAH8.2i", "S20230404", "20230406", "mirrored"),
+    ("PZAH8.2h", "S20230116", "20230406", "mirrored"),
+    ("PZAH8.2f", "S20230206", "20230406", "mirrored"),
+    # ("PZAH10.2d", "S20230531", "20230406", "unmirrored"),
+    # ("PZAH10.2f", "S20230908", ???, "unmirrored"),
 ]
 MOUSE_LIST = [
     "PZAH6.4b",
