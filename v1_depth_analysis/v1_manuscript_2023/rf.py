@@ -84,7 +84,8 @@ def plot_stimuli_frame(
 def plot_rf(
     fig,
     neurons_df,
-    roi,
+    roi, 
+    is_closed_loop=1,
     ndepths=8,
     frame_shape=(16, 24),
     plot_x=0,
@@ -96,7 +97,11 @@ def plot_rf(
     ylabel="Elevation (deg)",
     fontsize_dict={"title": 15, "label": 10, "tick": 5},
 ):
-    coef = neurons_df.loc[roi, "rf_coef"][:, :-1]
+    if is_closed_loop:
+        sfx="_closedloop"
+    else:
+        sfx="_openloop"
+    coef = neurons_df.loc[roi, f'rf_coef{sfx}'][:,:-1]
     coef = coef.reshape(coef.shape[0], ndepths, frame_shape[0], frame_shape[1])
     coef_mean = np.mean(coef, axis=0)
     coef_max = np.nanmax(coef_mean)
@@ -127,7 +132,11 @@ def plot_rf(
         ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
 
 
-def get_rf_results(project, sessions):
+def get_rf_results(project, sessions, is_closed_loop=1):
+    if is_closed_loop:
+        sfx="_closedloop"
+    else:
+        sfx="_openloop"
     for i, session_name in enumerate(sessions):
         flexilims_session = flz.get_flexilims_session(project_id=project)
         neurons_ds = pipeline_utils.create_neurons_ds(
@@ -171,10 +180,10 @@ def get_rf_results(project, sessions):
         results["iscell"] = iscell
 
         # Add coef to results
-        results["rf_coef"] = neurons_df["rf_coef"]
-        results["rf_coef_ipsi"] = neurons_df["rf_coef_ipsi"]
-
-        if i == 0:
+        results[f"rf_coef{sfx}"] = neurons_df[f"rf_coef{sfx}"]
+        results[f"rf_coef_ipsi{sfx}"] = neurons_df[f"rf_coef_ipsi{sfx}"]
+        
+        if i==0:
             results_all = results
         else:
             results_all = pd.concat([results_all, results], axis=0, ignore_index=True)
@@ -182,61 +191,72 @@ def get_rf_results(project, sessions):
     return results_all
 
 
-def plot_rf_centers(
-    fig,
-    results,
-    colors=["r", "b"],
-    ndepths=8,
-    frame_shape=(16, 24),
-    n_stds=5,
-    plot_x=0,
-    plot_y=1,
-    plot_width=1,
-    plot_height=1,
-    fontsize_dict={"title": 15, "label": 10, "tick": 5},
-):
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+def find_rf_centers(neurons_df, 
+                    ndepths=8,
+                    frame_shape=(16,24),
+                    is_closed_loop=1,
+                    jitter=False,
+                    resolution=5,
+                    ):
+    if is_closed_loop:
+        sfx="_closedloop"
+    else:
+        sfx="_openloop"
+    coef = np.stack(neurons_df[f"rf_coef{sfx}"].values)
+    coef_ = (coef[:,:,:-1]).reshape(coef.shape[0], coef.shape[1], ndepths, frame_shape[0], frame_shape[1])
+    coef_mean = np.mean(np.mean(coef_, axis=1), axis=1)
+
+    # Find the center (index of maximum value of fitted RF)
+    max_idx = [[np.unravel_index(coef_mean[i, :, :].argmax(), coef_mean[0, :, :].shape)[0],
+                np.unravel_index(coef_mean[i, :, :].argmax(), coef_mean[0, :, :].shape)[1]] for i in range(coef_mean.shape[0])]
+    max_idx = np.array(max_idx)
+
+    def index_to_deg(idx,resolution=resolution, jitter=False, n_ele=80, n_azi=120):
+        azi = idx[:,1]*resolution  
+        ele = idx[:,0]*resolution-n_ele/2
+        if jitter:
+            azi = azi + np.random.normal(0,1,size=azi.shape)
+            ele = ele + np.random.normal(0,1,size=ele.shape)
+        return azi, ele
+    azi, ele = index_to_deg(max_idx, jitter=jitter)
+    return azi, ele, coef
+
+def plot_rf_centers(fig,
+                    results, 
+                    is_closed_loop=1,
+                    colors=['r','b'],
+                    ndepths=8,
+                    frame_shape=(16,24),
+                    n_stds=5,
+                    plot_x=0,
+                    plot_y=1,
+                    plot_width=1,
+                    plot_height=1,
+                    fontsize_dict={'title': 15, 'label': 10, 'tick': 5},
+                    ):
+    if is_closed_loop:
+        sfx="_closedloop"
+    else:
+        sfx="_openloop"
+        
+    ax=fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     sessions = results.session.unique()
 
     for i in range(len(sessions)):
         # Get the coef and ipsi+_coef from each session
         session = sessions[i]
-        results_sess = results[results.session == session]
-        coef = np.stack(results_sess.rf_coef.values)
-        coef_ = (coef[:, :, :-1]).reshape(
-            coef.shape[0], coef.shape[1], ndepths, frame_shape[0], frame_shape[1]
-        )
-        coef_mean = np.mean(np.mean(coef_, axis=1), axis=1)
-
-        coef_ipsi = np.stack(results_sess.rf_coef_ipsi.values)
-        coef_ipsi_ = (coef_ipsi[:, :, :-1]).reshape(
-            coef_ipsi.shape[0], coef.shape[1], ndepths, frame_shape[0], frame_shape[1]
-        )
+        results_sess = results[results.session==session]
+        azi, ele, coef = find_rf_centers(neurons_df=results_sess, 
+                                         is_closed_loop=is_closed_loop,
+                                         ndepths=ndepths,
+                                         frame_shape=(16,24),
+                                         jitter=True,
+                                         resolution=5,
+                                         )
+        
+        coef_ipsi = np.stack(results_sess[f"rf_coef_ipsi{sfx}"].values)
+        coef_ipsi_ = (coef_ipsi[:,:,:-1]).reshape(coef_ipsi.shape[0], coef.shape[1], ndepths, frame_shape[0], frame_shape[1])
         coef_ipsi_mean = np.mean(np.mean(coef_ipsi_, axis=1), axis=1)
-
-        # Find the center (index of maximum value of fitted RF)
-        max_idx = [
-            [
-                np.unravel_index(coef_mean[i, :, :].argmax(), coef_mean[0, :, :].shape)[
-                    0
-                ],
-                np.unravel_index(coef_mean[i, :, :].argmax(), coef_mean[0, :, :].shape)[
-                    1
-                ],
-            ]
-            for i in range(coef_mean.shape[0])
-        ]
-        max_idx = np.array(max_idx)
-
-        def index_to_deg(idx, resolution=5, jitter=True, n_ele=80, n_azi=120):
-            azi = idx[:, 1] * resolution
-            ele = idx[:, 0] * resolution - n_ele / 2
-            if jitter:
-                azi = azi + np.random.normal(0, 1, size=azi.shape)
-                ele = ele + np.random.normal(0, 1, size=ele.shape)
-            return azi, ele
-
-        azi, ele = index_to_deg(max_idx)
 
         # Find cells with significant RF
         sig, sig_ipsi = spheres.find_sig_rfs(
@@ -256,17 +276,25 @@ def plot_rf_centers(
         )
         ax.set_aspect("equal", adjustable="box")
         plotting_utils.despine()
-        ax.set_xlabel("Azimuth (deg)", fontsize=fontsize_dict["label"])
-        ax.set_ylabel("Elevation (deg)", fontsize=fontsize_dict["label"])
-        ax.set_xlim([0, 120])
-        ax.set_ylim([-40, 40])
-        ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
-
-
-def load_sig_rf(flexilims_session, session_list, depth_neuron_thr=0.04, n_std=5):
+        ax.set_xlabel('Azimuth (deg)', fontsize=fontsize_dict['label'])
+        ax.set_ylabel('Elevation (deg)', fontsize=fontsize_dict['label'])
+        ax.set_xlim([0,120])
+        ax.set_ylim([-40,40])
+        ax.tick_params(axis='both', labelsize=fontsize_dict['tick'])
+        
+        
+def load_sig_rf(flexilims_session, 
+                session_list, 
+                use_cols=['roi', 'is_depth_neuron', 'best_depth', 'preferred_depth_closedloop', 'preferred_depth_closedloop_crossval',
+                                                                   'depth_tuning_test_rsq_closedloop', 'depth_tuning_test_spearmanr_rval_closedloop', 'depth_tuning_test_spearmanr_pval_closedloop',
+                                                                   'rf_coef_closedloop', 'rf_coef_ipsi_closedloop', 'rf_rsq_closedloop', 'rf_rsq_ipsi_closedloop',
+                                                                   ], 
+                n_std=5, 
+                verbose=1):
     all_sig = []
     all_sig_ipsi = []
-    for isess, session in enumerate(session_list):
+    isess=0
+    for session in session_list:
         # Load neurons_df
         neurons_ds = pipeline_utils.create_neurons_ds(
             session_name=session,
@@ -275,78 +303,116 @@ def load_sig_rf(flexilims_session, session_list, depth_neuron_thr=0.04, n_std=5)
             conflicts="skip",
         )
         neurons_df = pd.read_pickle(neurons_ds.path_full)
+        
+        if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
+            if use_cols is None:
+                neurons_df = neurons_df
+            else:
+                neurons_df = neurons_df[use_cols]
+        
+            # Load iscell
+            suite2p_ds = flz.get_datasets(
+                flexilims_session=flexilims_session,
+                origin_name=session,
+                dataset_type="suite2p_rois",
+                filter_datasets={"anatomical_only": 3},
+                allow_multiple=False,
+                return_dataseries=False,
+                )   
+            iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+            neurons_df["iscell"] = iscell
+            neurons_df['session'] = session
+            
+            # Load RF significant % 
+            coef = np.stack(neurons_df["rf_coef_closedloop"].values)
+            coef_ipsi = np.stack(neurons_df["rf_coef_ipsi_closedloop"].values)
+            if coef_ipsi.ndim == 3:
+                sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
+                                                    np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
+                                                    n_std=n_std)
+                neurons_df['rf_sig'] = sig
+                neurons_df['rf_sig_ipsi'] = sig_ipsi
+                select_neurons = (neurons_df["iscell"]==1) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)
+                sig = sig[select_neurons]
+                sig_ipsi = sig_ipsi[select_neurons]
+                all_sig.append(np.mean(sig))
+                all_sig_ipsi.append(np.mean(sig_ipsi))
+                
+                # find rf centers
+                if ("PZAH6.4b" in session) or ("PZAG3.4f" in session):
+                    ndepths = 5
+                else:
+                    ndepths = 8
+                azi, ele, _ = find_rf_centers(neurons_df, 
+                    ndepths=ndepths,
+                    frame_shape=(16,24),
+                    is_closed_loop=1,
+                    jitter=False,
+                    resolution=5,
+                    )
+                neurons_df['rf_azi'] = azi
+                neurons_df['rf_ele'] = ele
+                
+                if isess==0:
+                    neurons_df_all = neurons_df
+                else:
+                    neurons_df_all = pd.concat([neurons_df_all, neurons_df], axis=0, ignore_index=True)
+                if verbose:
+                    print(f"SESSION {session} concatenated")
+                isess+=1
+            else:
+                print(f"ERROR: SESSION {session}: rf_coef_closedloop and rf_coef_ipsi_closedloop not all 3D")
+        
+        else:
+            print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
+        
+    return all_sig, all_sig_ipsi, neurons_df_all
 
-        # Load iscell
-        suite2p_ds = flz.get_datasets(
-            flexilims_session=flexilims_session,
-            origin_name=session,
-            dataset_type="suite2p_rois",
-            filter_datasets={"anatomical_only": 3},
-            allow_multiple=False,
-            return_dataseries=False,
-        )
-        iscell = np.load(
-            suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
-        )[:, 0]
-        neurons_df["iscell"] = iscell
 
-        # Load RF significant %
-        coef = np.stack(neurons_df["rf_coef"].values)
-        coef_ipsi = np.stack(neurons_df["rf_coef_ipsi"].values)
-        sig, sig_ipsi = spheres.find_sig_rfs(
-            np.swapaxes(np.swapaxes(coef, 0, 2), 0, 1),
-            np.swapaxes(np.swapaxes(coef_ipsi, 0, 2), 0, 1),
-            n_std=n_std,
-        )
-        select_neurons = (neurons_df["iscell"] == 1) & (
-            neurons_df["depth_tuning_test_rsq_closedloop"] > depth_neuron_thr
-        )
-        sig = sig[select_neurons]
-        sig_ipsi = sig_ipsi[select_neurons]
-        all_sig.append(np.mean(sig))
-        all_sig_ipsi.append(np.mean(sig_ipsi))
-
-    return all_sig, all_sig_ipsi
-
-
-def plot_sig_rf_perc(
-    fig,
-    all_sig,
-    all_sig_ipsi,
-    bar_color="k",
-    scatter_color="k",
-    scatter_size=10,
-    plot_x=0,
-    plot_y=1,
-    plot_width=1,
-    plot_height=1,
-    fontsize_dict={"title": 15, "label": 10, "tick": 5},
+def plot_sig_rf_perc(fig,
+                     all_sig,
+                     all_sig_ipsi,
+                     plot_type='bar',
+                     bar_color='k',
+                     hist_colors=['r','k'],
+                     scatter_color='k',
+                     scatter_size=10,
+                     scatter_alpha=0.3,
+                     nbins=10,
+                     plot_x=0,
+                     plot_y=1,
+                     plot_width=1,
+                     plot_height=1,
+                     fontsize_dict={'title': 15, 'label': 10, 'tick': 5}
 ):
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.bar(
-        x=[0, 1],
-        height=[np.mean(all_sig), np.mean(all_sig_ipsi)],
-        yerr=[scipy.stats.sem(all_sig), scipy.stats.sem(all_sig_ipsi)],
-        capsize=10,
-        color=bar_color,
-        alpha=0.5,
-    )
-    ax.scatter(x=np.zeros(len(all_sig)), y=all_sig, color=scatter_color, s=scatter_size)
-    ax.scatter(
-        x=np.ones(len(all_sig_ipsi)),
-        y=all_sig_ipsi,
-        color=scatter_color,
-        s=scatter_size,
-    )
-    ax.set_xticks([0, 1])
-    ax.set_xticklabels(
-        ["Contra-\nlateral", "Ipsi-\nlateral"], fontsize=fontsize_dict["label"]
-    )
-    ax.set_ylabel(
-        "Proportion of neurons with \nsignificant receptive field",
-        fontsize=fontsize_dict["label"],
-    )
-    ax.set_ylim([0, 1])
+    if plot_type=='bar':
+        ax.bar(x=[0,1], 
+            height=[np.mean(all_sig), np.mean(all_sig_ipsi)], 
+            yerr=[scipy.stats.sem(all_sig), scipy.stats.sem(all_sig_ipsi)], 
+            capsize=10,
+            color=bar_color, 
+            alpha=0.5)
+        ax.scatter(x=np.zeros(len(all_sig)), 
+                y=all_sig, 
+                color=scatter_color, 
+                s=scatter_size,
+                alpha=scatter_alpha)
+        ax.scatter(x=np.ones(len(all_sig_ipsi)), 
+                y=all_sig_ipsi, 
+                color=scatter_color, 
+                s=scatter_size,
+                alpha=scatter_alpha)
+        ax.set_xticks([0,1])
+        ax.set_xticklabels(['Contra-\nlateral', 'Ipsi-\nlateral'], fontsize=fontsize_dict['label'])
+        ax.set_ylabel('Proportion of depth neurons \nwith significant receptive field', fontsize=fontsize_dict['label'])
+        ax.set_ylim([0,1])
+    elif plot_type=='hist':
+        # bins = np.linspace(0,np.max(all_sig),(nbins+1))
+        ax.hist(all_sig, bins=nbins, color=hist_colors[0], alpha=0.5, label='Contralateral')
+        ax.hist(all_sig_ipsi, bins=nbins, color=hist_colors[1], alpha=0.5, label='Ipsilateral')
+        ax.set_xlabel('Proportion of depth neurons \nwith significant receptive field', fontsize=fontsize_dict['label'])
+        ax.set_ylabel('Session number', fontsize=fontsize_dict['label'])
+        ax.legend(fontsize=fontsize_dict['tick'],frameon=False)
     plotting_utils.despine()
-    ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"])
-    plt.tight_layout()
+    ax.tick_params(axis='y', which='major', labelsize=fontsize_dict['tick'])
