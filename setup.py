@@ -9,4 +9,8 @@ setup(
     author="Antonin Blot, Yiran He, Petr Znamenskyi",
     author_email="yiran.he@crick.ac.uk",
     description="Analysis of the V1 depth dataset",
+    install_requires=[
+        "seaborn",
+        "cottage_analysis @ git@github.com:znamlab/cottage_analysis.git@dev",
+        ],
 )
