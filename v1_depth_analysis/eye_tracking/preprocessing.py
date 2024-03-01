@@ -17,19 +17,20 @@ from cottage_analysis import eye_tracking
 import v1_depth_analysis as vda
 from v1_depth_analysis.config import PROJECT, EYE_TRACKING_SESSIONS
 
-# get a list of all existing sessions
-flm_sess = flz.get_flexilims_session(project_id=PROJECT)
-
-
 REDO = False
 DLC_MODEL_DETECT = "headfixed_detect_eye"
 DLC_MODEL_TRACKING = "headfixed_track_eye"
-CONFLICTS = "skip"
+CONFLICTS = "overwrite"
 USE_SLURM = True
 
+flm_sess = flz.get_flexilims_session(project_id=PROJECT)
 
 log_df = []
-for mouse, sess in EYE_TRACKING_SESSIONS:
+for mouse, sess, calib_sess, orientation in EYE_TRACKING_SESSIONS:
+    if mouse in ["PZAH6.4b"]:
+        continue
+    if mouse != "PZAG3.4f":
+        continue
     sess_name = f"{mouse}_{sess}"
     sess = flz.get_entity(
         name=sess_name, datatype="session", flexilims_session=flm_sess
@@ -56,9 +57,9 @@ for mouse, sess in EYE_TRACKING_SESSIONS:
         conflicts=CONFLICTS,
         use_slurm=USE_SLURM,
         dependency=None,
-        run_detect=True,
-        run_tracking=True,
-        run_ellipse=True,
+        run_detect=False,
+        run_tracking=False,
+        run_ellipse=False,
         run_reprojection=True,
         repro_kwargs=dict(likelihood_threshold=0.8),
     )
