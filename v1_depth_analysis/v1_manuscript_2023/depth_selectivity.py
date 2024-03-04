@@ -1,11 +1,13 @@
 import functools
+
 print = functools.partial(print, flush=True)
 
 import os
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42 # for pdfs
+
+matplotlib.rcParams["pdf.fonttype"] = 42  # for pdfs
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from pathlib import Path
@@ -15,14 +17,20 @@ import scipy
 
 import flexiznam as flz
 from cottage_analysis.preprocessing import synchronisation
-from cottage_analysis.analysis import spheres, find_depth_neurons, common_utils, fit_gaussian_blob, size_control
+from cottage_analysis.analysis import (
+    spheres,
+    find_depth_neurons,
+    common_utils,
+    fit_gaussian_blob,
+    size_control,
+)
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 from v1_depth_analysis.v1_manuscript_2023 import rf
 
 
 def plot_raster_all_depths(
-    fig, 
+    fig,
     neurons_df,
     trials_df,
     roi,
@@ -93,9 +101,16 @@ def plot_raster_all_depths(
     # plot each depth as a heatmap
     if plot:
         plot_prop = 0.75
-        each_plot_width = (plot_width-cbar_width)/ len(depth_list)
+        each_plot_width = (plot_width - cbar_width) / len(depth_list)
         for idepth, depth in enumerate(depth_list):
-            ax = fig.add_axes([plot_x+idepth*each_plot_width, plot_y, each_plot_width*plot_prop, plot_height]) 
+            ax = fig.add_axes(
+                [
+                    plot_x + idepth * each_plot_width,
+                    plot_y,
+                    each_plot_width * plot_prop,
+                    plot_height,
+                ]
+            )
             im = ax.imshow(
                 dffs_binned[idepth], aspect="auto", cmap=WhRdcmap, vmin=0, vmax=vmax
             )
@@ -124,14 +139,24 @@ def plot_raster_all_depths(
                     labelsize=fontsize_dict["tick"],
                 )
                 ax.tick_params(axis="x", rotation=45)
-            if idepth == len(depth_list)//2:
+            if idepth == len(depth_list) // 2:
                 ax.set_xlabel("Corridor position (cm)", fontsize=fontsize_dict["label"])
 
-        ax2 = fig.add_axes([plot_x + (len(depth_list)-1)*each_plot_width + each_plot_width*plot_prop + 0.01, plot_y, cbar_width*0.8, plot_height]) 
+        ax2 = fig.add_axes(
+            [
+                plot_x
+                + (len(depth_list) - 1) * each_plot_width
+                + each_plot_width * plot_prop
+                + 0.01,
+                plot_y,
+                cbar_width * 0.8,
+                plot_height,
+            ]
+        )
         fig.colorbar(im, cax=ax2, label="\u0394F/F")
         ax2.tick_params(labelsize=fontsize_dict["tick"])
         ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
-                
+
     return dffs_binned
 
 
@@ -183,16 +208,20 @@ def plot_depth_tuning_curve(
     if param == "depth":
         param_list = np.array(find_depth_neurons.find_depth_list(trials_df))
     elif param == "size":
-        trials_df = size_control.get_physical_size(trials_df, use_cols=["size", "depth"], k=1)
+        trials_df = size_control.get_physical_size(
+            trials_df, use_cols=["size", "depth"], k=1
+        )
         param_list = np.sort(trials_df["physical_size"].unique())
-    mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(trials_df=trials_df,
-                                                rs_thr=rs_thr, 
-                                                rs_thr_max=rs_thr_max, 
-                                                still_only=still_only, 
-                                                still_time=still_time, 
-                                                frame_rate=frame_rate, 
-                                                closed_loop=closed_loop, 
-                                                param=param)[:, :, roi]
+    mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(
+        trials_df=trials_df,
+        rs_thr=rs_thr,
+        rs_thr_max=rs_thr_max,
+        still_only=still_only,
+        still_time=still_time,
+        frame_rate=frame_rate,
+        closed_loop=closed_loop,
+        param=param,
+    )[:, :, roi]
     CI_low, CI_high = common_utils.get_confidence_interval(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
 
@@ -207,8 +236,10 @@ def plot_depth_tuning_curve(
 
     # Plotting
     if overwrite_ax:
-        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    ax.plot(np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label)
+        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    ax.plot(
+        np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label
+    )
     ax.fill_between(
         np.log(param_list),
         CI_low,
@@ -220,7 +251,7 @@ def plot_depth_tuning_curve(
     )
     if plot_fit:
         ax.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
-    if param=="depth":
+    if param == "depth":
         plt.xticks(
             np.log(param_list),
             (np.array(param_list) * 100).astype("int"),
@@ -228,10 +259,10 @@ def plot_depth_tuning_curve(
             rotation=45,
         )
         plt.xlabel(f"Virtual depth (cm)", fontsize=fontsize_dict["label"])
-    elif param=="size":
+    elif param == "size":
         plt.xticks(
             np.log(param_list),
-            np.round(np.array(param_list)*0.87/10*20,1),
+            np.round(np.array(param_list) * 0.87 / 10 * 20, 1),
             fontsize=fontsize_dict["tick"],
             rotation=45,
         )
@@ -240,19 +271,19 @@ def plot_depth_tuning_curve(
     ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
 
     plotting_utils.despine()
-    
+
     return ax
-    
-    
+
+
 def get_PSTH(
     trials_df,
     roi,
     is_closed_loop,
-    rs_thr_min=None, #m/s
-    rs_thr_max=None, #m/s
+    rs_thr_min=None,  # m/s
+    rs_thr_max=None,  # m/s
     still_only=False,
-    still_time=1, #s
-    max_distance=6, #m
+    still_time=1,  # s
+    max_distance=6,  # m
     nbins=20,
     frame_rate=15,
 ):
@@ -277,23 +308,30 @@ def get_PSTH(
             dff = grouped_trials.get_group(depth).dff_stim.values[itrial][:, roi]
             rs_arr = grouped_trials.get_group(depth).RS_stim.values[itrial]
 
-            # threshold running speed according to rs_thr 
-            if not still_only: # take running frames
-                if (rs_thr_min is None) and (rs_thr_max is None): # take all frames
+            # threshold running speed according to rs_thr
+            if not still_only:  # take running frames
+                if (rs_thr_min is None) and (rs_thr_max is None):  # take all frames
                     take_idx = np.arange(len(rs_arr))
                 else:
-                    if rs_thr_max is None: # take frames with running speed > rs_thr
+                    if rs_thr_max is None:  # take frames with running speed > rs_thr
                         take_idx = rs_arr > rs_thr_min
-                    elif rs_thr_min is None: # take frames with running speed < rs_thr
+                    elif rs_thr_min is None:  # take frames with running speed < rs_thr
                         take_idx = rs_arr < rs_thr_max
-                    else: # take frames with running speed between rs_thr_min and rs_thr_max
+                    else:  # take frames with running speed between rs_thr_min and rs_thr_max
                         take_idx = (rs_arr > rs_thr_min) & (rs_arr < rs_thr_max)
-            else: # take still frames
-                if rs_thr_max is None: # use not running data but didn't set rs_thr
-                    print("ERROR: calculating under not_running condition without rs_thr_max to determine max speed")
-                else: # take frames with running speed < rs_thr for x seconds
-                    take_idx = common_utils.find_thresh_sequence(array=rs_arr, threshold_max=rs_thr_max, length=int(still_time*frame_rate), shift=int(still_time*frame_rate))
-                    
+            else:  # take still frames
+                if rs_thr_max is None:  # use not running data but didn't set rs_thr
+                    print(
+                        "ERROR: calculating under not_running condition without rs_thr_max to determine max speed"
+                    )
+                else:  # take frames with running speed < rs_thr for x seconds
+                    take_idx = common_utils.find_thresh_sequence(
+                        array=rs_arr,
+                        threshold_max=rs_thr_max,
+                        length=int(still_time * frame_rate),
+                        shift=int(still_time * frame_rate),
+                    )
+
             dff = dff[take_idx]
             rs_arr = rs_arr[take_idx]
             distance = np.cumsum(rs_arr / frame_rate)
@@ -367,9 +405,9 @@ def get_PSTH(
     ci = z * bin_stds / np.sqrt(bin_counts)
     ci[np.isnan(ci)] = 0
     all_ci[-1, :] = ci
-    
+
     return all_means, all_ci, bin_centers
-    
+
 
 def plot_PSTH(
     fig,
@@ -401,21 +439,25 @@ def plot_PSTH(
         nbins (int, optional): number of bins to bin the activity. Defaults to 20.
         frame_rate (int, optional): imaging frame rate. Defaults to 15.
     """
-    all_means, all_ci, bin_centers = get_PSTH(trials_df=trials_df, 
-                                              roi=roi, 
-                                              is_closed_loop=is_closed_loop, 
-                                              rs_thr_min=rs_thr_min,
-                                              rs_thr_max=rs_thr_max,
-                                              still_only=still_only,
-                                              still_time=still_time,
-                                              max_distance=max_distance, 
-                                              nbins=nbins, 
-                                              frame_rate=frame_rate)
-    
-    depth_list = find_depth_neurons.find_depth_list(trials_df)  
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    all_means, all_ci, bin_centers = get_PSTH(
+        trials_df=trials_df,
+        roi=roi,
+        is_closed_loop=is_closed_loop,
+        rs_thr_min=rs_thr_min,
+        rs_thr_max=rs_thr_max,
+        still_only=still_only,
+        still_time=still_time,
+        max_distance=max_distance,
+        nbins=nbins,
+        frame_rate=frame_rate,
+    )
+
+    depth_list = find_depth_neurons.find_depth_list(trials_df)
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     for idepth, depth in enumerate(depth_list):
-        linecolor = basic_vis_plots.get_depth_color(depth, depth_list, cmap=cm.cool.reversed())
+        linecolor = basic_vis_plots.get_depth_color(
+            depth, depth_list, cmap=cm.cool.reversed()
+        )
         ax.plot(
             bin_centers,
             all_means[idepth, :],
@@ -460,24 +502,47 @@ def plot_PSTH(
         rotation=45,
     )
     plt.yticks(fontsize=fontsize_dict["tick"])
-    
+
     if legend_on:
-        ax.legend(loc='upper left', bbox_to_anchor=(0.1, 1.4), fontsize=fontsize_dict["legend"], frameon=False, handlelength=1)
+        ax.legend(
+            loc="upper left",
+            bbox_to_anchor=(0.1, 1.4),
+            fontsize=fontsize_dict["legend"],
+            frameon=False,
+            handlelength=1,
+        )
     plotting_utils.despine()
-    
-    
-def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, closed_loop=1, use_cols=["preferred_depth_closedloop_crossval","depth_tuning_test_rsq_closedloop"], rs_thr_min=None, rs_thr_max=None, still_only=False, still_time=1, verbose=1):
+
+
+def get_psth_crossval_all_sessions(
+    flexilims_session,
+    session_list,
+    nbins=10,
+    closed_loop=1,
+    use_cols=[
+        "preferred_depth_closedloop_crossval",
+        "depth_tuning_test_rsq_closedloop",
+    ],
+    rs_thr_min=None,
+    rs_thr_max=None,
+    still_only=False,
+    still_time=1,
+    verbose=1,
+):
     for isess, session_name in enumerate(session_list):
         print(f"Calculating PSTH for {session_name}")
-        
+
         # Load all data
         if ("PZAH6.4b" in session_name) or ("PZAG3.4f" in session_name):
             photodiode_protocol = 2
         else:
             photodiode_protocol = 5
-            
+
         neurons_ds = pipeline_utils.create_neurons_ds(
-            session_name=session_name, flexilims_session=flexilims_session, project=None, conflicts="skip"
+            session_name=session_name,
+            flexilims_session=flexilims_session,
+            project=None,
+            conflicts="skip",
         )
         neurons_df = pd.read_pickle(neurons_ds.path_full)
         if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
@@ -485,39 +550,45 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, cl
                 neurons_df = neurons_df
             else:
                 neurons_df = neurons_df[use_cols]
-        
+
             _, trials_df = spheres.sync_all_recordings(
                 session_name=session_name,
                 flexilims_session=flexilims_session,
                 project=None,
-                filter_datasets={'anatomical_only':3},
+                filter_datasets={"anatomical_only": 3},
                 recording_type="two_photon",
                 protocol_base="SpheresPermTubeReward",
                 photodiode_protocol=photodiode_protocol,
                 return_volumes=True,
-                )
-            trials_df = trials_df[trials_df.closed_loop==closed_loop]
+            )
+            trials_df = trials_df[trials_df.closed_loop == closed_loop]
 
-            neurons_df['session'] = session_name
-            
+            neurons_df["session"] = session_name
+
             # Create dataframe to store results
             results = pd.DataFrame(
-            columns = [
-                'session',
-                'roi',
-                'iscell',
-                'preferred_depth_crossval',
-                'preferred_depth_rsq',
-                'psth_crossval',
-                ]   
-        )
+                columns=[
+                    "session",
+                    "roi",
+                    "iscell",
+                    "preferred_depth_crossval",
+                    "preferred_depth_rsq",
+                    "psth_crossval",
+                ]
+            )
             # Add roi, preferred depth, iscell to results
             results["roi"] = np.arange(len(neurons_df))
             results["session"] = session_name
-            results["preferred_depth_crossval"] = neurons_df["preferred_depth_closedloop_crossval"]
-            results["preferred_depth_rsq"] = neurons_df["depth_tuning_test_rsq_closedloop"]
+            results["preferred_depth_crossval"] = neurons_df[
+                "preferred_depth_closedloop_crossval"
+            ]
+            results["preferred_depth_rsq"] = neurons_df[
+                "depth_tuning_test_rsq_closedloop"
+            ]
             exp_session = flz.get_entity(
-                datatype="session", name=session_name, flexilims_session=flexilims_session
+                datatype="session",
+                name=session_name,
+                flexilims_session=flexilims_session,
             )
             suite2p_ds = flz.get_datasets(
                 flexilims_session=flexilims_session,
@@ -527,37 +598,50 @@ def get_psth_crossval_all_sessions(flexilims_session, session_list, nbins=10, cl
                 allow_multiple=False,
                 return_dataseries=False,
             )
-            iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+            iscell = np.load(
+                suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
+            )[:, 0]
             results["iscell"] = iscell
-            results["psth_crossval"] = [[np.nan]]*len(neurons_df)
-        
+            results["psth_crossval"] = [[np.nan]] * len(neurons_df)
+
             # Get the responses for this session that are not included for calculating the cross-validated preferred depth
-            choose_trials_resp = list(set(neurons_df.depth_tuning_trials_closedloop.iloc[0])-set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0]))
-            trials_df_resp, _, _ = common_utils.choose_trials_subset(trials_df, choose_trials_resp)
-            
+            choose_trials_resp = list(
+                set(neurons_df.depth_tuning_trials_closedloop.iloc[0])
+                - set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0])
+            )
+            trials_df_resp, _, _ = common_utils.choose_trials_subset(
+                trials_df, choose_trials_resp
+            )
+
             for roi in tqdm(range(len(neurons_df))):
-                psth, _, _ = get_PSTH(trials_df=trials_df_resp, 
-                                                        roi=roi, 
-                                                        is_closed_loop=1, 
-                                                        max_distance=6, 
-                                                        nbins=nbins, 
-                                                        rs_thr_min=rs_thr_min,
-                                                        rs_thr_max=rs_thr_max,
-                                                        still_only=still_only,
-                                                        still_time=still_time,
-                                                        frame_rate=15)
+                psth, _, _ = get_PSTH(
+                    trials_df=trials_df_resp,
+                    roi=roi,
+                    is_closed_loop=1,
+                    max_distance=6,
+                    nbins=nbins,
+                    rs_thr_min=rs_thr_min,
+                    rs_thr_max=rs_thr_max,
+                    still_only=still_only,
+                    still_time=still_time,
+                    frame_rate=15,
+                )
                 results.at[roi, "psth_crossval"] = psth
-            
+
             if isess == 0:
                 results_all = results.copy()
             else:
-                results_all = pd.concat([results_all, results], axis=0, ignore_index=True)
-            
+                results_all = pd.concat(
+                    [results_all, results], axis=0, ignore_index=True
+                )
+
             if verbose:
                 print(f"Finished concat neurons_df from session {session_name}")
         else:
-            print(f"ERROR: SESSION {session_name}: specified cols not all in neurons_df")
-        
+            print(
+                f"ERROR: SESSION {session_name}: specified cols not all in neurons_df"
+            )
+
     return results_all
 
 
@@ -572,25 +656,34 @@ def plot_preferred_depth_hist(
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    results_df = results_df[results_df['iscell'] ==1]
-    depth_bins = np.geomspace(np.nanmin(results_df[use_col])*100,np.nanmax(results_df[use_col])*100,num=nbins)
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
-    n, _, _ = ax.hist(results_df[use_col]*100, bins=depth_bins, weights=np.ones(len(results_df)) / len(results_df), color='k')
-    ax.set_xscale('log')
-    ax.set_ylabel('Proportion of neurons', fontsize = fontsize_dict['label'])
-    ax.set_xlabel('Preferred depth (cm)', fontsize = fontsize_dict['label'])
-    plt.xticks(fontsize=fontsize_dict['tick'])
+    results_df = results_df[results_df["iscell"] == 1]
+    depth_bins = np.geomspace(
+        np.nanmin(results_df[use_col]) * 100,
+        np.nanmax(results_df[use_col]) * 100,
+        num=nbins,
+    )
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    n, _, _ = ax.hist(
+        results_df[use_col] * 100,
+        bins=depth_bins,
+        weights=np.ones(len(results_df)) / len(results_df),
+        color="k",
+    )
+    ax.set_xscale("log")
+    ax.set_ylabel("Proportion of neurons", fontsize=fontsize_dict["label"])
+    ax.set_xlabel("Preferred depth (cm)", fontsize=fontsize_dict["label"])
+    plt.xticks(fontsize=fontsize_dict["tick"])
     yticks = plt.gca().get_yticks()
-    plt.yticks(yticks[0::2], fontsize=fontsize_dict['tick'])
+    plt.yticks(yticks[0::2], fontsize=fontsize_dict["tick"])
     plotting_utils.despine()
-    
-    
+
+
 def plot_psth_raster(
     fig,
     results_df,
     depth_list,
     use_cols=["preferred_depth_crossval", "psth_crossval", "preferred_depth_rsq"],
-    depth_rsq_thr = 0.04,
+    depth_rsq_thr=0.04,
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -598,40 +691,47 @@ def plot_psth_raster(
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     # Filter neurons with a depth tuning fit rsq threshold
-    results_df = results_df[(results_df[use_cols[2]]>depth_rsq_thr) & (results_df["iscell"]==1)]
-    psths = np.stack(results_df[use_cols[1]])[:,:-1,:] # exclude blank
-    ndepths = psths.shape[1]-1
+    results_df = results_df[
+        (results_df[use_cols[2]] > depth_rsq_thr) & (results_df["iscell"] == 1)
+    ]
+    psths = np.stack(results_df[use_cols[1]])[:, :-1, :]  # exclude blank
+    ndepths = psths.shape[1] - 1
     nbins = psths.shape[2]
-    
+
     # Sort neurons by preferred depth
     preferred_depths = results_df[use_cols[0]].values
     order = preferred_depths.argsort()
     psths = psths[order]
     psths = psths.reshape(psths.shape[0], -1)
-    
+
     # Normalize PSTHs
     neuron_max = np.nanmax(psths, axis=1)[:, np.newaxis]
     neuron_min = np.nanmin(psths, axis=1)[:, np.newaxis]
-    normed_psth = (psths - neuron_min) / (neuron_max-neuron_min)
-    
+    normed_psth = (psths - neuron_min) / (neuron_max - neuron_min)
+
     # Plot PSTHs
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.imshow(normed_psth, vmax=1, aspect='auto', cmap=plotting_utils.generate_cmap(cmap_name="WhRd"))
-    
+    ax.imshow(
+        normed_psth,
+        vmax=1,
+        aspect="auto",
+        cmap=plotting_utils.generate_cmap(cmap_name="WhRd"),
+    )
+
     # Plot vertical lines to separate different depths
     for i in range(ndepths):
-        ax.axvline((i+1)*nbins, color='k', linewidth=0.5)
-        
+        ax.axvline((i + 1) * nbins, color="k", linewidth=0.5)
+
     # Change xticks positions to the middle of current ticks and show depth at the tick position
-    xticks = np.arange(0+0.5,ndepths+1+0.5)*nbins
+    xticks = np.arange(0 + 0.5, ndepths + 1 + 0.5) * nbins
     ax.set_xticks(xticks)
     ax.set_xticklabels(np.round(depth_list))
-    ax.set_xlabel('Preferred depth (cm)', fontsize=fontsize_dict['label'])
-    ax.tick_params(axis='x', labelsize=fontsize_dict['tick'], rotation=60)
-    ax.set_ylabel('Neuron no.', fontsize=fontsize_dict['label'])
-    ax.tick_params(axis='y', labelsize=fontsize_dict['tick'])
-    
-    
+    ax.set_xlabel("Preferred depth (cm)", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="x", labelsize=fontsize_dict["tick"], rotation=60)
+    ax.set_ylabel("Neuron no.", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
+
+
 def plot_depth_neuron_perc_hist(
     fig,
     results_df,
@@ -644,95 +744,135 @@ def plot_depth_neuron_perc_hist(
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    results_df = results_df[results_df['iscell'] ==1]
+    results_df = results_df[results_df["iscell"] == 1]
     if denominator_filter is None:
-        neuron_sum = results_df.groupby('session')[['roi']].agg(['count']).values.flatten()
+        neuron_sum = (
+            results_df.groupby("session")[["roi"]].agg(["count"]).values.flatten()
+        )
     else:
-        neuron_sum = results_df[denominator_filter].groupby('session')[['roi']].agg(['count']).values.flatten()
-        
+        neuron_sum = (
+            results_df[denominator_filter]
+            .groupby("session")[["roi"]]
+            .agg(["count"])
+            .values.flatten()
+        )
+
     if numerator_filter is None:
-        prop = results_df.groupby('session').apply(lambda x: x[['roi']].agg(['count'])).values.flatten()
+        prop = (
+            results_df.groupby("session")
+            .apply(lambda x: x[["roi"]].agg(["count"]))
+            .values.flatten()
+        )
     else:
-        prop = results_df.groupby('session').apply(lambda x: x[numerator_filter][['roi']].agg(['count'])).values.flatten()
-    
+        prop = (
+            results_df.groupby("session")
+            .apply(lambda x: x[numerator_filter][["roi"]].agg(["count"]))
+            .values.flatten()
+        )
+
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.hist(prop/neuron_sum, bins=bins, color='k')
+    ax.hist(prop / neuron_sum, bins=bins, color="k")
     xlim = ax.get_xlim()
     ax.set_xlim([0, xlim[1]])
-    ax.set_xlabel('Proportion of depth-tuned neurons', fontsize=fontsize_dict['label'])
-    ax.set_ylabel('Session number', fontsize=fontsize_dict['label'])
-    ax.tick_params(axis='both', labelsize=fontsize_dict['tick'])
+    ax.set_xlabel("Proportion of depth-tuned neurons", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("Session number", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
     plotting_utils.despine()
-    
-    
-def get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=1, before_onset=0.5, frame_rate=15):
+
+
+def get_visually_responsive_neurons(
+    trials_df, neurons_df, is_closed_loop=1, before_onset=0.5, frame_rate=15
+):
     trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
-    
+
     # Find the mean response of each trial for all ROIs
     trials_df["trial_mean_response"] = trials_df.apply(
         lambda x: np.mean(x.dff_stim, axis=0), axis=1
-    )    
-    
+    )
+
     # Find the mean response of the blank period before the next trial for all ROIs
     trials_df["trial_mean_onset"] = trials_df.apply(
-        lambda x: np.mean(x.dff_blank[-int(frame_rate*before_onset):], axis=0), axis=1
-    )   
+        lambda x: np.mean(x.dff_blank[-int(frame_rate * before_onset) :], axis=0),
+        axis=1,
+    )
     # Shift blank response down 1 to put it to the correct trial
     trials_df["trial_mean_onset"] = trials_df["trial_mean_onset"].shift(1)
-    
+
     all_response = np.stack(trials_df.trial_mean_response[1:].values)
     all_onset = np.stack(trials_df.trial_mean_onset[1:].values)
-    
+
     # Check whether the response is significantly higher than the blank period
     for iroi, roi in enumerate(neurons_df.roi):
         response = all_response[:, iroi]
         onset = all_onset[:, iroi]
         pval = scipy.stats.wilcoxon(response, onset).pvalue
-        neurons_df.at[roi, "visually_responsive"] = (pval < 0.05) & (np.mean(response-onset)>0)
+        neurons_df.at[roi, "visually_responsive"] = (pval < 0.05) & (
+            np.mean(response - onset) > 0
+        )
         neurons_df.at[roi, "visually_responsive_pval"] = pval
-        neurons_df.at[roi, "mean_resp"] = np.mean(response-onset)
-    
+        neurons_df.at[roi, "mean_resp"] = np.mean(response - onset)
+
     return neurons_df
-    
-    
-def get_visually_responsive_all_sessions(flexilims_session, session_list, use_cols, is_closed_loop=1, protocol_base="SpheresPermTubeReward", protocol_base_list=[], before_onset=0.5, frame_rate=15,):
-    isess=0
+
+
+def get_visually_responsive_all_sessions(
+    flexilims_session,
+    session_list,
+    use_cols,
+    is_closed_loop=1,
+    protocol_base="SpheresPermTubeReward",
+    protocol_base_list=[],
+    before_onset=0.5,
+    frame_rate=15,
+):
+    isess = 0
     for i, session_name in enumerate(session_list):
         print(f"Calculating visually responsive neurons for {session_name}")
-        if len(protocol_base_list)>0:
+        if len(protocol_base_list) > 0:
             protocol_base = protocol_base_list[i]
-        
+
         # Load all data
-        if ("PZAH6.4b" in session_name) |  ("PZAG3.4f" in session_name):
+        if ("PZAH6.4b" in session_name) | ("PZAG3.4f" in session_name):
             photodiode_protocol = 2
         else:
             photodiode_protocol = 5
-            
+
         neurons_ds = pipeline_utils.create_neurons_ds(
-            session_name=session_name, flexilims_session=flexilims_session, project=None, conflicts="skip"
+            session_name=session_name,
+            flexilims_session=flexilims_session,
+            project=None,
+            conflicts="skip",
         )
-        neurons_df = pd.read_pickle(neurons_ds.path_full)   
+        neurons_df = pd.read_pickle(neurons_ds.path_full)
         _, trials_df = spheres.sync_all_recordings(
             session_name=session_name,
             flexilims_session=flexilims_session,
             project=None,
-            filter_datasets={'anatomical_only':3},
+            filter_datasets={"anatomical_only": 3},
             recording_type="two_photon",
             protocol_base=protocol_base,
             photodiode_protocol=photodiode_protocol,
             return_volumes=True,
-            )
-        trials_df = trials_df[trials_df.closed_loop==is_closed_loop]
-        neurons_df = get_visually_responsive_neurons(trials_df, neurons_df, is_closed_loop=is_closed_loop, before_onset=before_onset, frame_rate=frame_rate)
+        )
+        trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
+        neurons_df = get_visually_responsive_neurons(
+            trials_df,
+            neurons_df,
+            is_closed_loop=is_closed_loop,
+            before_onset=before_onset,
+            frame_rate=frame_rate,
+        )
         if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
             if use_cols is None:
                 neurons_df = neurons_df
             else:
                 neurons_df = neurons_df[use_cols]
-            
+
             neurons_df["session"] = session_name
             exp_session = flz.get_entity(
-                datatype="session", name=session_name, flexilims_session=flexilims_session
+                datatype="session",
+                name=session_name,
+                flexilims_session=flexilims_session,
             )
             suite2p_ds = flz.get_datasets(
                 flexilims_session=flexilims_session,
@@ -742,29 +882,37 @@ def get_visually_responsive_all_sessions(flexilims_session, session_list, use_co
                 allow_multiple=False,
                 return_dataseries=False,
             )
-            iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+            iscell = np.load(
+                suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
+            )[:, 0]
             neurons_df["iscell"] = iscell
-                
+
             if isess == 0:
                 results_all = neurons_df.copy()
             else:
-                results_all = pd.concat([results_all, neurons_df], axis=0, ignore_index=True)
-            isess+=1
+                results_all = pd.concat(
+                    [results_all, neurons_df], axis=0, ignore_index=True
+                )
+            isess += 1
         else:
-            print(f"ERROR: SESSION {session_name}: specified cols not all in neurons_df")
-            
+            print(
+                f"ERROR: SESSION {session_name}: specified cols not all in neurons_df"
+            )
+
     return results_all
 
 
 def get_color(value, value_min, value_max, log=False, cmap=cm.cool.reversed()):
     if log:
-        norm = matplotlib.colors.Normalize(vmin=np.log(value_min), vmax=np.log(value_max))
-        rgba_color = cmap(norm(np.log(value)),bytes=True)
+        norm = matplotlib.colors.Normalize(
+            vmin=np.log(value_min), vmax=np.log(value_max)
+        )
+        rgba_color = cmap(norm(np.log(value)), bytes=True)
     else:
         norm = matplotlib.colors.Normalize(vmin=value_min, vmax=value_max)
-        rgba_color = cmap(norm(value),bytes=True)
-    rgba_color = tuple(it/255 for it in rgba_color)
-    
+        rgba_color = cmap(norm(value), bytes=True)
+    rgba_color = tuple(it / 255 for it in rgba_color)
+
     return rgba_color
 
 
@@ -776,7 +924,7 @@ def plot_example_fov(
     ndepths=8,
     param="preferred_depth",
     cmap=cm.cool.reversed(),
-    background_color = np.array([0.133,0.545,0.133]),
+    background_color=np.array([0.133, 0.545, 0.133]),
     n_std=6,
     plot_x=0,
     plot_y=0,
@@ -784,7 +932,6 @@ def plot_example_fov(
     plot_height=1,
     cbar_width=0.1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
-    
 ):
     # Load suite2p ops files
     suite2p_ds = flz.get_datasets(
@@ -795,110 +942,166 @@ def plot_example_fov(
         allow_multiple=False,
         return_dataseries=False,
     )
-    iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[:,0]
+    iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[
+        :, 0
+    ]
     neurons_df["iscell"] = iscell
     stat = np.load(suite2p_ds.path_full / "plane0" / "stat.npy", allow_pickle=True)
     ops = np.load(suite2p_ds.path_full / "plane0" / "ops.npy", allow_pickle=True)
-    ops = ops.item()   
-    
-    # Find neuronal masks and assign on the background image
-    im = np.zeros((ops['Ly'], ops['Lx'],3))
-    im_back = np.swapaxes(np.swapaxes(np.tile(ops['meanImg'],(3,1,1)),0,2),0,1)/np.max(ops['meanImg'])
-    im_back = np.multiply(im_back,background_color.reshape(1,-1))
+    ops = ops.item()
 
-    depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]<0.05)&
-                               (neurons_df["iscell"]==1)].roi.values
-    non_depth_neurons = neurons_df[(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)&
-                               (neurons_df["iscell"]==1)].roi.values
+    # Find neuronal masks and assign on the background image
+    im = np.zeros((ops["Ly"], ops["Lx"], 3))
+    im_back = np.swapaxes(
+        np.swapaxes(np.tile(ops["meanImg"], (3, 1, 1)), 0, 2), 0, 1
+    ) / np.max(ops["meanImg"])
+    im_back = np.multiply(im_back, background_color.reshape(1, -1))
+
+    depth_neurons = neurons_df[
+        (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+        & (neurons_df["iscell"] == 1)
+    ].roi.values
+    non_depth_neurons = neurons_df[
+        (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] >= 0.05)
+        & (neurons_df["iscell"] == 1)
+    ].roi.values
     if param == "preferred_depth":
         select_neurons = depth_neurons
         null_neurons = non_depth_neurons
-                
+
     if (param == "preferred_azimuth") | (param == "preferred_elevation"):
         # Find cells with significant RF
         coef = np.stack(neurons_df[f"rf_coef_closedloop"].values)
         coef_ipsi = np.stack(neurons_df[f"rf_coef_ipsi_closedloop"].values)
-        sig, sig_ipsi = spheres.find_sig_rfs(np.swapaxes(np.swapaxes(coef, 0, 2),0,1), 
-                                             np.swapaxes(np.swapaxes(coef_ipsi, 0, 2),0,1),  
-                                             n_std=n_std)
-        select_neurons = neurons_df[(sig==1)&
-                               (neurons_df["iscell"]==1)
-                            #    &(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)
-                               ].roi.values
+        sig, sig_ipsi = spheres.find_sig_rfs(
+            np.swapaxes(np.swapaxes(coef, 0, 2), 0, 1),
+            np.swapaxes(np.swapaxes(coef_ipsi, 0, 2), 0, 1),
+            n_std=n_std,
+        )
+        select_neurons = neurons_df[
+            (sig == 1)
+            & (neurons_df["iscell"] == 1)
+            #    &(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)
+        ].roi.values
         # null_neurons = neurons_df[~((neurons_df["iscell"]==1)
         #                        &(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05))&
         #                          (neurons_df["iscell"]==1)].roi.values
-        null_neurons = neurons_df[(sig==0)&
-                                 (neurons_df["iscell"]==1)].roi.values
-        
+        null_neurons = neurons_df[(sig == 0) & (neurons_df["iscell"] == 1)].roi.values
+
     for n in null_neurons:
-        ypix = stat[n]['ypix'][~stat[n]['overlap']]
-        xpix = stat[n]['xpix'][~stat[n]['overlap']]
+        ypix = stat[n]["ypix"][~stat[n]["overlap"]]
+        xpix = stat[n]["xpix"][~stat[n]["overlap"]]
         if len(xpix) > 0 and len(ypix) > 0:
-            im[ypix,xpix,:] = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']])*0.3, (3,1)).T
-        
-        
-    azi, ele, _ = rf.find_rf_centers(neurons_df, 
-                    ndepths=ndepths,
-                    frame_shape=(16,24),
-                    is_closed_loop=1,
-                    jitter=False,
-                    resolution=5,
-                    )
+            im[ypix, xpix, :] = np.tile(
+                (stat[n]["lam"][~stat[n]["overlap"]])
+                / np.max(stat[n]["lam"][~stat[n]["overlap"]])
+                * 0.3,
+                (3, 1),
+            ).T
+
+    azi, ele, _ = rf.find_rf_centers(
+        neurons_df,
+        ndepths=ndepths,
+        frame_shape=(16, 24),
+        is_closed_loop=1,
+        jitter=False,
+        resolution=5,
+    )
 
     for i, n in enumerate(select_neurons):
-        ypix = stat[n]['ypix'][~stat[n]['overlap']]
-        xpix = stat[n]['xpix'][~stat[n]['overlap']]
-        lam_mat = np.tile((stat[n]['lam'][~stat[n]['overlap']])/np.max(stat[n]['lam'][~stat[n]['overlap']]), (3,1)).T
+        ypix = stat[n]["ypix"][~stat[n]["overlap"]]
+        xpix = stat[n]["xpix"][~stat[n]["overlap"]]
+        lam_mat = np.tile(
+            (stat[n]["lam"][~stat[n]["overlap"]])
+            / np.max(stat[n]["lam"][~stat[n]["overlap"]]),
+            (3, 1),
+        ).T
         if param == "preferred_depth":
-            rgba_color = get_color(neurons_df.at[n, "preferred_depth_closedloop"], 0.02, 20, log=True, cmap=cmap)
+            rgba_color = get_color(
+                neurons_df.at[n, "preferred_depth_closedloop"],
+                0.02,
+                20,
+                log=True,
+                cmap=cmap,
+            )
         elif param == "preferred_azimuth":
-            rgba_color = get_color(azi[n], np.percentile(azi,10), np.percentile(azi,90), log=False, cmap=cmap)
+            rgba_color = get_color(
+                azi[n],
+                np.percentile(azi, 10),
+                np.percentile(azi, 90),
+                log=False,
+                cmap=cmap,
+            )
         elif param == "preferred_elevation":
-            rgba_color = get_color(ele[n], np.percentile(ele,10), np.percentile(ele,90), log=False, cmap=cmap) 
-        im[ypix,xpix,:] =((np.asarray(rgba_color)[:-1].reshape(-1,1))@(lam_mat[:,0].reshape(1,-1))).T
+            rgba_color = get_color(
+                ele[n],
+                np.percentile(ele, 10),
+                np.percentile(ele, 90),
+                log=False,
+                cmap=cmap,
+            )
+        im[ypix, xpix, :] = (
+            (np.asarray(rgba_color)[:-1].reshape(-1, 1))
+            @ (lam_mat[:, 0].reshape(1, -1))
+        ).T
 
-    # Plot spatial distribution
+    # Plot spatial distribution
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    img=ax.imshow(np.flip(im[20:,20:,:], axis=1), alpha=1) 
-    plt.axis('off')
-    
-    ax_dummy = fig.add_axes([plot_x+plot_width*0.17, plot_y*(1+0.01), plot_width, plot_height])
-    dummy_img = ax_dummy.imshow(np.flip(im[20:,20:,:], axis=1), cmap=cmap)
+    img = ax.imshow(np.flip(im[20:, 20:, :], axis=1), alpha=1)
+    plt.axis("off")
+
+    ax_dummy = fig.add_axes(
+        [plot_x + plot_width * 0.17, plot_y * (1 + 0.01), plot_width, plot_height]
+    )
+    dummy_img = ax_dummy.imshow(np.flip(im[20:, 20:, :], axis=1), cmap=cmap)
     dummy_img.remove()  # Remove the dummy plot from the figure
-    
 
     # Add a colorbar for the dummy plot with the new colormap
-    cbar=ax_dummy.figure.colorbar(dummy_img, ax=ax_dummy, orientation='vertical', cmap=cmap)
+    cbar = ax_dummy.figure.colorbar(
+        dummy_img, ax=ax_dummy, orientation="vertical", cmap=cmap
+    )
     cbar.set_ticks(np.linspace(0, 1, 3))
     if param == "preferred_depth":
-        cbar.set_ticklabels((np.geomspace(0.02, 20, 3)*100).astype('int'))
+        cbar.set_ticklabels((np.geomspace(0.02, 20, 3) * 100).astype("int"))
     elif param == "preferred_azimuth":
-        cbar.set_ticklabels(np.linspace(np.percentile(azi,10), np.percentile(azi,90), 3).astype('int'))
-        
+        cbar.set_ticklabels(
+            np.linspace(np.percentile(azi, 10), np.percentile(azi, 90), 3).astype("int")
+        )
+
     elif param == "preferred_elevation":
-        cbar.set_ticklabels(np.linspace(np.percentile(ele,10), np.percentile(ele,90), 3).astype('int'))
+        cbar.set_ticklabels(
+            np.linspace(np.percentile(ele, 10), np.percentile(ele, 90), 3).astype("int")
+        )
     # ax_dummy.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['label'])
-    cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
+    cbar.ax.tick_params(labelsize=fontsize_dict["legend"])
     ax_dummy.remove()
     # ax_dummy.get_yaxis().labelpad = 15
     # Add scalebar
-    scalebar_length_px = im.shape[0]/572.867*100 # Scale bar length in pixels
+    scalebar_length_px = im.shape[0] / 572.867 * 100  # Scale bar length in pixels
     scalebar_physical_length = "100 um"  # Physical length represented by the scale bar
     scalebar_x = 10  # x position in pixels from the left to place scale bar
-    scalebar_y = im.shape[0]*0.95 # y position in pixels from the bottom to place scale bar
-    rect = plt.Rectangle((scalebar_x, scalebar_y), scalebar_length_px, 1, color='white')
+    scalebar_y = (
+        im.shape[0] * 0.95
+    )  # y position in pixels from the bottom to place scale bar
+    rect = plt.Rectangle((scalebar_x, scalebar_y), scalebar_length_px, 1, color="white")
     ax.add_patch(rect)
 
     # Annotate the scale bar with its physical size
-    ax.text(scalebar_x + scalebar_length_px / 2, scalebar_y - 7, scalebar_physical_length, color='white', ha='center', va='bottom', fontsize=fontsize_dict['legend'])
+    ax.text(
+        scalebar_x + scalebar_length_px / 2,
+        scalebar_y - 7,
+        scalebar_physical_length,
+        color="white",
+        ha="center",
+        va="bottom",
+        fontsize=fontsize_dict["legend"],
+    )
 
-    
-    # ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height]) 
+    # ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height])
     # fig.colorbar(im, cax=ax2, label=param)
-    if (param == "preferred_azimuth"):
+    if param == "preferred_azimuth":
         print(f"{param} min {azi.min()}, max {azi.max()}")
-    elif (param == "preferred_elevation"):
+    elif param == "preferred_elevation":
         print(f"{param} min {ele.min()}, max {ele.max()}")
-        
+
     return azi, ele
