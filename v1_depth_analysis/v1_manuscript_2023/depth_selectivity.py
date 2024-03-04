@@ -1,8 +1,3 @@
-import functools
-
-print = functools.partial(print, flush=True)
-
-import os
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -10,18 +5,14 @@ import matplotlib
 matplotlib.rcParams["pdf.fonttype"] = 42  # for pdfs
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from pathlib import Path
-import pickle
 from tqdm import tqdm
 import scipy
 
 import flexiznam as flz
-from cottage_analysis.preprocessing import synchronisation
 from cottage_analysis.analysis import (
     spheres,
     find_depth_neurons,
     common_utils,
-    fit_gaussian_blob,
     size_control,
 )
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
@@ -30,8 +21,6 @@ from v1_depth_analysis.v1_manuscript_2023 import rf
 
 
 def plot_raster_all_depths(
-    fig,
-    neurons_df,
     trials_df,
     roi,
     is_closed_loop,
@@ -40,18 +29,13 @@ def plot_raster_all_depths(
     frame_rate=15,
     vmax=1,
     plot=True,
-    plot_x=0,
-    plot_y=0,
-    plot_width=1,
-    plot_height=1,
     cbar_width=0.05,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    position=(0, 0, 1, 1),
 ):
     """Raster plot for neuronal activity for each depth
 
     Args:
-        fig (plt.figure): figure to plot on.
-        neurons_df (pd.DataFrame): dataframe with analyzed info of all rois.
         trials_df (pd.DataFrame): dataframe with info of all trials.
         roi (int): ROI number
         is_closed_loop (bool): plotting the closed loop or open loop results.
@@ -60,12 +44,9 @@ def plot_raster_all_depths(
         frame_rate (int, optional): imaging frame rate. Defaults to 15.
         vmax (int, optional): vmax to plot the heatmap. Defaults to 1.
         plot (bool, optional): whether to plot or not. Defaults to True.
-        plot_x (int, optional): x position of the plot out of 1. Defaults to 0.
-        plot_y (int, optional): y position of the plot out of 1. Defaults to 0.
-        plot_width (int, optional): width of the plot out of 1. Defaults to 1.
-        plot_height (int, optional): height of the plot out of 1. Defaults to 1.
         cbar_width (float, optional): width of the colorbar. Defaults to 0.05.
         fontsize_dict (dict, optional): dictionary of fontsize for title, label and tick. Defaults to {"title": 20, "label": 15, "tick": 15}.
+
     """
     # choose the trials with closed or open loop to visualize
     trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
@@ -84,9 +65,6 @@ def plot_raster_all_depths(
                 dff = all_dffs[itrial][:, roi]
                 rs_arr = all_rs[itrial]
                 distance = np.cumsum(rs_arr / frame_rate)
-                bins = np.linspace(
-                    start=0, stop=max_distance, num=nbins + 1, endpoint=True
-                )
                 bin_means, _, _ = scipy.stats.binned_statistic(
                     x=distance,
                     values=dff,
@@ -100,10 +78,11 @@ def plot_raster_all_depths(
 
     # plot each depth as a heatmap
     if plot:
+        plot_x, plot_y, plot_width, plot_height = position
         plot_prop = 0.75
         each_plot_width = (plot_width - cbar_width) / len(depth_list)
         for idepth, depth in enumerate(depth_list):
-            ax = fig.add_axes(
+            ax = plt.gcf().add_axes(
                 [
                     plot_x + idepth * each_plot_width,
                     plot_y,
@@ -142,7 +121,7 @@ def plot_raster_all_depths(
             if idepth == len(depth_list) // 2:
                 ax.set_xlabel("Corridor position (cm)", fontsize=fontsize_dict["label"])
 
-        ax2 = fig.add_axes(
+        ax2 = plt.gcf().add_axes(
             [
                 plot_x
                 + (len(depth_list) - 1) * each_plot_width
@@ -153,7 +132,7 @@ def plot_raster_all_depths(
                 plot_height,
             ]
         )
-        fig.colorbar(im, cax=ax2, label="\u0394F/F")
+        plt.colorbar(im, cax=ax2, label="\u0394F/F")
         ax2.tick_params(labelsize=fontsize_dict["tick"])
         ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
 
@@ -161,7 +140,6 @@ def plot_raster_all_depths(
 
 
 def plot_depth_tuning_curve(
-    fig,
     neurons_df,
     trials_df,
     roi,
@@ -177,12 +155,6 @@ def plot_depth_tuning_curve(
     linecolor="k",
     fit_linecolor="r",
     closed_loop=1,
-    overwrite_ax=True,
-    ax=None,
-    plot_x=0,
-    plot_y=0,
-    plot_width=1,
-    plot_height=1,
     label=None,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
@@ -201,6 +173,7 @@ def plot_depth_tuning_curve(
         linewidth (int, optional): linewidth. Defaults to 3.
         linecolor (str, optional): linecolor of true data. Defaults to "k".
         fit_linecolor (str, optional): linecolor of fitted curve. Defaults to "r".
+
     """
 
     # Load average activity and confidence interval for this roi
@@ -235,12 +208,10 @@ def plot_depth_tuning_curve(
         )
 
     # Plotting
-    if overwrite_ax:
-        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.plot(
+    plt.plot(
         np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label
     )
-    ax.fill_between(
+    plt.fill_between(
         np.log(param_list),
         CI_low,
         CI_high,
@@ -250,7 +221,7 @@ def plot_depth_tuning_curve(
         rasterized=False,
     )
     if plot_fit:
-        ax.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
+        plt.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
     if param == "depth":
         plt.xticks(
             np.log(param_list),
@@ -268,11 +239,9 @@ def plot_depth_tuning_curve(
         )
         plt.xlabel(f"Virtual radius (cm)", fontsize=fontsize_dict["label"])
     plt.yticks(fontsize=fontsize_dict["tick"])
-    ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
+    plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
 
     plotting_utils.despine()
-
-    return ax
 
 
 def get_PSTH(
@@ -410,7 +379,6 @@ def get_PSTH(
 
 
 def plot_PSTH(
-    fig,
     trials_df,
     roi,
     is_closed_loop,
@@ -421,10 +389,6 @@ def plot_PSTH(
     still_only=False,
     still_time=1,
     frame_rate=15,
-    plot_x=0,
-    plot_y=0,
-    plot_width=1,
-    plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
     linewidth=3,
     legend_on=False,
@@ -453,12 +417,11 @@ def plot_PSTH(
     )
 
     depth_list = find_depth_neurons.find_depth_list(trials_df)
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     for idepth, depth in enumerate(depth_list):
         linecolor = basic_vis_plots.get_depth_color(
             depth, depth_list, cmap=cm.cool.reversed()
         )
-        ax.plot(
+        plt.plot(
             bin_centers,
             all_means[idepth, :],
             color=linecolor,
@@ -466,7 +429,7 @@ def plot_PSTH(
             linewidth=linewidth,
         )
 
-        ax.fill_between(
+        plt.fill_between(
             bin_centers,
             y1=all_means[idepth, :] - all_ci[idepth, :],
             y2=all_means[idepth, :] + all_ci[idepth, :],
@@ -476,14 +439,14 @@ def plot_PSTH(
             rasterized=False,
         )
 
-    ax.plot(
+    plt.plot(
         bin_centers,
         all_means[-1, :],
         color="gray",
         label=f"blank",
         linewidth=linewidth,
     )
-    ax.fill_between(
+    plt.fill_between(
         bin_centers,
         y1=all_means[-1, :] - all_ci[-1, :],
         y2=all_means[-1, :] + all_ci[-1, :],
@@ -493,8 +456,8 @@ def plot_PSTH(
         rasterized=False,
     )
 
-    ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
-    ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
+    plt.xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
+    plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
     plt.xticks(
         # np.linspace(0, nbins, 3),
         # (np.linspace(0, max_distance, 3) * 100).astype("int"),
@@ -504,7 +467,7 @@ def plot_PSTH(
     plt.yticks(fontsize=fontsize_dict["tick"])
 
     if legend_on:
-        ax.legend(
+        plt.legend(
             loc="upper left",
             bbox_to_anchor=(0.1, 1.4),
             fontsize=fontsize_dict["legend"],
@@ -617,7 +580,7 @@ def get_psth_crossval_all_sessions(
                 psth, _, _ = get_PSTH(
                     trials_df=trials_df_resp,
                     roi=roi,
-                    is_closed_loop=1,
+                    is_closed_loop=closed_loop,
                     max_distance=6,
                     nbins=nbins,
                     rs_thr_min=rs_thr_min,
@@ -744,29 +707,25 @@ def plot_depth_neuron_perc_hist(
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    results_df = results_df[results_df["iscell"] == 1]
     if denominator_filter is None:
         neuron_sum = (
-            results_df.groupby("session")[["roi"]].agg(["count"]).values.flatten()
+            results_df.groupby("session").agg(["count"])["roi"].values.flatten()
         )
     else:
         neuron_sum = (
             results_df[denominator_filter]
-            .groupby("session")[["roi"]]
-            .agg(["count"])
+            .groupby("session")
+            .agg(["count"])["roi"]
             .values.flatten()
         )
 
     if numerator_filter is None:
-        prop = (
-            results_df.groupby("session")
-            .apply(lambda x: x[["roi"]].agg(["count"]))
-            .values.flatten()
-        )
+        prop = results_df.groupby("session").agg(["count"])["roi"].values.flatten()
     else:
         prop = (
-            results_df.groupby("session")
-            .apply(lambda x: x[numerator_filter][["roi"]].agg(["count"]))
+            results_df[numerator_filter]
+            .groupby("session")
+            .agg(["count"])["roi"]
             .values.flatten()
         )
 
