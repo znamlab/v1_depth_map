@@ -1,5 +1,7 @@
 {
     "python.formatting.provider": "black",
+    "editor.formatOnSave": true,
+    "nootebook.formatOnSave": true,
     "python.formatting.blackArgs": [
         "--line-length",
         "88"

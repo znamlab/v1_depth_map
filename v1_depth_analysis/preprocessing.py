@@ -11,7 +11,6 @@ processing steps have been done:
 
 """
 
-
 from pathlib import Path
 import flexiznam as flz
 import pandas as pd

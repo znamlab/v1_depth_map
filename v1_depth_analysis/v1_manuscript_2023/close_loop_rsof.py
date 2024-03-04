@@ -1,11 +1,13 @@
 import functools
+
 print = functools.partial(print, flush=True)
 
 import os
 import numpy as np
 import pandas as pd
 import matplotlib
-matplotlib.rcParams['pdf.fonttype'] = 42 # for pdfs
+
+matplotlib.rcParams["pdf.fonttype"] = 42  # for pdfs
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from pathlib import Path
@@ -16,7 +18,13 @@ import seaborn as sns
 
 import flexiznam as flz
 from cottage_analysis.preprocessing import synchronisation
-from cottage_analysis.analysis import spheres, find_depth_neurons, common_utils, fit_gaussian_blob, size_control
+from cottage_analysis.analysis import (
+    spheres,
+    find_depth_neurons,
+    common_utils,
+    fit_gaussian_blob,
+    size_control,
+)
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 
@@ -173,9 +181,11 @@ def plot_speed_tuning(
         speed_ci[-1] = ci
 
     # Plotting
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     for idepth, depth in enumerate(depth_list):
-        linecolor = basic_vis_plots.get_depth_color(depth, depth_list, cmap=cm.cool.reversed())
+        linecolor = basic_vis_plots.get_depth_color(
+            depth, depth_list, cmap=cm.cool.reversed()
+        )
         ax.plot(
             bin_centers[idepth, :],
             speed_tuning[idepth, :],
@@ -196,7 +206,10 @@ def plot_speed_tuning(
 
         if which_speed == "OF":
             ax.set_xscale("log")
-            ax.set_xlabel("Optic flow speed "+u'(\N{DEGREE SIGN}/s)', fontsize=fontsize_dict["label"])
+            ax.set_xlabel(
+                "Optic flow speed " + "(\N{DEGREE SIGN}/s)",
+                fontsize=fontsize_dict["label"],
+            )
 
     # Plot tuning to gray period
     if which_speed == "RS":
@@ -220,12 +233,18 @@ def plot_speed_tuning(
         ax.set_xlabel("Running speed (cm/s)", fontsize=fontsize_dict["label"])
     ax.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-        
+
     if legend_on:
-        ax.legend(loc='upper left', bbox_to_anchor=(1, 1), fontsize=fontsize_dict["legend"], frameon=False, handlelength=1)
+        ax.legend(
+            loc="upper left",
+            bbox_to_anchor=(1, 1),
+            fontsize=fontsize_dict["legend"],
+            frameon=False,
+            handlelength=1,
+        )
     plotting_utils.despine()
-    
-    
+
+
 def plot_RS_OF_matrix(
     fig,
     trials_df,
@@ -278,14 +297,14 @@ def plot_RS_OF_matrix(
     bin_means, rs_edges, of_egdes, _ = scipy.stats.binned_statistic_2d(
         x=rs_arr, y=of_arr, values=dff_arr, statistic="mean", bins=[rs_bins, of_bins]
     )
-    
+
     if vmin is None:
         vmin = np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)])
     if vmax is None:
         vmax = np.nanmax(bin_means[1:, 1:].flatten())
-    ax = fig.add_axes([plot_x, plot_y, plot_width*0.9, plot_height*0.9]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width * 0.9, plot_height * 0.9])
     im = ax.imshow(
-        bin_means[1:,1:].T,
+        bin_means[1:, 1:].T,
         origin="lower",
         aspect="equal",
         # cmap=generate_cmap(cmap_name="WhRd"),
@@ -294,8 +313,10 @@ def plot_RS_OF_matrix(
         vmax=vmax,
     )
 
-    ticks_select1, ticks_select2, bin_edges1, bin_edges2 = basic_vis_plots.get_RS_OF_heatmap_axis_ticks(
-        log_range=log_range, fontsize_dict=fontsize_dict
+    ticks_select1, ticks_select2, bin_edges1, bin_edges2 = (
+        basic_vis_plots.get_RS_OF_heatmap_axis_ticks(
+            log_range=log_range, fontsize_dict=fontsize_dict
+        )
     )
     plt.xticks(
         ticks_select1,
@@ -306,43 +327,49 @@ def plot_RS_OF_matrix(
     )
 
     plt.yticks(ticks_select2, bin_edges2, fontsize=fontsize_dict["tick"])
-    
+
     if is_closed_loop:
         ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
         ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     if not is_closed_loop:
-        ax.set_xticklabels('')
-        ax.set_yticklabels('')
-        ax_left = fig.add_axes([plot_x+0.15*plot_width, 
-                                plot_y, 
-                                plot_width*0.9/(log_range["of_bin_num"]-1), 
-                                plot_height*0.9])
+        ax.set_xticklabels("")
+        ax.set_yticklabels("")
+        ax_left = fig.add_axes(
+            [
+                plot_x + 0.15 * plot_width,
+                plot_y,
+                plot_width * 0.9 / (log_range["of_bin_num"] - 1),
+                plot_height * 0.9,
+            ]
+        )
         ax_left.imshow(
-            bin_means[0,1:].reshape(1,-1).T,
+            bin_means[0, 1:].reshape(1, -1).T,
             origin="lower",
             aspect="equal",
             # cmap=generate_cmap(cmap_name="WhRd"),
             cmap="Reds",
             vmin=vmin,
             vmax=vmax,
-            
         )
         plt.yticks(ticks_select2, bin_edges2)
         plt.xticks(ax_left.get_xticks(), "")
-        
-        ax_down = fig.add_axes([plot_x, 
-                                plot_y-plot_height*0.9/(log_range["of_bin_num"]-1)*1.5, 
-                                plot_width*0.9, 
-                                plot_height*0.9/(log_range["of_bin_num"]-1)])
+
+        ax_down = fig.add_axes(
+            [
+                plot_x,
+                plot_y - plot_height * 0.9 / (log_range["of_bin_num"] - 1) * 1.5,
+                plot_width * 0.9,
+                plot_height * 0.9 / (log_range["of_bin_num"] - 1),
+            ]
+        )
         ax_down.imshow(
-            bin_means[1:,0].reshape(-1,1).T,
+            bin_means[1:, 0].reshape(-1, 1).T,
             origin="lower",
             aspect="equal",
             # cmap=generate_cmap(cmap_name="WhRd"),
             cmap="Reds",
             vmin=vmin,
             vmax=vmax,
-            
         )
         plt.xticks(
             ticks_select1,
@@ -352,29 +379,37 @@ def plot_RS_OF_matrix(
             fontsize=fontsize_dict["tick"],
         )
         plt.yticks(ax_down.get_yticks(), "")
-        
-        ax_corner = fig.add_axes([plot_x+0.15*plot_width,
-                                  plot_y-plot_height*0.9/(log_range["of_bin_num"]-1)*1.5,
-                                  plot_height*0.9/(log_range["of_bin_num"]-1),
-                                  plot_height*0.9/(log_range["of_bin_num"]-1)])
+
+        ax_corner = fig.add_axes(
+            [
+                plot_x + 0.15 * plot_width,
+                plot_y - plot_height * 0.9 / (log_range["of_bin_num"] - 1) * 1.5,
+                plot_height * 0.9 / (log_range["of_bin_num"] - 1),
+                plot_height * 0.9 / (log_range["of_bin_num"] - 1),
+            ]
+        )
         ax_corner.imshow(
-            bin_means[0,0].reshape(1,1),
+            bin_means[0, 0].reshape(1, 1),
             origin="lower",
             aspect="equal",
             cmap="Reds",
             vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
-            vmax=np.nanmax(bin_means[1:,1:].flatten()),
+            vmax=np.nanmax(bin_means[1:, 1:].flatten()),
         )
         plt.yticks(ax_corner.get_yticks()[1::2], ["< 0.03"])
         plt.xticks(ax_corner.get_xticks()[1::2], ["< 1"])
-    
+
         ax_down.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
         ax_left.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
         ax_left.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
         ax_down.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-        ax_corner.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-        
-    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height*0.9]) 
+        ax_corner.tick_params(
+            axis="both", which="major", labelsize=fontsize_dict["tick"]
+        )
+
+    ax2 = fig.add_axes(
+        [plot_x + plot_width * 0.75, plot_y, cbar_width, plot_height * 0.9]
+    )
     fig.colorbar(im, cax=ax2, label="\u0394F/F")
     ax2.tick_params(labelsize=fontsize_dict["legend"])
     ax2.set_ylabel("\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"])
@@ -409,7 +444,6 @@ def plot_RS_OF_fitted_tuning(
     ylabel="Optical flow speed \n(degrees/s)",
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-
     """
     Plot the fitted tuning of a neuron.
     """
@@ -442,11 +476,11 @@ def plot_RS_OF_fitted_tuning(
         )
     resp_pred = resp_pred.reshape((len(of), len(rs)))
 
-    ax = fig.add_axes([plot_x, plot_y, plot_width*0.9, plot_height*0.9]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width * 0.9, plot_height * 0.9])
     im = ax.imshow(
         resp_pred,
         origin="lower",
-        extent=[rs.min() * 100,rs.max() * 100, of.min(), of.max()],
+        extent=[rs.min() * 100, rs.max() * 100, of.min(), of.max()],
         aspect=rs.max()
         * 100
         / of.max()
@@ -465,15 +499,19 @@ def plot_RS_OF_fitted_tuning(
         ha="center",
         fontsize=fontsize_dict["tick"],
     )
-    plt.yticks(ticks_select2, 
-               np.round(np.geomspace(of.min(), of.max(), len(ticks_select2))), 
-               fontsize=fontsize_dict["tick"])
-    
-    ax2 = fig.add_axes([plot_x + plot_width*0.75, plot_y, cbar_width, plot_height*0.9]) 
+    plt.yticks(
+        ticks_select2,
+        np.round(np.geomspace(of.min(), of.max(), len(ticks_select2))),
+        fontsize=fontsize_dict["tick"],
+    )
+
+    ax2 = fig.add_axes(
+        [plot_x + plot_width * 0.75, plot_y, cbar_width, plot_height * 0.9]
+    )
     fig.colorbar(im, cax=ax2, label="\u0394F/F")
     ax2.tick_params(labelsize=fontsize_dict["legend"])
     ax2.set_ylabel("\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"])
-    
+
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     return resp_pred.min(), resp_pred.max()
@@ -487,7 +525,7 @@ def plot_r2_comparison(
     plot_type="violin",
     markersize=10,
     alpha=0.3,
-    color='k',
+    color="k",
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -495,27 +533,36 @@ def plot_r2_comparison(
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     if plot_type == "violin":
-        results = pd.DataFrame(columns=["model","rsq"])
+        results = pd.DataFrame(columns=["model", "rsq"])
         neurons_df = neurons_df[
-            (neurons_df["iscell"] == 1) & 
-            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) 
-            ]
-        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+            (neurons_df["iscell"] == 1)
+            & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+        ]
+        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
         for i, col in enumerate(use_cols):
-            neurons_df[col][neurons_df[col]<-1] = 0
-            results = pd.concat([results, pd.DataFrame({"model": labels[i], 
-                                                        "rsq": neurons_df[col]}, )
-                                ],
-                                ignore_index=True)
+            neurons_df[col][neurons_df[col] < -1] = 0
+            results = pd.concat(
+                [
+                    results,
+                    pd.DataFrame(
+                        {"model": labels[i], "rsq": neurons_df[col]},
+                    ),
+                ],
+                ignore_index=True,
+            )
         sns.violinplot(data=results, x="model", y="rsq", ax=ax)
         ax.set_ylabel("R-squared", fontsize=fontsize_dict["label"])
         ax.set_xlabel("Model", fontsize=fontsize_dict["label"])
         ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
         plotting_utils.despine()
-        
-        print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[1]])}")
-        print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[2]])}")
-    
+
+        print(
+            f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[1]])}"
+        )
+        print(
+            f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[2]])}"
+        )
+
     elif plot_type == "bar":
         # Find the best model for each neuron
         neurons_df["best_model"] = neurons_df[use_cols].idxmax(axis=1)
@@ -525,45 +572,58 @@ def plot_r2_comparison(
             use_cols[2]: "gof",
         }
         neurons_df["best_model"] = neurons_df["best_model"].map(name_mapping)
-        
+
         # Filter depth neurons
         neurons_df_filtered = neurons_df[
-            (neurons_df["iscell"] == 1) & 
-            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) 
-            ]
-        
-        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+            (neurons_df["iscell"] == 1)
+            & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+        ]
+
+        ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
         # Calculate percentage of neurons that have the best model
-        neuron_sum = neurons_df_filtered.groupby('session')[['roi']].agg(['count']).values.flatten()
+        neuron_sum = (
+            neurons_df_filtered.groupby("session")[["roi"]]
+            .agg(["count"])
+            .values.flatten()
+        )
         props = []
         for i, model in enumerate(["g2d", "gadd", "gof"]):
-            prop = (neurons_df_filtered.groupby('session').apply(lambda x: x[x["best_model"]==model][['roi']].agg(['count'])).values.flatten())/neuron_sum
+            prop = (
+                neurons_df_filtered.groupby("session")
+                .apply(lambda x: x[x["best_model"] == model][["roi"]].agg(["count"]))
+                .values.flatten()
+            ) / neuron_sum
             props.append(prop)
-            # Plot bar plot 
-            ax.bar(x=0.5*i, 
-                height=prop.mean(), 
+            # Plot bar plot
+            ax.bar(
+                x=0.5 * i,
+                height=prop.mean(),
                 width=0.2,
                 yerr=scipy.stats.sem(prop),
                 capsize=10,
-                color=color, 
-                alpha=0.5,)
-        
-            ax.scatter(x=np.ones(len(prop))*0.5*i, 
-                    y=prop, 
-                    color=color, 
-                    s=markersize,
-                    alpha=alpha)
+                color=color,
+                alpha=0.5,
+            )
 
-        ax.set_xticks([0,0.5,1])
+            ax.scatter(
+                x=np.ones(len(prop)) * 0.5 * i,
+                y=prop,
+                color=color,
+                s=markersize,
+                alpha=alpha,
+            )
+
+        ax.set_xticks([0, 0.5, 1])
         ax.set_xticklabels(labels, fontsize=fontsize_dict["label"])
-        ax.set_ylabel('Proportion of depth neurons\' \nbest model', fontsize=fontsize_dict['label'])
-        ax.set_ylim([0,1])
+        ax.set_ylabel(
+            "Proportion of depth neurons' \nbest model", fontsize=fontsize_dict["label"]
+        )
+        ax.set_ylim([0, 1])
         plotting_utils.despine()
-        ax.tick_params(axis='y', which='major', labelsize=fontsize_dict['tick'])
+        ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"])
         print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(props[0],props[1])}")
         print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(props[0],props[2])}")
 
-            
 
 def plot_speed_depth_scatter(
     fig,
@@ -574,7 +634,7 @@ def plot_speed_depth_scatter(
     ylabel="Preferred depth (cm)",
     s=10,
     alpha=0.2,
-    c='g',
+    c="g",
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -582,21 +642,29 @@ def plot_speed_depth_scatter(
     cbar_width=0.01,
     aspect_equal=False,
     plot_diagonal=False,
-    fontsize_dict={"title": 15, "label": 10, "tick": 10},):
-    
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+):
+
     # Filter neurons_df
-    neurons_df = neurons_df[(neurons_df["iscell"] == 1) & 
-                            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) &
-                            (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
-                            ]
-    
+    neurons_df = neurons_df[
+        (neurons_df["iscell"] == 1)
+        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+        & (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
+    ]
+
     # Plot scatter
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     X = neurons_df[xcol].values
     y = neurons_df[ycol].values
-    ax.scatter(X, y, s=s, alpha=alpha, c=c,  edgecolors="none")
+    ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors="none")
     if plot_diagonal:
-        ax.plot(np.geomspace(y.min(),y.max(),1000), np.geomspace(y.min(),y.max(),1000), c='y', linestyle="dotted", linewidth=2)
+        ax.plot(
+            np.geomspace(y.min(), y.max(), 1000),
+            np.geomspace(y.min(), y.max(), 1000),
+            c="y",
+            linestyle="dotted",
+            linewidth=2,
+        )
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
@@ -621,34 +689,36 @@ def plot_speed_colored_by_depth(
     zlabel="Preferred depth (cm)",
     s=10,
     alpha=0.2,
-    cmap='cool_r',
+    cmap="cool_r",
     plot_x=0,
     plot_y=0,
     plot_width=1,
     plot_height=1,
     cbar_width=0.01,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
-    ):
-    
+):
+
     # Filter neurons_df
-    neurons_df = neurons_df[(neurons_df["iscell"] == 1) & 
-                            (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05) &
-                            (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
-                            ]
-    
+    neurons_df = neurons_df[
+        (neurons_df["iscell"] == 1)
+        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+        & (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
+    ]
+
     # Plot scatter
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height]) 
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     sns.scatterplot(
-        neurons_df, 
-        x=xcol, 
-        y=ycol, 
+        neurons_df,
+        x=xcol,
+        y=ycol,
         hue=np.log(neurons_df[zcol]),
         # hue_norm = (np.log(6), np.log(600)),
         palette="cool_r",
-        s=s, 
+        s=s,
         alpha=alpha,
         ax=ax,
-        linewidth=0,)
+        linewidth=0,
+    )
     sns.despine()
     ax.set_aspect("equal", "box")
     ax.set_xscale("log")
@@ -657,16 +727,25 @@ def plot_speed_colored_by_depth(
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-    
-    norm = matplotlib.colors.LogNorm(np.nanmin(neurons_df[zcol]), np.nanmax(neurons_df[zcol]))
+
+    norm = matplotlib.colors.LogNorm(
+        np.nanmin(neurons_df[zcol]), np.nanmax(neurons_df[zcol])
+    )
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-    
+
     # Remove the legend and add a colorbar
-    ax2 = fig.add_axes([plot_x + plot_width + cbar_width, plot_y+0.05, cbar_width, plot_height*0.88]) 
+    ax2 = fig.add_axes(
+        [
+            plot_x + plot_width + cbar_width,
+            plot_y + 0.05,
+            cbar_width,
+            plot_height * 0.88,
+        ]
+    )
     ax2.figure.colorbar(sm, cax=ax2)
-    ax2.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['label'])
-    ax2.tick_params(labelsize=fontsize_dict['legend'])
+    ax2.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict["label"])
+    ax2.tick_params(labelsize=fontsize_dict["legend"])
     ax2.get_yaxis().labelpad = 15
 
     # cbar = ax.figure.colorbar(sm)
