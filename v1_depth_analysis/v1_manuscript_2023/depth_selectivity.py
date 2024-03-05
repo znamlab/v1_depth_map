@@ -257,6 +257,7 @@ def get_PSTH(
     still_only=False,
     still_time=1,  # s
     max_distance=6,  # m
+    min_distance=0,
     nbins=20,
     frame_rate=15,
     compute_ci=True,
@@ -268,21 +269,43 @@ def get_PSTH(
     trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
 
     depth_list = find_depth_neurons.find_depth_list(trials_df)
-    grouped_trials = trials_df.groupby(by="depth")
+    grouped = trials_df.groupby(by="depth")
     trial_number = len(trials_df) // len(depth_list)
 
     # bin dff according to distance travelled for each trial
     all_means = np.zeros((len(depth_list) + 1, nbins))
     all_ci = np.zeros((2, len(depth_list) + 1, nbins))
-    bins = np.linspace(start=0, stop=max_distance, num=nbins + 1, endpoint=True)
+    bins = np.linspace(
+        start=min_distance, stop=max_distance, num=nbins + 1, endpoint=True
+    )
     bin_centers = (bins[1:] + bins[:-1]) / 2
     for idepth, depth in enumerate(depth_list):
         all_dff = []
-        all_distance = []
         for itrial in np.arange(trial_number):
-            dff = grouped_trials.get_group(depth).dff_stim.values[itrial][:, roi]
-            rs_arr = grouped_trials.get_group(depth).RS_stim.values[itrial]
-            pos_arr = grouped_trials.get_group(depth).mouse_z_harp_stim.values[itrial]
+            # concatenate dff_blank_pre, dff, and dff_blank
+            dff = np.concatenate(
+                (
+                    grouped.get_group(depth).dff_blank_pre.values[itrial][:, roi],
+                    grouped.get_group(depth).dff_stim.values[itrial][:, roi],
+                    grouped.get_group(depth).dff_blank.values[itrial][:, roi],
+                )
+            )
+            rs_arr = np.concatenate(
+                (
+                    grouped.get_group(depth).RS_blank_pre.values[itrial],
+                    grouped.get_group(depth).RS_stim.values[itrial],
+                    grouped.get_group(depth).RS_blank.values[itrial],
+                )
+            )
+            pos_arr = np.concatenate(
+                (
+                    grouped.get_group(depth).mouse_z_harp_blank_pre.values[itrial],
+                    grouped.get_group(depth).mouse_z_harp_stim.values[itrial],
+                    grouped.get_group(depth).mouse_z_harp_blank.values[itrial],
+                )
+            )
+            pos_arr -= grouped.get_group(depth).mouse_z_harp_stim.values[itrial][0]
+
             take_idx = apply_rs_threshold(
                 rs_arr, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
             )
@@ -291,7 +314,7 @@ def get_PSTH(
             distance = pos_arr[take_idx] - pos_arr[0]
             # bin dff according to distance travelled
             dff, _, _ = scipy.stats.binned_statistic(
-                x=distance,
+                x=pos_arr,
                 values=dff,
                 statistic="mean",
                 bins=bins,
@@ -365,6 +388,7 @@ def plot_PSTH(
     roi,
     is_closed_loop,
     max_distance=6,
+    min_distance=0,
     nbins=20,
     rs_thr_min=None,
     rs_thr_max=None,
@@ -374,6 +398,7 @@ def plot_PSTH(
     fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
     linewidth=3,
     legend_on=False,
+    show_ci=True,
 ):
     """PSTH of a neuron for each depth and blank period.
 
@@ -393,6 +418,7 @@ def plot_PSTH(
         rs_thr_max=rs_thr_max,
         still_only=still_only,
         still_time=still_time,
+        min_distance=min_distance,
         max_distance=max_distance,
         nbins=nbins,
         frame_rate=frame_rate,
@@ -410,32 +436,16 @@ def plot_PSTH(
             label=f"{int(depth_list[idepth] * 100)} cm",
             linewidth=linewidth,
         )
-        plt.fill_between(
-            bin_centers,
-            y1=all_ci[0, idepth, :],
-            y2=all_ci[1, idepth, :],
-            color=linecolor,
-            alpha=0.3,
-            edgecolor=None,
-            rasterized=False,
-        )
-
-    plt.plot(
-        bin_centers,
-        all_means[-1, :],
-        color="gray",
-        label=f"blank",
-        linewidth=linewidth,
-    )
-    plt.fill_between(
-        bin_centers,
-        y1=all_ci[0, -1, :],
-        y2=all_ci[1, -1, :],
-        color="gray",
-        alpha=0.3,
-        edgecolor=None,
-        rasterized=False,
-    )
+        if show_ci:
+            plt.fill_between(
+                bin_centers,
+                y1=all_ci[0, idepth, :],
+                y2=all_ci[1, idepth, :],
+                color=linecolor,
+                alpha=0.3,
+                edgecolor=None,
+                rasterized=False,
+            )
 
     plt.xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
     plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
