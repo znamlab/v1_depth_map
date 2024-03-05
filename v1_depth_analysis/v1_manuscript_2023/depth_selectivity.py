@@ -24,7 +24,8 @@ def plot_raster_all_depths(
     trials_df,
     roi,
     is_closed_loop,
-    max_distance=6,
+    corridor_length=6,
+    blank_length=0,
     nbins=60,
     vmax=1,
     plot=True,
@@ -51,26 +52,40 @@ def plot_raster_all_depths(
     trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
 
     depth_list = find_depth_neurons.find_depth_list(trials_df)
-    grouped_trials = trials_df.groupby(by="depth")
+    grouped = trials_df.groupby(by="depth")
     trial_number = len(trials_df) // len(depth_list)
 
     # bin dff according to distance travelled for each trial
     dffs_binned = np.zeros((len(depth_list), trial_number, nbins))
+    min_distance = -blank_length
+    max_distance = corridor_length + blank_length
+    bins = np.linspace(
+        start=min_distance, stop=max_distance, num=nbins + 1, endpoint=True
+    )
     for idepth, depth in enumerate(depth_list):
-        all_dffs = grouped_trials.get_group(depth).dff_stim.values
-        all_pos = grouped_trials.get_group(depth).mouse_z_harp_stim.values
-        for itrial in np.arange(len(all_dffs)):
-            if itrial < trial_number:
-                dff = all_dffs[itrial][:, roi]
-                pos_arr = all_pos[itrial]
-                distance = pos_arr - pos_arr[0]
-                bin_means, _, _ = scipy.stats.binned_statistic(
-                    x=distance,
-                    values=dff,
-                    statistic="mean",
-                    bins=nbins,
+        for itrial in np.arange(trial_number):
+            dff = np.concatenate(
+                (
+                    grouped.get_group(depth).dff_blank_pre.values[itrial][:, roi],
+                    grouped.get_group(depth).dff_stim.values[itrial][:, roi],
+                    grouped.get_group(depth).dff_blank.values[itrial][:, roi],
                 )
-                dffs_binned[idepth, itrial, :] = bin_means
+            )
+            pos_arr = np.concatenate(
+                (
+                    grouped.get_group(depth).mouse_z_harp_blank_pre.values[itrial],
+                    grouped.get_group(depth).mouse_z_harp_stim.values[itrial],
+                    grouped.get_group(depth).mouse_z_harp_blank.values[itrial],
+                )
+            )
+            pos_arr -= grouped.get_group(depth).mouse_z_harp_stim.values[itrial][0]
+            bin_means, _, _ = scipy.stats.binned_statistic(
+                x=pos_arr,
+                values=dff,
+                statistic="mean",
+                bins=bins,
+            )
+            dffs_binned[idepth, itrial, :] = bin_means
 
     # colormap
     WhRdcmap = basic_vis_plots.generate_cmap(cmap_name="WhRd")
@@ -96,10 +111,7 @@ def plot_raster_all_depths(
                 vmin=0,
                 vmax=vmax,
                 interpolation="nearest",
-            )
-            plt.xticks(
-                np.linspace(0, nbins, 3),
-                (np.linspace(0, max_distance, 3) * 100).astype("int"),
+                extent=[min_distance, max_distance, 0, trial_number],
             )
             if idepth == 0:
                 ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"])
@@ -123,7 +135,9 @@ def plot_raster_all_depths(
                 )
                 ax.tick_params(axis="x", rotation=45)
             if idepth == len(depth_list) // 2:
-                ax.set_xlabel("Corridor position (cm)", fontsize=fontsize_dict["label"])
+                ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
+            ax.set_xticks([0, corridor_length])
+            ax.invert_yaxis()
 
         ax2 = plt.gcf().add_axes(
             [
@@ -327,29 +341,29 @@ def get_PSTH(
             )
 
     # Blank dff
-    all_dff = []
-    for itrial in np.arange(len(trials_df)):
-        dff = trials_df.dff_blank.values[itrial][:, roi]
-        rs = trials_df.RS_blank.values[itrial]
-        pos_arr = trials_df.mouse_z_harp_blank.values[itrial]
-        take_idx = apply_rs_threshold(
-            rs, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
-        )
-        dff = dff[take_idx]
-        distance = pos_arr[take_idx] - pos_arr[0]
-        # bin dff according to distance travelled
-        dff, _, _ = scipy.stats.binned_statistic(
-            x=distance,
-            values=dff,
-            statistic="mean",
-            bins=bins,
-        )
-        all_dff.append(dff)
-    all_means[-1, :] = np.nanmean(all_dff, axis=0)
-    if compute_ci:
-        all_ci[0, -1, :], all_ci[1, -1, :] = common_utils.get_bootstrap_ci(
-            np.array(all_dff).T, sig_level=1 - ci_range
-        )
+    # all_dff = []
+    # for itrial in np.arange(len(trials_df)):
+    #     dff = trials_df.dff_blank.values[itrial][:, roi]
+    #     rs = trials_df.RS_blank.values[itrial]
+    #     pos_arr = trials_df.mouse_z_harp_blank.values[itrial]
+    #     take_idx = apply_rs_threshold(
+    #         rs, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
+    #     )
+    #     dff = dff[take_idx]
+    #     distance = pos_arr[take_idx] - pos_arr[0]
+    #     # bin dff according to distance travelled
+    #     dff, _, _ = scipy.stats.binned_statistic(
+    #         x=distance,
+    #         values=dff,
+    #         statistic="mean",
+    #         bins=bins,
+    #     )
+    #     all_dff.append(dff)
+    # all_means[-1, :] = np.nanmean(all_dff, axis=0)
+    # if compute_ci:
+    #     all_ci[0, -1, :], all_ci[1, -1, :] = common_utils.get_bootstrap_ci(
+    #         np.array(all_dff).T, sig_level=1 - ci_range
+    #     )
 
     return all_means, all_ci, bin_centers
 
@@ -457,8 +471,8 @@ def plot_PSTH(
 
     if legend_on:
         plt.legend(
-            loc="upper left",
-            bbox_to_anchor=(0.1, 1.4),
+            loc="lower right",
+            bbox_to_anchor=(1.1, 0.2),
             fontsize=fontsize_dict["legend"],
             frameon=False,
             handlelength=1,
