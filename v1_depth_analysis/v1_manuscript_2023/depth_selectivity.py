@@ -26,7 +26,6 @@ def plot_raster_all_depths(
     is_closed_loop,
     max_distance=6,
     nbins=60,
-    frame_rate=15,
     vmax=1,
     plot=True,
     cbar_width=0.05,
@@ -59,12 +58,12 @@ def plot_raster_all_depths(
     dffs_binned = np.zeros((len(depth_list), trial_number, nbins))
     for idepth, depth in enumerate(depth_list):
         all_dffs = grouped_trials.get_group(depth).dff_stim.values
-        all_rs = grouped_trials.get_group(depth).RS_stim.values
+        all_pos = grouped_trials.get_group(depth).mouse_z_harp_stim.values
         for itrial in np.arange(len(all_dffs)):
             if itrial < trial_number:
                 dff = all_dffs[itrial][:, roi]
-                rs_arr = all_rs[itrial]
-                distance = np.cumsum(rs_arr / frame_rate)
+                pos_arr = all_pos[itrial]
+                distance = pos_arr - pos_arr[0]
                 bin_means, _, _ = scipy.stats.binned_statistic(
                     x=distance,
                     values=dff,
@@ -91,14 +90,19 @@ def plot_raster_all_depths(
                 ]
             )
             im = ax.imshow(
-                dffs_binned[idepth], aspect="auto", cmap=WhRdcmap, vmin=0, vmax=vmax
+                dffs_binned[idepth],
+                aspect="auto",
+                cmap=WhRdcmap,
+                vmin=0,
+                vmax=vmax,
+                interpolation="nearest",
             )
             plt.xticks(
                 np.linspace(0, nbins, 3),
                 (np.linspace(0, max_distance, 3) * 100).astype("int"),
             )
             if idepth == 0:
-                ax.set_ylabel("Trial no.", fontsize=fontsize_dict["label"])
+                ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"])
                 ax.tick_params(
                     left=True,
                     right=False,
@@ -428,7 +432,6 @@ def plot_PSTH(
             label=f"{int(depth_list[idepth] * 100)} cm",
             linewidth=linewidth,
         )
-
         plt.fill_between(
             bin_centers,
             y1=all_means[idepth, :] - all_ci[idepth, :],
@@ -459,8 +462,6 @@ def plot_PSTH(
     plt.xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
     plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
     plt.xticks(
-        # np.linspace(0, nbins, 3),
-        # (np.linspace(0, max_distance, 3) * 100).astype("int"),
         fontsize=fontsize_dict["tick"],
         rotation=45,
     )
@@ -937,14 +938,8 @@ def plot_example_fov(
             np.swapaxes(np.swapaxes(coef_ipsi, 0, 2), 0, 1),
             n_std=n_std,
         )
-        select_neurons = neurons_df[
-            (sig == 1)
-            & (neurons_df["iscell"] == 1)
-            #    &(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05)
-        ].roi.values
-        # null_neurons = neurons_df[~((neurons_df["iscell"]==1)
-        #                        &(neurons_df["depth_tuning_test_spearmanr_pval_closedloop"]>=0.05))&
-        #                          (neurons_df["iscell"]==1)].roi.values
+        select_neurons = neurons_df[(sig == 1) & (neurons_df["iscell"] == 1)].roi.values
+
         null_neurons = neurons_df[(sig == 0) & (neurons_df["iscell"] == 1)].roi.values
 
     for n in null_neurons:
