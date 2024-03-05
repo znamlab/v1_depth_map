@@ -259,10 +259,10 @@ def get_PSTH(
     max_distance=6,  # m
     nbins=20,
     frame_rate=15,
+    compute_ci=True,
 ):
     # confidence interval z calculation
     ci_range = 0.95
-    z = scipy.stats.norm.ppf(1 - ((1 - ci_range) / 2))
 
     # choose the trials with closed or open loop to visualize
     trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
@@ -298,9 +298,10 @@ def get_PSTH(
             )
             all_dff.append(dff)
         all_means[idepth, :] = np.nanmean(all_dff, axis=0)
-        all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
-            np.array(all_dff).T
-        )
+        if compute_ci:
+            all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
+                np.array(all_dff).T, sig_level=1 - ci_range
+            )
 
     # Blank dff
     all_dff = []
@@ -322,9 +323,10 @@ def get_PSTH(
         )
         all_dff.append(dff)
     all_means[-1, :] = np.nanmean(all_dff, axis=0)
-    all_ci[0, -1, :], all_ci[1, -1, :] = common_utils.get_bootstrap_ci(
-        np.array(all_dff).T
-    )
+    if compute_ci:
+        all_ci[0, -1, :], all_ci[1, -1, :] = common_utils.get_bootstrap_ci(
+            np.array(all_dff).T, sig_level=1 - ci_range
+        )
 
     return all_means, all_ci, bin_centers
 
@@ -565,6 +567,7 @@ def get_psth_crossval_all_sessions(
                     still_only=still_only,
                     still_time=still_time,
                     frame_rate=15,
+                    compute_ci=False,
                 )
                 results.at[roi, "psth_crossval"] = psth
 
