@@ -199,7 +199,7 @@ def plot_depth_tuning_curve(
         closed_loop=closed_loop,
         param=param,
     )[:, :, roi]
-    CI_low, CI_high = common_utils.get_confidence_interval(mean_dff_arr)
+    CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
 
     # Load gaussian fit params for this roi
@@ -272,114 +272,90 @@ def get_PSTH(
     trial_number = len(trials_df) // len(depth_list)
 
     # bin dff according to distance travelled for each trial
-    all_means = np.zeros(((len(depth_list) + 1), nbins))
-    all_ci = np.zeros(((len(depth_list) + 1), nbins))
+    all_means = np.zeros((len(depth_list) + 1, nbins))
+    all_ci = np.zeros((2, len(depth_list) + 1, nbins))
+    bins = np.linspace(start=0, stop=max_distance, num=nbins + 1, endpoint=True)
+    bin_centers = (bins[1:] + bins[:-1]) / 2
     for idepth, depth in enumerate(depth_list):
         all_dff = []
         all_distance = []
         for itrial in np.arange(trial_number):
             dff = grouped_trials.get_group(depth).dff_stim.values[itrial][:, roi]
             rs_arr = grouped_trials.get_group(depth).RS_stim.values[itrial]
-
-            # threshold running speed according to rs_thr
-            if not still_only:  # take running frames
-                if (rs_thr_min is None) and (rs_thr_max is None):  # take all frames
-                    take_idx = np.arange(len(rs_arr))
-                else:
-                    if rs_thr_max is None:  # take frames with running speed > rs_thr
-                        take_idx = rs_arr > rs_thr_min
-                    elif rs_thr_min is None:  # take frames with running speed < rs_thr
-                        take_idx = rs_arr < rs_thr_max
-                    else:  # take frames with running speed between rs_thr_min and rs_thr_max
-                        take_idx = (rs_arr > rs_thr_min) & (rs_arr < rs_thr_max)
-            else:  # take still frames
-                if rs_thr_max is None:  # use not running data but didn't set rs_thr
-                    print(
-                        "ERROR: calculating under not_running condition without rs_thr_max to determine max speed"
-                    )
-                else:  # take frames with running speed < rs_thr for x seconds
-                    take_idx = common_utils.find_thresh_sequence(
-                        array=rs_arr,
-                        threshold_max=rs_thr_max,
-                        length=int(still_time * frame_rate),
-                        shift=int(still_time * frame_rate),
-                    )
+            pos_arr = grouped_trials.get_group(depth).mouse_z_harp_stim.values[itrial]
+            take_idx = apply_rs_threshold(
+                rs_arr, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
+            )
 
             dff = dff[take_idx]
-            rs_arr = rs_arr[take_idx]
-            distance = np.cumsum(rs_arr / frame_rate)
+            distance = pos_arr[take_idx] - pos_arr[0]
+            # bin dff according to distance travelled
+            dff, _, _ = scipy.stats.binned_statistic(
+                x=distance,
+                values=dff,
+                statistic="mean",
+                bins=bins,
+            )
             all_dff.append(dff)
-            all_distance.append(distance)
-
-        all_dff = np.array([j for i in all_dff for j in i])
-        all_distance = np.array([j for i in all_distance for j in i])
-        bins = np.linspace(start=0, stop=max_distance, num=nbins + 1, endpoint=True)
-        bin_centers = (bins[1:] + bins[:-1]) / 2
-
-        # calculate speed tuning
-        bin_means, _, _ = scipy.stats.binned_statistic(
-            x=all_distance,
-            values=all_dff,
-            statistic="mean",
-            bins=nbins,
+        all_means[idepth, :] = np.nanmean(all_dff, axis=0)
+        all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
+            np.array(all_dff).T
         )
-
-        bin_stds, _, _ = scipy.stats.binned_statistic(
-            x=all_distance,
-            values=all_dff,
-            statistic="std",
-            bins=nbins,
-        )
-
-        bin_counts, _, _ = scipy.stats.binned_statistic(
-            x=all_distance,
-            values=all_dff,
-            statistic="count",
-            bins=nbins,
-        )
-
-        all_means[idepth, :] = bin_means
-
-        ci = z * bin_stds / np.sqrt(bin_counts)
-        ci[np.isnan(ci)] = 0
-        all_ci[idepth, :] = ci
 
     # Blank dff
-    dff = trials_df.dff_blank.values
-    rs = trials_df.RS_blank.values
-
-    all_dff = np.array([j for i in dff for j in i[:, roi]])
-    rs_arr = np.array([j for i in rs for j in i])
-    all_distance = np.cumsum(rs_arr / frame_rate)
-
-    # calculate speed tuning
-    bin_means, _, _ = scipy.stats.binned_statistic(
-        x=all_distance,
-        values=all_dff,
-        statistic="mean",
-        bins=nbins,
+    all_dff = []
+    for itrial in np.arange(len(trials_df)):
+        dff = trials_df.dff_blank.values[itrial][:, roi]
+        rs = trials_df.RS_blank.values[itrial]
+        pos_arr = trials_df.mouse_z_harp_blank.values[itrial]
+        take_idx = apply_rs_threshold(
+            rs, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
+        )
+        dff = dff[take_idx]
+        distance = pos_arr[take_idx] - pos_arr[0]
+        # bin dff according to distance travelled
+        dff, _, _ = scipy.stats.binned_statistic(
+            x=distance,
+            values=dff,
+            statistic="mean",
+            bins=bins,
+        )
+        all_dff.append(dff)
+    all_means[-1, :] = np.nanmean(all_dff, axis=0)
+    all_ci[0, -1, :], all_ci[1, -1, :] = common_utils.get_bootstrap_ci(
+        np.array(all_dff).T
     )
-
-    bin_stds, _, _ = scipy.stats.binned_statistic(
-        x=all_distance,
-        values=all_dff,
-        statistic="std",
-        bins=nbins,
-    )
-
-    bin_counts, _, _ = scipy.stats.binned_statistic(
-        x=all_distance,
-        values=all_dff,
-        statistic="count",
-        bins=nbins,
-    )
-
-    all_means[-1, :] = bin_means
-    ci = z * bin_stds / np.sqrt(bin_counts)
-    ci[np.isnan(ci)] = 0
-    all_ci[-1, :] = ci
 
     return all_means, all_ci, bin_centers
+
+
+def apply_rs_threshold(
+    rs_arr, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
+):
+    # threshold running speed according to rs_thr
+    if not still_only:  # take running frames
+        if (rs_thr_min is None) and (rs_thr_max is None):  # take all frames
+            take_idx = np.arange(len(rs_arr))
+        else:
+            if rs_thr_max is None:  # take frames with running speed > rs_thr
+                take_idx = rs_arr > rs_thr_min
+            elif rs_thr_min is None:  # take frames with running speed < rs_thr
+                take_idx = rs_arr < rs_thr_max
+            else:  # take frames with running speed between rs_thr_min and rs_thr_max
+                take_idx = (rs_arr > rs_thr_min) & (rs_arr < rs_thr_max)
+    else:  # take still frames
+        if rs_thr_max is None:  # use not running data but didn't set rs_thr
+            print(
+                "ERROR: calculating under not_running condition without rs_thr_max to determine max speed"
+            )
+        else:  # take frames with running speed < rs_thr for x seconds
+            take_idx = common_utils.find_thresh_sequence(
+                array=rs_arr,
+                threshold_max=rs_thr_max,
+                length=int(still_time * frame_rate),
+                shift=int(still_time * frame_rate),
+            )
+    return take_idx
 
 
 def plot_PSTH(
@@ -434,8 +410,8 @@ def plot_PSTH(
         )
         plt.fill_between(
             bin_centers,
-            y1=all_means[idepth, :] - all_ci[idepth, :],
-            y2=all_means[idepth, :] + all_ci[idepth, :],
+            y1=all_ci[0, idepth, :],
+            y2=all_ci[1, idepth, :],
             color=linecolor,
             alpha=0.3,
             edgecolor=None,
@@ -451,8 +427,8 @@ def plot_PSTH(
     )
     plt.fill_between(
         bin_centers,
-        y1=all_means[-1, :] - all_ci[-1, :],
-        y2=all_means[-1, :] + all_ci[-1, :],
+        y1=all_ci[0, -1, :],
+        y2=all_ci[1, -1, :],
         color="gray",
         alpha=0.3,
         edgecolor=None,
