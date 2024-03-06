@@ -93,7 +93,7 @@ def plot_raster_all_depths(
     # plot each depth as a heatmap
     if plot:
         plot_x, plot_y, plot_width, plot_height = position
-        plot_prop = 0.75
+        plot_prop = 0.9
         each_plot_width = (plot_width - cbar_width) / len(depth_list)
         for idepth, depth in enumerate(depth_list):
             ax = plt.gcf().add_axes(
@@ -123,7 +123,6 @@ def plot_raster_all_depths(
                     bottom=True,
                     labelsize=fontsize_dict["tick"],
                 )
-                ax.tick_params(axis="x", rotation=45)
             else:
                 ax.tick_params(
                     left=True,
@@ -133,10 +132,21 @@ def plot_raster_all_depths(
                     bottom=True,
                     labelsize=fontsize_dict["tick"],
                 )
-                ax.tick_params(axis="x", rotation=45)
+                # set length of y-ticks to 1
+                ax.tick_params(axis="y", length=1)
             if idepth == len(depth_list) // 2:
                 ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
             ax.set_xticks([0, corridor_length])
+            plt.plot([0, 0], [0, trial_number], "k--", linewidth=0.5)
+            plt.plot(
+                [corridor_length, corridor_length],
+                [0, trial_number],
+                "k--",
+                linewidth=0.5,
+            )
+            plt.title(
+                f"{int(depth_list[idepth] * 100)} cm", fontsize=fontsize_dict["title"]
+            )
             ax.invert_yaxis()
 
         ax2 = plt.gcf().add_axes(
@@ -147,7 +157,7 @@ def plot_raster_all_depths(
                 + 0.01,
                 plot_y,
                 cbar_width * 0.8,
-                plot_height,
+                plot_height / 3,
             ]
         )
         plt.colorbar(im, cax=ax2, label="\u0394F/F")
@@ -325,7 +335,6 @@ def get_PSTH(
             )
 
             dff = dff[take_idx]
-            distance = pos_arr[take_idx] - pos_arr[0]
             # bin dff according to distance travelled
             dff, _, _ = scipy.stats.binned_statistic(
                 x=pos_arr,
@@ -339,31 +348,6 @@ def get_PSTH(
             all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
                 np.array(all_dff).T, sig_level=1 - ci_range
             )
-
-    # Blank dff
-    # all_dff = []
-    # for itrial in np.arange(len(trials_df)):
-    #     dff = trials_df.dff_blank.values[itrial][:, roi]
-    #     rs = trials_df.RS_blank.values[itrial]
-    #     pos_arr = trials_df.mouse_z_harp_blank.values[itrial]
-    #     take_idx = apply_rs_threshold(
-    #         rs, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
-    #     )
-    #     dff = dff[take_idx]
-    #     distance = pos_arr[take_idx] - pos_arr[0]
-    #     # bin dff according to distance travelled
-    #     dff, _, _ = scipy.stats.binned_statistic(
-    #         x=distance,
-    #         values=dff,
-    #         statistic="mean",
-    #         bins=bins,
-    #     )
-    #     all_dff.append(dff)
-    # all_means[-1, :] = np.nanmean(all_dff, axis=0)
-    # if compute_ci:
-    #     all_ci[0, -1, :], all_ci[1, -1, :] = common_utils.get_bootstrap_ci(
-    #         np.array(all_dff).T, sig_level=1 - ci_range
-    #     )
 
     return all_means, all_ci, bin_centers
 
@@ -401,8 +385,8 @@ def plot_PSTH(
     trials_df,
     roi,
     is_closed_loop,
-    max_distance=6,
-    min_distance=0,
+    corridor_length=6,
+    blank_length=0,
     nbins=20,
     rs_thr_min=None,
     rs_thr_max=None,
@@ -424,6 +408,8 @@ def plot_PSTH(
         nbins (int, optional): number of bins to bin the activity. Defaults to 20.
         frame_rate (int, optional): imaging frame rate. Defaults to 15.
     """
+    max_distance = corridor_length + blank_length
+    min_distance = -blank_length
     all_means, all_ci, bin_centers = get_PSTH(
         trials_df=trials_df,
         roi=roi,
@@ -464,15 +450,25 @@ def plot_PSTH(
     plt.xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
     plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
     plt.xticks(
+        [0, corridor_length],
         fontsize=fontsize_dict["tick"],
         rotation=45,
     )
     plt.yticks(fontsize=fontsize_dict["tick"])
+    ylim = plt.gca().get_ylim()
+    plt.plot([0, 0], ylim, "k--", linewidth=0.5, label="_nolegend_")
+    plt.plot(
+        [corridor_length, corridor_length],
+        ylim,
+        "k--",
+        linewidth=0.5,
+        label="_nolegend_",
+    )
 
     if legend_on:
         plt.legend(
             loc="lower right",
-            bbox_to_anchor=(1.1, 0.2),
+            bbox_to_anchor=(1.2, 0.2),
             fontsize=fontsize_dict["legend"],
             frameon=False,
             handlelength=1,
@@ -494,6 +490,7 @@ def get_psth_crossval_all_sessions(
     still_only=False,
     still_time=1,
     verbose=1,
+    fs=15,
 ):
     for isess, session_name in enumerate(session_list):
         print(f"Calculating PSTH for {session_name}")
@@ -590,7 +587,7 @@ def get_psth_crossval_all_sessions(
                     rs_thr_max=rs_thr_max,
                     still_only=still_only,
                     still_time=still_time,
-                    frame_rate=15,
+                    frame_rate=fs,
                     compute_ci=False,
                 )
                 results.at[roi, "psth_crossval"] = psth
@@ -613,34 +610,75 @@ def get_psth_crossval_all_sessions(
 
 
 def plot_preferred_depth_hist(
-    fig,
     results_df,
     use_col="preferred_depth_crossval",
     nbins=50,
-    plot_x=0,
-    plot_y=0,
-    plot_width=1,
-    plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    results_df = results_df[results_df["iscell"] == 1]
-    depth_bins = np.geomspace(
-        np.nanmin(results_df[use_col]) * 100,
-        np.nanmax(results_df[use_col]) * 100,
+    results_df = results_df[results_df["iscell"] == 1].copy()
+    # convert to cm
+    results_df[use_col] = results_df[use_col].apply(lambda x: np.log(x * 100))
+    min_depth = np.nanmin(results_df[use_col])
+    max_depth = np.nanmax(results_df[use_col])
+    depth_bins = np.linspace(
+        min_depth,
+        max_depth,
         num=nbins,
     )
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    n, _, _ = ax.hist(
-        results_df[use_col] * 100,
+    # set rows where use_col = min or max to -inf and inf
+    results_df[use_col] = results_df[use_col].apply(
+        lambda x: -np.inf if x == min_depth else x
+    )
+    results_df[use_col] = results_df[use_col].apply(
+        lambda x: np.inf if x == max_depth else x
+    )
+
+    plt.hist(
+        results_df[use_col],
         bins=depth_bins,
         weights=np.ones(len(results_df)) / len(results_df),
         color="k",
     )
-    ax.set_xscale("log")
+    # plot proportion of rows with -inf and inf values as separate bars at min_depth/2 and max_depth*2
+    plt.bar(
+        min_depth - 1,
+        np.sum(results_df[use_col] == -np.inf) / len(results_df),
+        color="k",
+        width=(max_depth - min_depth) / nbins,
+    )
+    plt.bar(
+        max_depth + 1,
+        np.sum(results_df[use_col] == np.inf) / len(results_df),
+        color="k",
+        width=(max_depth - min_depth) / nbins,
+    )
+
+    ax = plt.gca()
     ax.set_ylabel("Proportion of neurons", fontsize=fontsize_dict["label"])
-    ax.set_xlabel("Preferred depth (cm)", fontsize=fontsize_dict["label"])
-    plt.xticks(fontsize=fontsize_dict["tick"])
-    yticks = plt.gca().get_yticks()
+    ax.set_xlabel("Preferred virtual depth (cm)", fontsize=fontsize_dict["label"])
+    tick_pos = [10, 100, 1000]
+    ax.set_xticks(
+        np.log(
+            np.concatenate(
+                (
+                    np.arange(2, 9, 1),
+                    np.arange(2, 9, 1) * 10,
+                    np.arange(2, 9, 1) * 100,
+                    [
+                        2000,
+                    ],
+                )
+            )
+        ),
+        minor=True,
+    )
+    plt.xticks(
+        np.concatenate([[min_depth - 1], np.log(tick_pos), [max_depth + 1]]),
+        labels=np.concatenate([["N.P."], tick_pos, ["F.P."]]),
+        fontsize=fontsize_dict["tick"],
+    )
+
+    yticks = ax.get_yticks()
     plt.yticks(yticks[0::2], fontsize=fontsize_dict["tick"])
     plotting_utils.despine()
 
@@ -700,15 +738,10 @@ def plot_psth_raster(
 
 
 def plot_depth_neuron_perc_hist(
-    fig,
     results_df,
     numerator_filter=None,
     denominator_filter=None,
     bins=50,
-    plot_x=0,
-    plot_y=0,
-    plot_width=1,
-    plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     if denominator_filter is None:
@@ -732,14 +765,22 @@ def plot_depth_neuron_perc_hist(
             .agg(["count"])["roi"]
             .values.flatten()
         )
-
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.hist(prop / neuron_sum, bins=bins, color="k")
+    plt.hist(prop / neuron_sum, bins=bins, color="k")
+    ax = plt.gca()
     xlim = ax.get_xlim()
     ax.set_xlim([0, xlim[1]])
     ax.set_xlabel("Proportion of depth-tuned neurons", fontsize=fontsize_dict["label"])
-    ax.set_ylabel("Session number", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("Number of sessions", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
+    # plot median proportion as a triangle along the top of the histogram
+    median_prop = np.median(prop / neuron_sum)
+    ax.plot(
+        median_prop,
+        ax.get_ylim()[1],
+        marker="v",
+        markersize=5,
+        color="k",
+    )
     plotting_utils.despine()
 
 
