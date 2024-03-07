@@ -29,20 +29,17 @@ from cottage_analysis.pipelines import pipeline_utils
 
 
 def plot_stimuli_frame(
-    fig,
     frames,
     iframe,
     idepth,
     ndepths,
-    plot_x=0,
-    plot_y=1,
-    plot_width=1,
-    plot_height=1,
+    position=(0, 0, 1, 1),
     plot_prop=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
+    plot_x, plot_y, plot_width, plot_height = position
     for i in range(ndepths):
-        ax = fig.add_axes(
+        ax = plt.gcf().add_axes(
             [
                 plot_x,
                 plot_y - plot_height / ndepths * i,
@@ -82,16 +79,12 @@ def plot_stimuli_frame(
 
 
 def plot_rf(
-    fig,
     neurons_df,
     roi,
     is_closed_loop=1,
     ndepths=8,
     frame_shape=(16, 24),
-    plot_x=0,
-    plot_y=1,
-    plot_width=1,
-    plot_height=1,
+    position=[0, 0, 1, 1],
     plot_prop=0.9,
     xlabel="Azimuth (deg)",
     ylabel="Elevation (deg)",
@@ -105,9 +98,9 @@ def plot_rf(
     coef = coef.reshape(coef.shape[0], ndepths, frame_shape[0], frame_shape[1])
     coef_mean = np.mean(coef, axis=0)
     coef_max = np.nanmax(coef_mean)
-
+    plot_x, plot_y, plot_width, plot_height = position
     for i in range(ndepths):
-        ax = fig.add_axes(
+        ax = plt.gcf().add_axes(
             [
                 plot_x,
                 plot_y - plot_height / ndepths * i,
