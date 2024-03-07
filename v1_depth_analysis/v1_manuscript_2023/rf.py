@@ -1,43 +1,26 @@
 import functools
 
-print = functools.partial(print, flush=True)
-
-import os
 import numpy as np
 import pandas as pd
-import matplotlib
-
-matplotlib.rcParams["pdf.fonttype"] = 42  # for pdfs
 import matplotlib.pyplot as plt
-from matplotlib import cm
-from pathlib import Path
-import pickle
-from tqdm import tqdm
 import scipy
-
 import flexiznam as flz
-from cottage_analysis.preprocessing import synchronisation
-from cottage_analysis.analysis import (
-    spheres,
-    find_depth_neurons,
-    common_utils,
-    fit_gaussian_blob,
-    size_control,
-)
-from cottage_analysis.plotting import basic_vis_plots, plotting_utils
+from cottage_analysis.analysis import spheres
+
+from cottage_analysis.plotting import plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 
 
-def plot_stimuli_frame(
-    frames,
-    iframe,
+def plot_stimulus_frame(
+    frame,
     idepth,
-    ndepths,
+    depths,
     position=(0, 0, 1, 1),
     plot_prop=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     plot_x, plot_y, plot_width, plot_height = position
+    ndepths = len(depths)
     for i in range(ndepths):
         ax = plt.gcf().add_axes(
             [
@@ -48,10 +31,10 @@ def plot_stimuli_frame(
             ]
         )
         if i == idepth:
-            this_frame = frames[iframe].astype(float)
-            this_frame[this_frame == 0] = 0.5
+            frame = frame.astype(float)
+            frame[frame == 0] = 0.5
             ax.imshow(
-                this_frame,
+                frame,
                 cmap="gray_r",
                 origin="lower",
                 extent=[0, 120, -40, 40],
@@ -61,7 +44,7 @@ def plot_stimuli_frame(
             )
         else:
             ax.imshow(
-                np.ones_like(frames[iframe]) * 0.5,
+                np.ones_like(frame) * 0.5,
                 cmap="gray_r",
                 origin="lower",
                 extent=[0, 120, -40, 40],
@@ -69,10 +52,19 @@ def plot_stimuli_frame(
                 vmax=1,
                 vmin=0,
             )
+        # add text indicating the depth
+        ax.text(
+            2,
+            frame.shape[1] * 0.9,
+            f"{depths[i] * 100} cm",
+            fontsize=fontsize_dict["tick"],
+            color="white",
+            fontdict={"weight": "bold"},
+        )
         if i == ndepths - 1:
-            ax.set_xlabel("Azimuth (deg)", fontsize=fontsize_dict["label"])
+            ax.set_xlabel("Azimuth (degrees)", fontsize=fontsize_dict["label"])
         elif i == ndepths // 2:
-            ax.set_ylabel("Elevation (deg)", fontsize=fontsize_dict["label"])
+            ax.set_ylabel("Elevation (degrees)", fontsize=fontsize_dict["label"])
         if i != ndepths - 1:
             ax.set_xticklabels([])
         ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
@@ -189,7 +181,6 @@ def find_rf_centers(
     ndepths=8,
     frame_shape=(16, 24),
     is_closed_loop=1,
-    jitter=False,
     resolution=5,
 ):
     if is_closed_loop:
@@ -212,15 +203,12 @@ def find_rf_centers(
     ]
     max_idx = np.array(max_idx)
 
-    def index_to_deg(idx, resolution=resolution, jitter=False, n_ele=80, n_azi=120):
-        azi = idx[:, 1] * resolution
-        ele = idx[:, 0] * resolution - n_ele / 2
-        if jitter:
-            azi = azi + np.random.normal(0, 1, size=azi.shape)
-            ele = ele + np.random.normal(0, 1, size=ele.shape)
+    def index_to_deg(idx, resolution=resolution, n_ele=80):
+        azi = (idx[:, 1] + 0.5) * resolution
+        ele = (idx[:, 0] + 0.5) * resolution - n_ele / 2
         return azi, ele
 
-    azi, ele = index_to_deg(max_idx, jitter=jitter)
+    azi, ele = index_to_deg(max_idx, n_ele=frame_shape[0])
     return azi, ele, coef
 
 
@@ -254,28 +242,24 @@ def plot_rf_centers(
             neurons_df=results_sess,
             is_closed_loop=is_closed_loop,
             ndepths=ndepths,
-            frame_shape=(16, 24),
-            jitter=True,
+            frame_shape=frame_shape,
             resolution=5,
         )
 
         coef_ipsi = np.stack(results_sess[f"rf_coef_ipsi{sfx}"].values)
-        coef_ipsi_ = (coef_ipsi[:, :, :-1]).reshape(
-            coef_ipsi.shape[0], coef.shape[1], ndepths, frame_shape[0], frame_shape[1]
-        )
-        coef_ipsi_mean = np.mean(np.mean(coef_ipsi_, axis=1), axis=1)
 
         # Find cells with significant RF
-        sig, sig_ipsi = spheres.find_sig_rfs(
+        sig, _ = spheres.find_sig_rfs(
             np.swapaxes(np.swapaxes(coef, 0, 2), 0, 1),
             np.swapaxes(np.swapaxes(coef_ipsi, 0, 2), 0, 1),
             n_std=n_stds,
         )
 
         # Plot
+        cell_idx = sig & (results_sess.iscell == 1)
         ax.scatter(
-            azi[sig & (results_sess.iscell == 1)],
-            ele[sig & (results_sess.iscell == 1)],
+            azi[cell_idx] + np.random.rand(np.sum(cell_idx)) * 4 - 2,
+            ele[cell_idx] + np.random.rand(np.sum(cell_idx)) * 4 - 2,
             c=colors[i],
             edgecolors="none",
             s=10,
@@ -283,8 +267,8 @@ def plot_rf_centers(
         )
         ax.set_aspect("equal", adjustable="box")
         plotting_utils.despine()
-        ax.set_xlabel("Azimuth (deg)", fontsize=fontsize_dict["label"])
-        ax.set_ylabel("Elevation (deg)", fontsize=fontsize_dict["label"])
+        ax.set_xlabel("Azimuth (degrees)", fontsize=fontsize_dict["label"])
+        ax.set_ylabel("Elevation (degrees)", fontsize=fontsize_dict["label"])
         ax.set_xlim([0, 120])
         ax.set_ylim([-40, 40])
         ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
@@ -313,6 +297,7 @@ def load_sig_rf(
     all_sig = []
     all_sig_ipsi = []
     isess = 0
+    neurons_df_all = []
     for session in session_list:
         # Load neurons_df
         neurons_ds = pipeline_utils.create_neurons_ds(
@@ -379,12 +364,7 @@ def load_sig_rf(
                 neurons_df["rf_azi"] = azi
                 neurons_df["rf_ele"] = ele
 
-                if isess == 0:
-                    neurons_df_all = neurons_df
-                else:
-                    neurons_df_all = pd.concat(
-                        [neurons_df_all, neurons_df], axis=0, ignore_index=True
-                    )
+                neurons_df_all.append(neurons_df)
                 if verbose:
                     print(f"SESSION {session} concatenated")
                 isess += 1
@@ -395,7 +375,7 @@ def load_sig_rf(
 
         else:
             print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
-
+    neurons_df_all = pd.concat(neurons_df_all, axis=0, ignore_index=True)
     return all_sig, all_sig_ipsi, neurons_df_all
 
 
