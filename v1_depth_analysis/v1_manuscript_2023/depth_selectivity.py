@@ -452,7 +452,6 @@ def plot_PSTH(
     plt.xticks(
         [0, corridor_length],
         fontsize=fontsize_dict["tick"],
-        rotation=45,
     )
     plt.yticks(fontsize=fontsize_dict["tick"])
     ylim = plt.gca().get_ylim()
@@ -490,23 +489,33 @@ def get_psth_crossval_all_sessions(
     still_only=False,
     still_time=1,
     verbose=1,
-    fs=15,
+    corridor_length=6,
+    blank_length=0,
+    overwrite=False,
 ):
+    results_all = []
     for isess, session_name in enumerate(session_list):
-        print(f"Calculating PSTH for {session_name}")
-
+        print(f"{isess}/{len(session_list)}: calculating PSTH for {session_name}")
+        neurons_ds = pipeline_utils.create_neurons_ds(
+            session_name=session_name,
+            flexilims_session=flexilims_session,
+            conflicts="skip",
+        )
+        psth_path = neurons_ds.path_full.parent / "psth_crossval.pkl"
+        if psth_path.exists() and not overwrite:
+            results_all.append(pd.read_pickle(psth_path))
+            continue
         # Load all data
         if ("PZAH6.4b" in session_name) or ("PZAG3.4f" in session_name):
             photodiode_protocol = 2
         else:
             photodiode_protocol = 5
-
-        neurons_ds = pipeline_utils.create_neurons_ds(
-            session_name=session_name,
+        suite2p_ds = flz.get_datasets_recursively(
             flexilims_session=flexilims_session,
-            project=None,
-            conflicts="skip",
+            origin_name=session_name,
+            dataset_type="suite2p_traces",
         )
+        fs = list(suite2p_ds.values())[0][-1].extra_attributes["fs"]
         neurons_df = pd.read_pickle(neurons_ds.path_full)
         if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
             if use_cols is None:
@@ -525,9 +534,7 @@ def get_psth_crossval_all_sessions(
                 return_volumes=True,
             )
             trials_df = trials_df[trials_df.closed_loop == closed_loop]
-
             neurons_df["session"] = session_name
-
             # Create dataframe to store results
             results = pd.DataFrame(
                 columns=[
@@ -581,7 +588,8 @@ def get_psth_crossval_all_sessions(
                     trials_df=trials_df_resp,
                     roi=roi,
                     is_closed_loop=closed_loop,
-                    max_distance=6,
+                    max_distance=corridor_length + blank_length,
+                    min_distance=-blank_length,
                     nbins=nbins,
                     rs_thr_min=rs_thr_min,
                     rs_thr_max=rs_thr_max,
@@ -592,20 +600,15 @@ def get_psth_crossval_all_sessions(
                 )
                 results.at[roi, "psth_crossval"] = psth
 
-            if isess == 0:
-                results_all = results.copy()
-            else:
-                results_all = pd.concat(
-                    [results_all, results], axis=0, ignore_index=True
-                )
-
+            results.to_pickle(psth_path)
+            results_all.append(results)
             if verbose:
                 print(f"Finished concat neurons_df from session {session_name}")
         else:
             print(
                 f"ERROR: SESSION {session_name}: specified cols not all in neurons_df"
             )
-
+    results_all = pd.concat(results_all, axis=0, ignore_index=True)
     return results_all
 
 
@@ -774,6 +777,15 @@ def plot_depth_neuron_perc_hist(
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
     # plot median proportion as a triangle along the top of the histogram
     median_prop = np.median(prop / neuron_sum)
+    print("Median proportion of depth-tuned neurons:", median_prop)
+    print(
+        "Range of proportion of depth-tuned neurons:",
+        np.min(prop / neuron_sum),
+        "to",
+        np.max(prop / neuron_sum),
+    )
+    print("Number of sessions:", len(prop))
+
     ax.plot(
         median_prop,
         ax.get_ylim()[1],
