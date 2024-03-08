@@ -56,7 +56,7 @@ def plot_stimulus_frame(
         ax.text(
             2,
             frame.shape[1] * 0.9,
-            f"{depths[i] * 100} cm",
+            f"{int(depths[i] * 100)} cm",
             fontsize=fontsize_dict["tick"],
             color="white",
             fontdict={"weight": "bold"},
@@ -67,7 +67,8 @@ def plot_stimulus_frame(
             ax.set_ylabel("Elevation (degrees)", fontsize=fontsize_dict["label"])
         if i != ndepths - 1:
             ax.set_xticklabels([])
-        ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
+        ax.set_xticks([0, 60, 120])
+        ax.tick_params(axis="both", labelsize=fontsize_dict["tick"], length=1.5)
 
 
 def plot_rf(
@@ -114,7 +115,8 @@ def plot_rf(
             ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
         if i == ndepths - 1:
             ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
-        ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
+        ax.tick_params(axis="both", labelsize=fontsize_dict["tick"], length=1.5)
+        ax.set_xticks([0, 60, 120])
 
 
 def get_rf_results(project, sessions, is_closed_loop=1):
@@ -205,7 +207,7 @@ def find_rf_centers(
 
     def index_to_deg(idx, resolution=resolution, n_ele=80):
         azi = (idx[:, 1] + 0.5) * resolution
-        ele = (idx[:, 0] + 0.5) * resolution - n_ele / 2
+        ele = (idx[:, 0] + 0.5 - n_ele / 2) * resolution
         return azi, ele
 
     azi, ele = index_to_deg(max_idx, n_ele=frame_shape[0])
@@ -358,7 +360,6 @@ def load_sig_rf(
                     ndepths=ndepths,
                     frame_shape=(16, 24),
                     is_closed_loop=1,
-                    jitter=False,
                     resolution=5,
                 )
                 neurons_df["rf_azi"] = azi
@@ -380,25 +381,19 @@ def load_sig_rf(
 
 
 def plot_sig_rf_perc(
-    fig,
     all_sig,
     all_sig_ipsi,
     plot_type="bar",
     bar_color="k",
-    hist_colors=["r", "k"],
+    hist_color="k",
     scatter_color="k",
     scatter_size=10,
     scatter_alpha=0.3,
-    nbins=10,
-    plot_x=0,
-    plot_y=1,
-    plot_width=1,
-    plot_height=1,
+    bins=10,
     fontsize_dict={"title": 15, "label": 10, "tick": 5},
 ):
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     if plot_type == "bar":
-        ax.bar(
+        plt.bar(
             x=[0, 1],
             height=[np.mean(all_sig), np.mean(all_sig_ipsi)],
             yerr=[scipy.stats.sem(all_sig), scipy.stats.sem(all_sig_ipsi)],
@@ -406,46 +401,52 @@ def plot_sig_rf_perc(
             color=bar_color,
             alpha=0.5,
         )
-        ax.scatter(
+        plt.scatter(
             x=np.zeros(len(all_sig)),
             y=all_sig,
             color=scatter_color,
             s=scatter_size,
             alpha=scatter_alpha,
         )
-        ax.scatter(
+        plt.scatter(
             x=np.ones(len(all_sig_ipsi)),
             y=all_sig_ipsi,
             color=scatter_color,
             s=scatter_size,
             alpha=scatter_alpha,
         )
-        ax.set_xticks([0, 1])
-        ax.set_xticklabels(
-            ["Contra-\nlateral", "Ipsi-\nlateral"], fontsize=fontsize_dict["label"]
+        plt.xticks(
+            [0, 1], ["Contralateral", "Ipsilateral"], fontsize=fontsize_dict["label"]
         )
-        ax.set_ylabel(
-            "Proportion of depth neurons \nwith significant receptive field",
+        plt.ylabel(
+            "Proportion of depth-tuned neurons \nwith significant RFs",
             fontsize=fontsize_dict["label"],
         )
-        ax.set_ylim([0, 1])
+        plt.ylim([0, 1])
     elif plot_type == "hist":
-        # bins = np.linspace(0,np.max(all_sig),(nbins+1))
-        ax.hist(
-            all_sig, bins=nbins, color=hist_colors[0], alpha=0.5, label="Contralateral"
-        )
-        ax.hist(
-            all_sig_ipsi,
-            bins=nbins,
-            color=hist_colors[1],
-            alpha=0.5,
-            label="Ipsilateral",
-        )
-        ax.set_xlabel(
-            "Proportion of depth neurons \nwith significant receptive field",
+        plt.hist(all_sig, bins=bins, color=hist_color)
+        plt.xlabel(
+            "Proportion of depth-tuned neurons \nwith significant RFs",
             fontsize=fontsize_dict["label"],
         )
-        ax.set_ylabel("Session number", fontsize=fontsize_dict["label"])
-        ax.legend(fontsize=fontsize_dict["tick"], frameon=False)
+        plt.ylabel("Number of sessions", fontsize=fontsize_dict["label"])
+        plt.xlim([0, 1])
+    # plot median proportion as a triangle along the top of the histogram
+    median_prop = np.median(all_sig)
+    print("Median proportion of depth-tuned neurons:", median_prop)
+    print(
+        "Range of proportion of depth-tuned neurons:",
+        np.min(all_sig),
+        "to",
+        np.max(all_sig),
+    )
+    print("Number of sessions:", len(all_sig))
+    plt.plot(
+        median_prop,
+        plt.ylim()[1],
+        marker="v",
+        markersize=5,
+        color="k",
+    )
     plotting_utils.despine()
-    ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"])
+    plt.tick_params(labelsize=fontsize_dict["tick"])

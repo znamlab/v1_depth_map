@@ -785,7 +785,6 @@ def plot_depth_neuron_perc_hist(
         np.max(prop / neuron_sum),
     )
     print("Number of sessions:", len(prop))
-
     ax.plot(
         median_prop,
         ax.get_ylim()[1],
@@ -927,7 +926,7 @@ def get_color(value, value_min, value_max, log=False, cmap=cm.cool.reversed()):
     else:
         norm = matplotlib.colors.Normalize(vmin=value_min, vmax=value_max)
         rgba_color = cmap(norm(value), bytes=True)
-    rgba_color = tuple(it / 255 for it in rgba_color)
+    rgba_color = np.array([it / 255 for it in rgba_color])
 
     return rgba_color
 
@@ -965,11 +964,9 @@ def plot_example_fov(
         null_neurons = neurons_df[(sig == 0) & (neurons_df["iscell"] == 1)].roi.values
 
     # Find neuronal masks and assign on the background image
-    im = np.zeros((ops["Ly"], ops["Lx"], 3))
-    im_back = np.swapaxes(
-        np.swapaxes(np.tile(ops["meanImg"], (3, 1, 1)), 0, 2), 0, 1
-    ) / np.max(ops["meanImg"])
-    im_back = np.multiply(im_back, background_color.reshape(1, -1))
+    im = (
+        np.ones((ops["Ly"], ops["Lx"], 3)) * background_color[np.newaxis, np.newaxis, :]
+    )
     azi, ele, _ = rf.find_rf_centers(
         neurons_df,
         ndepths=ndepths,
@@ -981,20 +978,10 @@ def plot_example_fov(
         ypix = stat[n]["ypix"][~stat[n]["overlap"]]
         xpix = stat[n]["xpix"][~stat[n]["overlap"]]
         if len(xpix) > 0 and len(ypix) > 0:
-            im[ypix, xpix, :] = np.tile(
-                (stat[n]["lam"][~stat[n]["overlap"]])
-                / np.max(stat[n]["lam"][~stat[n]["overlap"]])
-                * 0.3,
-                (3, 1),
-            ).T
+            im[ypix, xpix, :] = 0.3
     for n in select_neurons:
         ypix = stat[n]["ypix"][~stat[n]["overlap"]]
         xpix = stat[n]["xpix"][~stat[n]["overlap"]]
-        lam_mat = np.tile(
-            (stat[n]["lam"][~stat[n]["overlap"]])
-            / np.max(stat[n]["lam"][~stat[n]["overlap"]]),
-            (3, 1),
-        ).T
         if param == "preferred_depth":
             rgba_color = get_color(
                 neurons_df.at[n, "preferred_depth_closedloop"],
@@ -1019,17 +1006,13 @@ def plot_example_fov(
                 log=False,
                 cmap=cmap,
             )
-        im[ypix, xpix, :] = (
-            (np.asarray(rgba_color)[:-1].reshape(-1, 1))
-            @ (lam_mat[:, 0].reshape(1, -1))
-        ).T
+        im[ypix, xpix, :] = rgba_color[np.newaxis, :3]
 
     # Plot spatial distribution
-    plt.imshow(np.flip(im[20:, 20:, :], axis=1), alpha=1)
+    plt.imshow(np.flip(im, axis=1), interpolation="nearest")
     plt.axis("off")
-
     # Add a colorbar for the dummy plot with the new colormap
-    cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap))
+    cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap), ax=plt.gca())
     cbar.set_ticks(np.linspace(0, 1, 3))
     if param == "preferred_depth":
         cbar.set_ticklabels((np.geomspace(0.02, 20, 3) * 100).astype("int"))
@@ -1042,24 +1025,18 @@ def plot_example_fov(
             np.linspace(np.percentile(ele, 10), np.percentile(ele, 90), 3).astype("int")
         )
     cbar.ax.tick_params(labelsize=fontsize_dict["legend"])
-
+    cbar_pos = np.array(plt.gca().get_position().bounds)
+    cbar_pos[0] = cbar_pos[0] + cbar_pos[2] + 0.005
+    cbar_pos[2] = 0.15
+    cbar_pos[3] = cbar_pos[3] * 0.3
+    cbar.ax.set_position(cbar_pos)
+    cbar.ax.tick_params(axis="y", length=1.5)
     # Add scalebar
     scalebar_length_px = im.shape[0] / 572.867 * 100  # Scale bar length in pixels
-    scalebar_physical_length = "100 µm"  # Physical length represented by the scale bar
-    scalebar_x = 10
-    scalebar_y = im.shape[0] * 0.95
-    rect = plt.Rectangle((scalebar_x, scalebar_y), scalebar_length_px, 1, color="white")
-    plt.gca().add_patch(rect)
-    # Annotate the scale bar with its physical size
-    plt.text(
-        scalebar_x + scalebar_length_px / 2,
-        scalebar_y - 7,
-        scalebar_physical_length,
-        color="white",
-        ha="center",
-        va="bottom",
-        fontsize=fontsize_dict["legend"],
+    rect = plt.Rectangle(
+        (40, im.shape[0] * 0.93), scalebar_length_px, 20, color="white"
     )
+    plt.gca().add_patch(rect)
     if param == "preferred_azimuth":
         print(f"{param} min {azi.min()}, max {azi.max()}")
     elif param == "preferred_elevation":
