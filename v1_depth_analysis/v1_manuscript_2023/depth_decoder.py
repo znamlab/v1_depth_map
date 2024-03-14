@@ -18,6 +18,7 @@ import itertools
 import flexiznam as flz
 from cottage_analysis.pipelines import pipeline_utils
 from cottage_analysis.plotting import plotting_utils, depth_decoder_plots
+from cottage_analysis.analysis import common_utils
 
 
 def concatenate_all_decoder_results(
@@ -111,7 +112,12 @@ def dot_plot(
     group4=None,
     markersize=5,
     colors=["b", "g"],
+    errorbar=False,
+    errorbar_colors=["r","r"],
     linewidth=4,
+    ylim=[0, 1],
+    xlabel=["Closed loop", "Open loop"],
+    ylabel="Classification accuracy",
     plot_x=0,
     plot_y=1,
     plot_width=1,
@@ -128,7 +134,14 @@ def dot_plot(
         markersize=markersize,
         linewidth=linewidth,
     )
-    ax.axhline(y=baselines[0], color=colors[0], linestyle="dotted", linewidth=linewidth)
+    if errorbar:
+        for group, x in zip([group1, group2],[0.3,0.7]):
+            group_mean = np.mean(group)
+            group_ci = common_utils.get_bootstrap_ci(group, sig_level=0.05, n_bootstraps=1000, func=np.nanmean)
+            ax.errorbar(x, group_mean, yerr=(group_ci[1]-group_mean), fmt='o', color=errorbar_colors[0], markersize=markersize, linewidth=linewidth)
+    
+    if len(baselines) > 0:
+        ax.axhline(y=baselines[0], color=colors[0], linestyle="dotted", linewidth=linewidth)
     t_statistic, p_value = ttest_rel(group1, group2)
     print(f"t-test for {labels[0]}: {p_value}")
     if group3 is not None:
@@ -141,21 +154,28 @@ def dot_plot(
             markersize=markersize,
             linewidth=linewidth,
         )
-        ax.axhline(
-            y=baselines[1], color=colors[1], linestyle="dotted", linewidth=linewidth
-        )
+        if len(baselines) > 0:
+            ax.axhline(
+                y=baselines[1], color=colors[1], linestyle="dotted", linewidth=linewidth
+            )
         t_statistic, p_value = ttest_rel(group3, group4)
         print(f"t-test for {labels[1]}: {p_value}")
+        
+        if errorbar:
+            for group, x in zip([group3, group4],[0.3,0.7]):
+                group_mean = np.mean(group)
+                group_ci = common_utils.get_bootstrap_ci(group, sig_level=0.05, n_bootstraps=1000, func=np.nanmean)
+                ax.errorbar(x, group_mean, yerr=(group_ci[1]-group_mean), fmt='o', color=errorbar_colors[0], markersize=markersize, linewidth=linewidth)
     ax.spines["right"].set_visible(False)
     ax.spines["top"].set_visible(False)
     plt.xticks([0.3, 0.7], fontsize=fontsize_dict["tick"])
     plt.yticks(fontsize=fontsize_dict["tick"])
     plt.xlim([0.1, 0.9])
-    plt.ylim([0, 1])
+    plt.ylim(ylim)
     ax.set_xticklabels(
-        ["Closed \nloop", "Open \nloop"], fontsize=fontsize_dict["label"]
+        xlabel, fontsize=fontsize_dict["label"]
     )
-    plt.ylabel("Classification accuracy", fontsize=fontsize_dict["label"])
+    plt.ylabel(ylabel, fontsize=fontsize_dict["label"])
     # ax.legend(fontsize=fontsize_dict['legend'])
 
 
@@ -217,3 +237,33 @@ def plot_closed_open_conmat(
     )
     plot_confusion_matrix(conmat_open, ax, vmax, fontsize_dict)
     ax.set_title("Open loop", fontsize=fontsize_dict["title"])
+
+
+def make_error_weight_matrix(size):
+    # predict depth - true depth
+    matrix = np.zeros((size, size))  # Initialize a size x size matrix of zeros
+    for i in range(size):
+        for j in range(size):
+            if i < j:
+                matrix[i, j] = 1  # Set upper half to 1, as predicted depth class is larger than true depth class
+            elif i > j:
+                matrix[i, j] = -1   # Set lower half to -1, as predicted depth class is smaller than true depth class
+    return matrix
+
+
+def calculate_error(conmat):
+    # calculate average squared error of log(depth)
+    if conmat.shape[0] == 5:
+        depth_list = np.geomspace(6,600,5)
+    elif conmat.shape[0] == 8:
+        depth_list = np.geomspace(5,640,8)
+    log_distance = np.log(depth_list[1]) - np.log(depth_list[0])
+    error_weight_matrix = make_error_weight_matrix(conmat.shape[0])
+    error = np.sum(np.square(np.multiply(conmat,error_weight_matrix) * log_distance)) / np.sum(conmat)
+    return error
+
+
+def calculate_error_all_sessions(results):
+    results["error_closedloop"] = results["conmat_closedloop"].apply(calculate_error)
+    results["error_openloop"] = results["conmat_openloop"].apply(calculate_error)
+    return results
