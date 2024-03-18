@@ -317,7 +317,11 @@ def load_sig_rf(
             project=None,
             conflicts="skip",
         )
-        neurons_df = pd.read_pickle(neurons_ds.path_full)
+        try:
+            neurons_df = pd.read_pickle(neurons_ds.path_full)
+        except FileNotFoundError:
+            print(f"ERROR: SESSION {session}: neurons_df not found")
+            continue
 
         if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
             if use_cols is None:

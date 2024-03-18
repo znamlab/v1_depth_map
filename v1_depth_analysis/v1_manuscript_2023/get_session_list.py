@@ -1,29 +1,58 @@
 import flexiznam as flz
 
 
-def get_sessions(project, mouse_list, exclude_sessions=[]):
+def get_sessions(
+    flexilims_session, exclude_sessions=(), closedloop_only=True, openloop_only=False
+):
+    """ """
+    assert not (
+        closedloop_only and openloop_only
+    ), "Both closedloop_only and openloop_only cannot be True"
     session_list = []
-    flexilims_session = flz.get_flexilims_session(project)
-    for mouse in mouse_list:
+    mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
+    for mouse in mouse_list["name"].values:
         sessions_mouse = flz.get_children(
             parent_name=mouse,
             children_datatype="session",
             flexilims_session=flexilims_session,
-        ).name.values.tolist()
-        session_list.append(sessions_mouse)
-
+        )
+        # exclude any sessions which have an "exclude_reason" on flexilims
+        if "exclude_reason" in sessions_mouse.columns:
+            sessions_mouse = sessions_mouse[
+                (sessions_mouse["exclude_reason"].isna())
+                | (sessions_mouse["exclude_reason"].str.isspace())
+            ]
+        if len(sessions_mouse) > 0:
+            session_list.append(sessions_mouse.name.values.tolist())
     # exclude any sessions from exclude_sessions
     session_list = [session for i in session_list for session in i]
     session_list = [
         session for session in session_list if session not in exclude_sessions
     ]
-
-    return session_list
+    keep_sessions = []
+    # filter based on closedloop_only and openloop_only
+    for session in session_list:
+        recs = flz.get_children(
+            parent_name=session,
+            children_datatype="recording",
+            flexilims_session=flexilims_session,
+        )
+        closed_loop = len(recs[recs["protocol"] == "SpheresPermTubeReward"]) > 0
+        open_loop = len(recs[recs["protocol"] == "SpheresPermTubeRewardPlayback"]) > 0
+        if (
+            (closedloop_only and open_loop and closed_loop)
+            or (openloop_only and closed_loop and open_loop)
+            or (
+                (not closedloop_only and not openloop_only)
+                and (closed_loop or open_loop)
+            )
+        ):
+            keep_sessions.append(session)
+    return keep_sessions
 
 
 def get_all_sessions(project, mouse_list, closedloop_only=True, openloop_only=False):
     session_list = []
-
     # Exclude non-V1 sessions
     exclude_sessions = [
         "PZAH6.4b_S20220428",
