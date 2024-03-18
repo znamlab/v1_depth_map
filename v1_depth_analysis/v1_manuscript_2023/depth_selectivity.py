@@ -936,22 +936,30 @@ def plot_example_fov(
     stat,
     ops,
     ndepths=8,
-    param="preferred_depth",
+    col="preferred_depth",
     cmap=cm.cool.reversed(),
     background_color=np.array([0.133, 0.545, 0.133]),
     n_std=6,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    fov_width=572.867,
 ):
-
-    if param == "preferred_depth":
+    rf.find_rf_centers(
+        neurons_df,
+        ndepths=ndepths,
+        frame_shape=(16, 24),
+        is_closed_loop=1,
+        resolution=5,
+    )
+    find_roi_centers(neurons_df, stat)
+    if col == "preferred_depth":
         select_neurons = neurons_df[
             (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
             & (neurons_df["iscell"] == 1)
-        ].roi.values
+        ]
         null_neurons = neurons_df[
             (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] >= 0.05)
             & (neurons_df["iscell"] == 1)
-        ].roi.values
+        ]
     else:
         coef = np.stack(neurons_df[f"rf_coef_closedloop"].values)
         coef_ipsi = np.stack(neurons_df[f"rf_coef_ipsi_closedloop"].values)
@@ -960,86 +968,122 @@ def plot_example_fov(
             np.swapaxes(np.swapaxes(coef_ipsi, 0, 2), 0, 1),
             n_std=n_std,
         )
-        select_neurons = neurons_df[(sig == 1) & (neurons_df["iscell"] == 1)].roi.values
-        null_neurons = neurons_df[(sig == 0) & (neurons_df["iscell"] == 1)].roi.values
-
+        select_neurons = neurons_df[(sig == 1) & (neurons_df["iscell"] == 1)]
+        null_neurons = neurons_df[(sig == 0) & (neurons_df["iscell"] == 1)]
     # Find neuronal masks and assign on the background image
     im = (
         np.ones((ops["Ly"], ops["Lx"], 3)) * background_color[np.newaxis, np.newaxis, :]
     )
-    azi, ele, _ = rf.find_rf_centers(
-        neurons_df,
-        ndepths=ndepths,
-        frame_shape=(16, 24),
-        is_closed_loop=1,
-        resolution=5,
-    )
-    for n in null_neurons:
-        ypix = stat[n]["ypix"][~stat[n]["overlap"]]
-        xpix = stat[n]["xpix"][~stat[n]["overlap"]]
+    azi_min = select_neurons["rf_azi"].quantile(0.1)
+    azi_max = select_neurons["rf_azi"].quantile(0.9)
+    ele_min = select_neurons["rf_ele"].quantile(0.1)
+    ele_max = select_neurons["rf_ele"].quantile(0.9)
+    for i, n in null_neurons.iterrows():
+        ypix = stat[n.roi]["ypix"][~stat[n.roi]["overlap"]]
+        xpix = stat[n.roi]["xpix"][~stat[n.roi]["overlap"]]
         if len(xpix) > 0 and len(ypix) > 0:
             im[ypix, xpix, :] = 0.3
-    for n in select_neurons:
-        ypix = stat[n]["ypix"][~stat[n]["overlap"]]
-        xpix = stat[n]["xpix"][~stat[n]["overlap"]]
-        if param == "preferred_depth":
+    for _, n in select_neurons.iterrows():
+        ypix = stat[n.roi]["ypix"][~stat[n.roi]["overlap"]]
+        xpix = stat[n.roi]["xpix"][~stat[n.roi]["overlap"]]
+        if col == "preferred_depth_closedloop":
             rgba_color = get_color(
-                neurons_df.at[n, "preferred_depth_closedloop"],
+                n[col],
                 0.02,
                 20,
                 log=True,
                 cmap=cmap,
             )
-        elif param == "preferred_azimuth":
+        elif col == "rf_azi":
             rgba_color = get_color(
-                azi[n],
-                np.percentile(azi, 10),
-                np.percentile(azi, 90),
+                n[col],
+                azi_min,
+                azi_max,
                 log=False,
                 cmap=cmap,
             )
-        elif param == "preferred_elevation":
+        elif col == "rf_ele":
             rgba_color = get_color(
-                ele[n],
-                np.percentile(ele, 10),
-                np.percentile(ele, 90),
+                n[col],
+                ele_min,
+                ele_max,
                 log=False,
                 cmap=cmap,
             )
         im[ypix, xpix, :] = rgba_color[np.newaxis, :3]
-
     # Plot spatial distribution
-    plt.imshow(np.flip(im, axis=1), interpolation="nearest")
+    plt.imshow(im)
+    if col != "preferred_depth_closedloop":
+        # find the gradient of col w.r.t. center_x and center_y
+        slope_x = scipy.stats.linregress(
+            x=select_neurons["center_x"], y=select_neurons[col]
+        ).slope
+        slope_y = scipy.stats.linregress(
+            x=select_neurons["center_y"], y=select_neurons[col]
+        ).slope
+        norm = np.linalg.norm(np.array([slope_x, slope_y]))
+        slope_x /= norm
+        slope_y /= norm
+        arrow_length = 100
+        # draw an arrow in the direction of the gradient
+        plt.arrow(
+            x=im.shape[1] / 2 - slope_x * arrow_length / 2,
+            y=im.shape[0] / 2 - slope_y * arrow_length / 2,
+            dx=slope_x * arrow_length,
+            dy=slope_y * arrow_length,
+            color="white",
+            width=2,
+            head_width=10,
+        )
+        print(f"{col}: slope x {slope_x}, slope y {slope_y}")
     plt.axis("off")
     # Add a colorbar for the dummy plot with the new colormap
     cbar = plt.colorbar(cm.ScalarMappable(cmap=cmap), ax=plt.gca())
     cbar.set_ticks(np.linspace(0, 1, 3))
-    if param == "preferred_depth":
+    if col == "preferred_depth_closedloop":
         cbar.set_ticklabels((np.geomspace(0.02, 20, 3) * 100).astype("int"))
-    elif param == "preferred_azimuth":
-        cbar.set_ticklabels(
-            np.linspace(np.percentile(azi, 10), np.percentile(azi, 90), 3).astype("int")
-        )
-    elif param == "preferred_elevation":
-        cbar.set_ticklabels(
-            np.linspace(np.percentile(ele, 10), np.percentile(ele, 90), 3).astype("int")
-        )
+    elif col == "rf_azi":
+        cbar.set_ticklabels(np.linspace(azi_min, azi_max, 3).astype("int"))
+    elif col == "rf_ele":
+        cbar.set_ticklabels(np.linspace(ele_min, ele_max, 3).astype("int"))
     cbar.ax.tick_params(labelsize=fontsize_dict["legend"])
+    cbar_pos = np.array(plt.gca().get_position().bounds)
+    cbar_pos[0] = cbar_pos[0] + cbar_pos[2] + 0.005
+    cbar_pos[2] = 0.25
+    cbar_pos[3] = cbar_pos[3] * 0.3
+    cbar.ax.set_position(cbar_pos)
+    cbar.ax.tick_params(axis="y", length=1.5)
+    # Add scalebar
+    scalebar_length_px = im.shape[0] / fov_width * 100  # Scale bar length in pixels
+    rect = plt.Rectangle(
+        (40, im.shape[0] * 0.93), scalebar_length_px, 20, color="white"
+    )
+    plt.gca().invert_xaxis()
+    plt.gca().add_patch(rect)
+
+
+def find_roi_centers(neurons_df, stat):
+    for roi in neurons_df.roi:
+        ypix = stat[roi]["ypix"][~stat[roi]["overlap"]]
+        xpix = stat[roi]["xpix"][~stat[roi]["overlap"]]
+        neurons_df.at[roi, "center_x"] = np.mean(xpix)
+        neurons_df.at[roi, "center_y"] = np.mean(ypix)
+
+
+def plot_fov_mean_img(im, vmax=700, fov_width=572.867):
+    plt.imshow(np.flip(im, axis=1), vmax=vmax, cmap="gray")
+    plt.axis("off")
+    cbar = plt.colorbar()
     cbar_pos = np.array(plt.gca().get_position().bounds)
     cbar_pos[0] = cbar_pos[0] + cbar_pos[2] + 0.005
     cbar_pos[2] = 0.15
     cbar_pos[3] = cbar_pos[3] * 0.3
     cbar.ax.set_position(cbar_pos)
     cbar.ax.tick_params(axis="y", length=1.5)
+    cbar.remove()
     # Add scalebar
-    scalebar_length_px = im.shape[0] / 572.867 * 100  # Scale bar length in pixels
+    scalebar_length_px = im.shape[0] / fov_width * 100  # Scale bar length in pixels
     rect = plt.Rectangle(
         (40, im.shape[0] * 0.93), scalebar_length_px, 20, color="white"
     )
     plt.gca().add_patch(rect)
-    if param == "preferred_azimuth":
-        print(f"{param} min {azi.min()}, max {azi.max()}")
-    elif param == "preferred_elevation":
-        print(f"{param} min {ele.min()}, max {ele.max()}")
-
-    return azi, ele

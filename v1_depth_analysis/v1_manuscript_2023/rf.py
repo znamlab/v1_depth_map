@@ -211,6 +211,8 @@ def find_rf_centers(
         return azi, ele
 
     azi, ele = index_to_deg(max_idx, n_ele=frame_shape[0])
+    neurons_df["rf_azi"] = azi
+    neurons_df["rf_ele"] = ele
     return azi, ele, coef
 
 
@@ -292,6 +294,13 @@ def load_sig_rf(
         "rf_coef_ipsi_closedloop",
         "rf_rsq_closedloop",
         "rf_rsq_ipsi_closedloop",
+        "preferred_RS_closedloop_g2d",
+        "preferred_RS_closedloop_crossval_g2d",
+        "preferred_OF_closedloop_g2d",
+        "preferred_OF_closedloop_crossval_g2d",
+        "rsof_test_rsq_closedloop_g2d",
+        "rsof_rsq_closedloop_g2d",
+        "rsof_popt_closedloop_g2d",
     ],
     n_std=5,
     verbose=1,
@@ -419,14 +428,14 @@ def plot_sig_rf_perc(
             [0, 1], ["Contralateral", "Ipsilateral"], fontsize=fontsize_dict["label"]
         )
         plt.ylabel(
-            "Proportion of depth-tuned neurons \nwith significant RFs",
+            "Proportion of neurons \nwith significant RFs",
             fontsize=fontsize_dict["label"],
         )
         plt.ylim([0, 1])
     elif plot_type == "hist":
         plt.hist(all_sig, bins=bins, color=hist_color)
         plt.xlabel(
-            "Proportion of depth-tuned neurons \nwith significant RFs",
+            "Proportion of neurons \nwith significant RFs",
             fontsize=fontsize_dict["label"],
         )
         plt.ylabel("Number of sessions", fontsize=fontsize_dict["label"])
