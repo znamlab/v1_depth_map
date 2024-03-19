@@ -32,38 +32,41 @@ def concatenate_all_neurons_df(
             project=None,
             conflicts="skip",
         )
-        neurons_df = pd.read_pickle(neurons_ds.path_full.parent / filename)
-        if (cols is None) or (set(cols).issubset(neurons_df.columns.tolist())):
-            if cols is None:
-                neurons_df = neurons_df
-            else:
-                neurons_df = neurons_df[cols]
-            suite2p_ds = flz.get_datasets(
-                flexilims_session=flexilims_session,
-                origin_name=session,
-                dataset_type="suite2p_rois",
-                filter_datasets={"anatomical_only": 3},
-                allow_multiple=False,
-                return_dataseries=False,
-            )
-            if read_iscell:
-                iscell = np.load(
-                    suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
-                )[:, 0]
-                neurons_df["iscell"] = iscell
-
-            neurons_df["session"] = session
-            if isess == 0:
-                neurons_df_all = neurons_df
-            else:
-                neurons_df_all = pd.concat(
-                    [neurons_df_all, neurons_df], ignore_index=True
+        if os.path.exists(neurons_ds.path_full.parent / filename):
+            neurons_df = pd.read_pickle(neurons_ds.path_full.parent / filename)
+            if (cols is None) or (set(cols).issubset(neurons_df.columns.tolist())):
+                if cols is None:
+                    neurons_df = neurons_df
+                else:
+                    neurons_df = neurons_df[cols]
+                suite2p_ds = flz.get_datasets(
+                    flexilims_session=flexilims_session,
+                    origin_name=session,
+                    dataset_type="suite2p_rois",
+                    filter_datasets={"anatomical_only": 3},
+                    allow_multiple=False,
+                    return_dataseries=False,
                 )
+                if read_iscell:
+                    iscell = np.load(
+                        suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
+                    )[:, 0]
+                    neurons_df["iscell"] = iscell
 
-            if verbose:
-                print(f"Finished concat neurons_df from session {session}")
-            isess += 1
+                neurons_df["session"] = session
+                if isess == 0:
+                    neurons_df_all = neurons_df
+                else:
+                    neurons_df_all = pd.concat(
+                        [neurons_df_all, neurons_df], ignore_index=True
+                    )
+
+                if verbose:
+                    print(f"Finished concat neurons_df from session {session}")
+                isess += 1
+            else:
+                print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
         else:
-            print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
+            print(f"ERROR: SESSION {session}: {filename} not found")
 
     return neurons_df_all
