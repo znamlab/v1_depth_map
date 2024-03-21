@@ -2,9 +2,25 @@ import flexiznam as flz
 
 
 def get_sessions(
-    flexilims_session, exclude_sessions=(), closedloop_only=True, openloop_only=False
+    flexilims_session,
+    exclude_sessions=(),
+    closedloop_only=True,
+    openloop_only=False,
+    v1_only=True,
 ):
-    """ """
+    """
+    Get a list of sessions to include.
+
+    Args:
+        flexilims_session (str): flexilims session
+        exclude_sessions (list): list of sessions to exclude manually
+        closedloop_only (bool): only include closedloop sessions
+        openloop_only (bool): only include openloop sessions
+
+    Returns:
+        list: list of sessions to include
+
+    """
     assert not (
         closedloop_only and openloop_only
     ), "Both closedloop_only and openloop_only cannot be True"
@@ -18,10 +34,17 @@ def get_sessions(
         )
         # exclude any sessions which have an "exclude_reason" on flexilims
         if "exclude_reason" in sessions_mouse.columns:
-            sessions_mouse = sessions_mouse[
-                (sessions_mouse["exclude_reason"].isna())
-                | (sessions_mouse["exclude_reason"].str.isspace())
-            ]
+            if not v1_only:
+                sessions_mouse = sessions_mouse[
+                    (sessions_mouse["exclude_reason"].isna())
+                    | (sessions_mouse["exclude_reason"].str.isspace())
+                    | (sessions_mouse["exclude_reason"] == "not V1")
+                ]
+            else:
+                sessions_mouse = sessions_mouse[
+                    (sessions_mouse["exclude_reason"].isna())
+                    | (sessions_mouse["exclude_reason"].str.isspace())
+                ]
         if len(sessions_mouse) > 0:
             session_list.append(sessions_mouse.name.values.tolist())
     # exclude any sessions from exclude_sessions
