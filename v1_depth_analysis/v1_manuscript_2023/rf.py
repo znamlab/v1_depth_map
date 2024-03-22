@@ -6,9 +6,7 @@ import flexiznam as flz
 from cottage_analysis.analysis import spheres
 from cottage_analysis.plotting import plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
-import v1_depth_analysis as v1da
-from roifile import ImagejRoi
-from tifffile import TiffFile
+from v1_depth_analysis.v1_manuscript_2023.roi_location import determine_roi_locations
 
 
 def plot_stimulus_frame(
@@ -278,23 +276,6 @@ def plot_rf_centers(
         ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
 
 
-def get_si_metadata(flexilims_session, session):
-    recording = flz.get_children(
-        parent_name=session,
-        flexilims_session=flexilims_session,
-        children_datatype="recording",
-    ).iloc[0]
-    dataset = flz.get_children(
-        parent_name=recording["name"],
-        flexilims_session=flexilims_session,
-        children_datatype="dataset",
-        filter={"dataset_type": "scanimage"},
-    ).iloc[0]
-    data_root = flz.get_data_root("raw", flexilims_session=flexilims_session)
-    tif_path = data_root / recording["path"] / sorted(dataset["tif_files"])[0]
-    return TiffFile(tif_path).scanimage_metadata
-
-
 def load_sig_rf(
     flexilims_session,
     session_list,
@@ -371,28 +352,7 @@ def load_sig_rf(
             )[:, 0]
             neurons_df["iscell"] = iscell
             neurons_df["session"] = session
-            stat = np.load(
-                suite2p_ds.path_full / "plane0" / "stat.npy", allow_pickle=True
-            )
-            ops = np.load(
-                suite2p_ds.path_full / "plane0" / "ops.npy", allow_pickle=True
-            ).item()
-            si_metadata = get_si_metadata(flexilims_session, session)
-            neurons_df["z_position"] = si_metadata["FrameData"][
-                "SI.hMotors.samplePosition"
-            ][2]
-            v1da.v1_manuscript_2023.depth_selectivity.find_roi_centers(neurons_df, stat)
-            fov = load_overview_roi(flexilims_session, session)
-            if fov is not None:
-                neurons_df["fov"] = neurons_df["roi"].apply(lambda x: fov)
-                fov_width = fov[3] - fov[2]
-                fov_height = fov[1] - fov[0]
-                neurons_df["overview_x"] = (
-                    neurons_df["center_x"] / ops["Lx"] * fov_width + fov[2]
-                )
-                neurons_df["overview_y"] = (
-                    neurons_df["center_y"] / ops["Ly"] * fov_height + fov[0]
-                )
+
             # Load RF significant %
             coef = np.stack(neurons_df["rf_coef_closedloop"].values)
             coef_ipsi = np.stack(neurons_df["rf_coef_ipsi_closedloop"].values)
@@ -412,7 +372,9 @@ def load_sig_rf(
                 all_sig.append(np.mean(sig))
                 all_sig_ipsi.append(np.mean(sig_ipsi))
 
-                # find rf centers
+                determine_roi_locations(
+                    neurons_df, flexilims_session, session, suite2p_ds
+                )
                 if ("PZAH6.4b" in session) or ("PZAG3.4f" in session):
                     ndepths = 5
                 else:
@@ -440,26 +402,6 @@ def load_sig_rf(
             print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
     neurons_df_all = pd.concat(neurons_df_all, axis=0, ignore_index=True)
     return all_sig, all_sig_ipsi, neurons_df_all
-
-
-def load_overview_roi(flexilims_session, session):
-    session_path = flz.get_path(
-        session, flexilims_session=flexilims_session, datatype="session"
-    )
-    data_root = flz.get_data_root("processed", flexilims_session=flexilims_session)
-
-    fovs = (data_root / session_path).parent / "FOVs" / "rois.zip"
-    try:
-        rois = ImagejRoi.fromfile(fovs)
-    except FileNotFoundError:
-        print("No overview ROI file found for session", session)
-        return None
-    session_date = session.split("_")[1]
-    for roi in rois:
-        if roi.name == session_date:
-            return [roi.top, roi.bottom, roi.left, roi.right]
-    print("No overview ROI found for session", session)
-    return None
 
 
 def plot_sig_rf_perc(

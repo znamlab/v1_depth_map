@@ -18,6 +18,7 @@ from cottage_analysis.analysis import (
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 from v1_depth_analysis.v1_manuscript_2023 import rf
+from v1_depth_analysis.v1_manuscript_2023.roi_location import find_roi_centers
 
 
 def plot_raster_all_depths(
@@ -1060,14 +1061,6 @@ def plot_example_fov(
     )
     plt.gca().invert_xaxis()
     plt.gca().add_patch(rect)
-
-
-def find_roi_centers(neurons_df, stat):
-    for roi in neurons_df.roi:
-        ypix = stat[roi]["ypix"][~stat[roi]["overlap"]]
-        xpix = stat[roi]["xpix"][~stat[roi]["overlap"]]
-        neurons_df.at[roi, "center_x"] = np.mean(xpix)
-        neurons_df.at[roi, "center_y"] = np.mean(ypix)
 
 
 def plot_fov_mean_img(im, vmax=700, fov_width=572.867):

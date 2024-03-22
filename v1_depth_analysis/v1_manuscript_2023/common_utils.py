@@ -1,17 +1,6 @@
-import functools
-
-print = functools.partial(print, flush=True)
-
 import os
 import numpy as np
 import pandas as pd
-import matplotlib
-
-matplotlib.rcParams["pdf.fonttype"] = 42  # for pdfs
-import matplotlib.pyplot as plt
-from pathlib import Path
-from tqdm import tqdm
-
 import flexiznam as flz
 from cottage_analysis.pipelines import pipeline_utils
 
@@ -49,7 +38,8 @@ def concatenate_all_neurons_df(
                 )
                 if read_iscell:
                     iscell = np.load(
-                        suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
+                        suite2p_ds.path_full / "plane0" / "iscell.npy",
+                        allow_pickle=True,
                     )[:, 0]
                     neurons_df["iscell"] = iscell
 

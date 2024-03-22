@@ -5,6 +5,7 @@ import yaml
 from flexilims.offline import download_database
 from flexiznam.schema import Dataset
 from v1_depth_analysis.config import MICE, PROJECT
+from tifffile import TiffFile
 
 FLM_SESS = flz.get_flexilims_session(project_id=PROJECT)
 
@@ -123,3 +124,20 @@ def download_full_flexilims_database(flexilims_session, target_file=None):
         with open(target_file, "w") as f:
             yaml.dump(json_data, f)
     return json_data
+
+
+def get_si_metadata(flexilims_session, session):
+    recording = flz.get_children(
+        parent_name=session,
+        flexilims_session=flexilims_session,
+        children_datatype="recording",
+    ).iloc[0]
+    dataset = flz.get_children(
+        parent_name=recording["name"],
+        flexilims_session=flexilims_session,
+        children_datatype="dataset",
+        filter={"dataset_type": "scanimage"},
+    ).iloc[0]
+    data_root = flz.get_data_root("raw", flexilims_session=flexilims_session)
+    tif_path = data_root / recording["path"] / sorted(dataset["tif_files"])[0]
+    return TiffFile(tif_path).scanimage_metadata

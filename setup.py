@@ -12,5 +12,6 @@ setup(
     install_requires=[
         "seaborn",
         "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git@dev",
-        ],
+        "roifile",
+    ],
 )
