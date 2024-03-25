@@ -81,6 +81,7 @@ def check_neurons_in_v1(
             ]
 
     neurons_df["v1_mask"] = neurons_df.apply(inside_mask, axis=1)
+    return overview_img
 
 
 def load_overview_roi(flexilims_session, session):

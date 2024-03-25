@@ -352,7 +352,7 @@ def load_sig_rf(
             )[:, 0]
             neurons_df["iscell"] = iscell
             neurons_df["session"] = session
-
+            determine_roi_locations(neurons_df, flexilims_session, session, suite2p_ds)
             # Load RF significant %
             coef = np.stack(neurons_df["rf_coef_closedloop"].values)
             coef_ipsi = np.stack(neurons_df["rf_coef_ipsi_closedloop"].values)
@@ -371,10 +371,6 @@ def load_sig_rf(
                 sig_ipsi = sig_ipsi[select_neurons]
                 all_sig.append(np.mean(sig))
                 all_sig_ipsi.append(np.mean(sig_ipsi))
-
-                determine_roi_locations(
-                    neurons_df, flexilims_session, session, suite2p_ds
-                )
                 if ("PZAH6.4b" in session) or ("PZAG3.4f" in session):
                     ndepths = 5
                 else:
