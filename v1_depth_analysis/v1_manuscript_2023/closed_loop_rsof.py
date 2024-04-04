@@ -352,6 +352,7 @@ def plot_RS_OF_fit(
     neurons_df,
     roi,
     model="gaussian_2d",
+    model_label="",
     min_sigma=0.25,
     vmin=0,
     vmax=None,
@@ -438,9 +439,14 @@ def plot_RS_OF_fit(
         ax2.tick_params(labelsize=fontsize_dict["legend"])
         ax2.set_ylabel("\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"])
     plt.title(
-        f"$R^2$ = {neurons_df[f'rsof_test_rsq_closedloop_{model}'].iloc[roi]:.2f}",
+        model_label,
         fontdict={"fontsize": fontsize_dict["label"]},
-        loc="right",
+    )
+    plt.text(
+        x=log_range["rs_bin_log_min"] + 0.2,
+        y=log_range["of_bin_log_max"] - 0.7,
+        s=f"$R^2$ = {neurons_df[f'rsof_test_rsq_closedloop_{model}'].iloc[roi]:.2f}",
+        fontsize=fontsize_dict["tick"],
     )
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
@@ -523,6 +529,7 @@ def plot_r2_comparison(
                 jitter=0.4,
                 edgecolor="white",
                 orient="h",
+                color=sns.color_palette("Set1")[i],
             )
             plt.plot(
                 [np.median(prop), np.median(prop)],
@@ -569,6 +576,46 @@ def plot_r2_cdfs(
     plt.gca().tick_params(axis="both", labelsize=fontsize_dict["tick"])
     plt.xlabel("$R^2$", fontsize=fontsize_dict["label"])
     plt.ylabel("Cumulative proportion of neurons", fontsize=fontsize_dict["label"])
+    sns.despine(offset=5, ax=plt.gca())
+
+
+def plot_r2_violin(
+    neurons_df,
+    models,
+    model_labels,
+    xlim=(10**-4, 1),
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+):
+    neurons_df_sig = neurons_df[
+        (neurons_df["iscell"] == 1)
+        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.001)
+        & (neurons_df["preferred_depth_amplitude"] > 0.5)
+    ]
+    cols = [f"rsof_test_rsq_closedloop_{model}" for model in models]
+    df = neurons_df_sig[cols].melt(var_name="model", value_name="r2")
+    df["model"] = df["model"].apply(lambda x: model_labels[cols.index(x)])
+    df["r2"][df["r2"] < xlim[0]] = xlim[0]
+    sns.violinplot(
+        data=df,
+        x="r2",
+        y="model",
+        log_scale=True,
+        hue="model",
+        cut=0,
+        inner="quartile",
+        legend=False,
+        fill=False,
+        palette="Set1",
+    )
+    plt.xlim(xlim)
+    plt.gca().tick_params(axis="x", labelsize=fontsize_dict["tick"])
+    plt.gca().tick_params(axis="y", labelsize=fontsize_dict["label"])
+    plt.ylabel("")
+    # change the first xtick label
+    xtick_labels = plt.gca().get_xticklabels()
+    xtick_labels[0] = f"< {xlim[0]:.0e}"
+    plt.gca().set_xticklabels(xtick_labels)
+    plt.xlabel("$R^2$", fontsize=fontsize_dict["label"])
     sns.despine(offset=5, ax=plt.gca())
 
 
