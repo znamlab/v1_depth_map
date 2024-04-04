@@ -13,20 +13,15 @@ from cottage_analysis.analysis import (
     fit_gaussian_blob,
 )
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
+from cottage_analysis.analysis import common_utils
 
 
-def calculate_speed_tuning(speed_arr, dff_arr, bins, smoothing_sd=1, z=1.96):
+def calculate_speed_tuning(speed_arr, dff_arr, bins, smoothing_sd=1, ci_range=0.95):
     # calculate speed tuning
     bin_means, _, _ = scipy.stats.binned_statistic(
         x=speed_arr,
         values=dff_arr,
         statistic="mean",
-        bins=bins,
-    )
-    bin_stds, _, _ = scipy.stats.binned_statistic(
-        x=speed_arr,
-        values=dff_arr,
-        statistic="std",
         bins=bins,
     )
     bin_counts, _, _ = scipy.stats.binned_statistic(
@@ -35,12 +30,17 @@ def calculate_speed_tuning(speed_arr, dff_arr, bins, smoothing_sd=1, z=1.96):
         statistic="count",
         bins=bins,
     )
-    tuning = plotting_utils.get_tuning_function(
+    ci = np.zeros((len(bin_means), 2)) * np.nan
+    for ibin in range(len(bin_means)):
+        idx = (speed_arr > bins[ibin]) & (speed_arr < bins[ibin + 1])
+        if np.sum(idx) > 0:
+            ci[ibin, 0], ci[ibin, 1] = common_utils.get_bootstrap_ci(
+                dff_arr[idx], n_bootstraps=1000, sig_level=1 - ci_range
+            )
+    smoothed_tuning = plotting_utils.get_tuning_function(
         bin_means, bin_counts, smoothing_sd=smoothing_sd
     )
-    ci = z * bin_stds / np.sqrt(bin_counts)
-    ci[np.isnan(ci)] = 0
-    return tuning, ci
+    return bin_means, smoothed_tuning, ci
 
 
 def plot_speed_tuning(
@@ -62,6 +62,7 @@ def plot_speed_tuning(
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
     legend_on=False,
+    ci_range=0.95,
 ):
     """Plot a neuron's speed tuning to either running speed or optic flow speed.
 
@@ -88,11 +89,10 @@ def plot_speed_tuning(
             np.linspace(start=speed_min, stop=speed_max, num=nbins + 1, endpoint=True)
             * 100
         )
-    speed_tuning = np.zeros(((len(depth_list)), nbins))
-    speed_ci = np.zeros(((len(depth_list)), nbins))
+    tuning = np.zeros(((len(depth_list)), nbins))
+    smoothed_tuning = np.zeros(((len(depth_list)), nbins))
+    ci = np.zeros(((len(depth_list)), nbins, 2))
     bin_centers = np.zeros(((len(depth_list)), nbins))
-    ci_range = 0.95
-    z = scipy.stats.norm.ppf(1 - ((1 - ci_range) / 2))
 
     # Find all speed and dff of this ROI for a specific depth
     for idepth, depth in enumerate(depth_list):
@@ -118,15 +118,13 @@ def plot_speed_tuning(
                 endpoint=True,
             )
         bin_centers[idepth] = (bins[:-1] + bins[1:]) / 2
-        tuning, ci = calculate_speed_tuning(
+        tuning[idepth], smoothed_tuning[idepth], ci[idepth] = calculate_speed_tuning(
             speed_arr,
             dff_arr,
             bins,
             smoothing_sd=smoothing_sd,
-            z=z,
+            ci_range=ci_range,
         )
-        speed_tuning[idepth] = tuning
-        speed_ci[idepth] = ci
     # Plotting
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     for idepth, depth in enumerate(depth_list):
@@ -140,15 +138,15 @@ def plot_speed_tuning(
             label = f"{int(depth_list[idepth] * 100)} cm"
         ax.plot(
             bin_centers[idepth, :],
-            speed_tuning[idepth, :],
+            smoothed_tuning[idepth, :],
             color=linecolor,
             label=label,
             linewidth=linewidth,
         )
         ax.errorbar(
             x=bin_centers[idepth, :],
-            y=speed_tuning[idepth, :],
-            yerr=speed_ci[idepth, :],
+            y=tuning[idepth, :],
+            yerr=np.abs(ci[idepth, :].T - tuning[idepth, :]),
             fmt="o",
             color=linecolor,
             ls="none",
@@ -467,7 +465,8 @@ def plot_r2_comparison(
     # Filter depth neurons
     neurons_df_sig = neurons_df[
         (neurons_df["iscell"] == 1)
-        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.001)
+        & (neurons_df["preferred_depth_amplitude"] > 0.5)
     ]
     if plot_type == "violin":
         results = pd.DataFrame(columns=["model", "rsq"])
@@ -517,28 +516,29 @@ def plot_r2_comparison(
             props.append(prop)
             # Plot bar plot
             sns.stripplot(
-                x=np.ones(len(prop)) * i,
-                y=prop,
+                y=np.ones(len(prop)) * i,
+                x=prop,
                 size=markersize,
                 alpha=alpha,
                 jitter=0.4,
                 edgecolor="white",
+                orient="h",
             )
             plt.plot(
-                [i - 0.4, i + 0.4],
                 [np.median(prop), np.median(prop)],
+                [i - 0.4, i + 0.4],
                 linewidth=3,
                 color=color,
             )
         sns.despine(offset=5, ax=plt.gca())
-        ax.set_xticks(range(len(models)))
-        ax.set_xticklabels(labels, fontsize=fontsize_dict["label"], rotation=90)
-        ax.set_ylabel(
+        ax.set_yticks(range(len(models)))
+        ax.set_yticklabels(labels, fontsize=fontsize_dict["label"])
+        ax.set_xlabel(
             "Proportion of neurons \nwith best model fit",
             fontsize=fontsize_dict["label"],
         )
-        ax.set_ylim([0, 1])
-        ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"])
+        ax.set_xlim([0, 1])
+        ax.tick_params(axis="x", which="major", labelsize=fontsize_dict["tick"])
         print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(props[0],props[1])}")
         print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(props[0],props[2])}")
 
@@ -557,7 +557,8 @@ def plot_r2_cdfs(
 
     neurons_df_sig = neurons_df[
         (neurons_df["iscell"] == 1)
-        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.001)
+        & (neurons_df["preferred_depth_amplitude"] > 0.5)
     ]
     for model, label in zip(models, model_labels):
         plt.plot(*cdf(neurons_df_sig[f"rsof_test_rsq_closedloop_{model}"]), label=label)
@@ -590,14 +591,6 @@ def plot_speed_depth_scatter(
     plot_diagonal=False,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-
-    # Filter neurons_df
-    neurons_df = neurons_df[
-        (neurons_df["iscell"] == 1)
-        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
-        & (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
-    ]
-
     # Plot scatter
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     X = neurons_df[xcol].values
@@ -643,14 +636,6 @@ def plot_speed_colored_by_depth(
     cbar_width=0.01,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-
-    # Filter neurons_df
-    neurons_df = neurons_df[
-        (neurons_df["iscell"] == 1)
-        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
-        & (neurons_df["rsof_rsq_closedloop_g2d"] > 0.02)
-    ]
-
     # Plot scatter
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     sns.scatterplot(
