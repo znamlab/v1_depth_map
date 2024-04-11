@@ -263,8 +263,8 @@ def plot_RS_OF_matrix(
         ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
         ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     if not is_closed_loop:
-        ax.set_xticklabels("")
-        ax.set_yticklabels("")
+        ax.set_xticks([])
+        ax.set_yticks([])
         ax_left = fig.add_axes(
             [
                 plot_x + 0.15 * plot_width,
@@ -282,8 +282,8 @@ def plot_RS_OF_matrix(
             vmin=vmin,
             vmax=vmax,
         )
-        plt.yticks(ticks_select2, bin_edges2)
-        plt.xticks(ax_left.get_xticks(), "")
+        plt.yticks(ticks_select2[1::2], bin_edges2[1::2], fontsize=fontsize_dict["tick"])
+        plt.xticks([])
 
         ax_down = fig.add_axes(
             [
@@ -302,13 +302,11 @@ def plot_RS_OF_matrix(
             vmax=vmax,
         )
         plt.xticks(
-            ticks_select1,
-            bin_edges1,
-            rotation=45,
-            ha="center",
-            fontsize=fontsize_dict["tick"],
+            ticks_select1[0::2],
+            bin_edges1[0::2],
+            fontsize=fontsize_dict["tick"]
         )
-        plt.yticks(ax_down.get_yticks(), "")
+        plt.yticks([])
 
         ax_corner = fig.add_axes(
             [
@@ -323,8 +321,8 @@ def plot_RS_OF_matrix(
             origin="lower",
             aspect="equal",
             cmap="Reds",
-            vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
-            vmax=np.nanmax(bin_means[1:, 1:].flatten()),
+            vmin=vmin,
+            vmax=vmax,
         )
         plt.yticks(ax_corner.get_yticks()[1::2], ["< 0.03"])
         plt.xticks(ax_corner.get_xticks()[1::2], ["< 1"])
@@ -609,7 +607,7 @@ def plot_r2_violin(
     sns.despine(offset=5, ax=plt.gca())
 
 
-def plot_speed_depth_scatter(
+def plot_scatter(
     fig,
     neurons_df,
     xcol,
