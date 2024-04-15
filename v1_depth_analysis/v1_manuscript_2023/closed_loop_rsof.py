@@ -240,7 +240,6 @@ def plot_RS_OF_matrix(
         bin_means[1:, 1:].T,
         origin="lower",
         aspect="equal",
-        # cmap=generate_cmap(cmap_name="WhRd"),
         cmap="Reds",
         vmin=vmin,
         vmax=vmax,
@@ -277,12 +276,13 @@ def plot_RS_OF_matrix(
             bin_means[0, 1:].reshape(1, -1).T,
             origin="lower",
             aspect="equal",
-            # cmap=generate_cmap(cmap_name="WhRd"),
             cmap="Reds",
             vmin=vmin,
             vmax=vmax,
         )
-        plt.yticks(ticks_select2[1::2], bin_edges2[1::2], fontsize=fontsize_dict["tick"])
+        plt.yticks(
+            ticks_select2[1::2], bin_edges2[1::2], fontsize=fontsize_dict["tick"]
+        )
         plt.xticks([])
 
         ax_down = fig.add_axes(
@@ -302,9 +302,7 @@ def plot_RS_OF_matrix(
             vmax=vmax,
         )
         plt.xticks(
-            ticks_select1[0::2],
-            bin_edges1[0::2],
-            fontsize=fontsize_dict["tick"]
+            ticks_select1[0::2], bin_edges1[0::2], fontsize=fontsize_dict["tick"]
         )
         plt.yticks([])
 
@@ -334,13 +332,15 @@ def plot_RS_OF_matrix(
         ax_corner.tick_params(
             axis="both", which="major", labelsize=fontsize_dict["tick"]
         )
-
-    ax2 = fig.add_axes(
-        [plot_x + plot_width * 0.75, plot_y, cbar_width, plot_height * 0.9]
-    )
-    fig.colorbar(im, cax=ax2, label="\u0394F/F")
-    ax2.tick_params(labelsize=fontsize_dict["legend"])
-    ax2.set_ylabel("\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"])
+    if cbar_width is not None:
+        ax2 = fig.add_axes(
+            [plot_x + plot_width * 0.7, plot_y, cbar_width, plot_height * 0.9 / 2]
+        )
+        fig.colorbar(im, cax=ax2, label="\u0394F/F")
+        ax2.tick_params(labelsize=fontsize_dict["legend"])
+        ax2.set_ylabel(
+            "\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"], labelpad=5
+        )
 
     return vmin, vmax
 
@@ -623,23 +623,27 @@ def plot_scatter(
     plot_height=1,
     aspect_equal=False,
     plot_diagonal=False,
+    diagonal_color="r",
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    log_scale=True,
+    edgecolors="none",
 ):
     # Plot scatter
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     X = neurons_df[xcol].values
     y = neurons_df[ycol].values
-    ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors="none")
+    ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors=edgecolors, linewidths=0.5)
     if plot_diagonal:
         ax.plot(
-            [y.min(), y.max()],
-            [y.min(), y.max()],
-            c="r",
+            plt.xlim(),
+            plt.xlim(),
+            c=diagonal_color,
             linestyle="--",
-            linewidth=2,
+            linewidth=1,
         )
-    ax.set_xscale("log")
-    ax.set_yscale("log")
+    if log_scale:
+        ax.set_xscale("log")
+        ax.set_yscale("log")
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
@@ -695,24 +699,8 @@ def plot_speed_colored_by_depth(
     )
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-
-    # # Remove the legend and add a colorbar
-    # ax2 = fig.add_axes(
-    #     [
-    #         plot_x + plot_width * 0.9,
-    #         plot_y + 0.05,
-    #         cbar_width,
-    #         plot_height * 0.88,
-    #     ]
-    # )
     cbar = plt.colorbar(sm, shrink=0.5, ax=ax)
     cbar.ax.set_ylabel(
         zlabel, rotation=270, fontsize=fontsize_dict["label"], labelpad=10
     )
     cbar.ax.tick_params(labelsize=fontsize_dict["tick"])
-
-    # cbar = ax.figure.colorbar(sm)
-    # cbar.ax.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['legend'])
-    # cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
-    # cbar.ax.get_yaxis().labelpad = 25
-    # yticks = cbar.ax.get_yticks()
