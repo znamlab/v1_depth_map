@@ -351,7 +351,7 @@ def plot_RS_OF_fit(
     fig,
     neurons_df,
     roi,
-    model="gaussian_2d",
+    model="g2d",
     model_label="",
     min_sigma=0.25,
     vmin=0,
