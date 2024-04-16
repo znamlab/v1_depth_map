@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-#SBATCH --job-name=2p_analysis
+#SBATCH --job-name=batch_analysis
 #SBATCH --ntasks=1
 #SBATCH --time=2:00:00
 #SBATCH --mem=8G
-#SBATCH --partition=cpu
+#SBATCH --partition=ncpu
 #SBATCH --mail-type=END,FAIL
 #SBATCH --output="/camp/lab/znamenskiyp/home/users/hey2/codes/cottage_analysis/logs/2p_analysis_%j.log"
 
