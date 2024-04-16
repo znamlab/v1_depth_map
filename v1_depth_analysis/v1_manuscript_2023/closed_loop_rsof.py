@@ -240,7 +240,6 @@ def plot_RS_OF_matrix(
         bin_means[1:, 1:].T,
         origin="lower",
         aspect="equal",
-        # cmap=generate_cmap(cmap_name="WhRd"),
         cmap="Reds",
         vmin=vmin,
         vmax=vmax,
@@ -263,8 +262,8 @@ def plot_RS_OF_matrix(
         ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
         ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     if not is_closed_loop:
-        ax.set_xticklabels("")
-        ax.set_yticklabels("")
+        ax.set_xticks([])
+        ax.set_yticks([])
         ax_left = fig.add_axes(
             [
                 plot_x + 0.15 * plot_width,
@@ -277,13 +276,14 @@ def plot_RS_OF_matrix(
             bin_means[0, 1:].reshape(1, -1).T,
             origin="lower",
             aspect="equal",
-            # cmap=generate_cmap(cmap_name="WhRd"),
             cmap="Reds",
             vmin=vmin,
             vmax=vmax,
         )
-        plt.yticks(ticks_select2, bin_edges2)
-        plt.xticks(ax_left.get_xticks(), "")
+        plt.yticks(
+            ticks_select2[1::2], bin_edges2[1::2], fontsize=fontsize_dict["tick"]
+        )
+        plt.xticks([])
 
         ax_down = fig.add_axes(
             [
@@ -302,13 +302,9 @@ def plot_RS_OF_matrix(
             vmax=vmax,
         )
         plt.xticks(
-            ticks_select1,
-            bin_edges1,
-            rotation=45,
-            ha="center",
-            fontsize=fontsize_dict["tick"],
+            ticks_select1[0::2], bin_edges1[0::2], fontsize=fontsize_dict["tick"]
         )
-        plt.yticks(ax_down.get_yticks(), "")
+        plt.yticks([])
 
         ax_corner = fig.add_axes(
             [
@@ -323,8 +319,8 @@ def plot_RS_OF_matrix(
             origin="lower",
             aspect="equal",
             cmap="Reds",
-            vmin=np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)]),
-            vmax=np.nanmax(bin_means[1:, 1:].flatten()),
+            vmin=vmin,
+            vmax=vmax,
         )
         plt.yticks(ax_corner.get_yticks()[1::2], ["< 0.03"])
         plt.xticks(ax_corner.get_xticks()[1::2], ["< 1"])
@@ -336,13 +332,15 @@ def plot_RS_OF_matrix(
         ax_corner.tick_params(
             axis="both", which="major", labelsize=fontsize_dict["tick"]
         )
-
-    ax2 = fig.add_axes(
-        [plot_x + plot_width * 0.75, plot_y, cbar_width, plot_height * 0.9]
-    )
-    fig.colorbar(im, cax=ax2, label="\u0394F/F")
-    ax2.tick_params(labelsize=fontsize_dict["legend"])
-    ax2.set_ylabel("\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"])
+    if cbar_width is not None:
+        ax2 = fig.add_axes(
+            [plot_x + plot_width * 0.7, plot_y, cbar_width, plot_height * 0.9 / 2]
+        )
+        fig.colorbar(im, cax=ax2, label="\u0394F/F")
+        ax2.tick_params(labelsize=fontsize_dict["legend"])
+        ax2.set_ylabel(
+            "\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"], labelpad=5
+        )
 
     return vmin, vmax
 
@@ -468,22 +466,16 @@ def plot_r2_comparison(
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    # Filter depth neurons
-    neurons_df_sig = neurons_df[
-        (neurons_df["iscell"] == 1)
-        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.001)
-        & (neurons_df["preferred_depth_amplitude"] > 0.5)
-    ]
     if plot_type == "violin":
         results = pd.DataFrame(columns=["model", "rsq"])
         ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
         for i, col in enumerate(models):
-            neurons_df_sig[col][neurons_df[col] < -1] = 0
+            neurons_df[col][neurons_df[col] < -1] = 0
             results = pd.concat(
                 [
                     results,
                     pd.DataFrame(
-                        {"model": labels[i], "rsq": neurons_df_sig[col]},
+                        {"model": labels[i], "rsq": neurons_df[col]},
                     ),
                 ],
                 ignore_index=True,
@@ -504,48 +496,47 @@ def plot_r2_comparison(
     elif plot_type == "bar":
         model_cols = [f"rsof_test_rsq_closedloop_{model}" for model in models]
         # Find the best model for each neuron
-        neurons_df_sig["best_model"] = neurons_df_sig[model_cols].idxmax(axis=1)
+        neurons_df["best_model"] = neurons_df[model_cols].idxmax(axis=1)
 
         ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
         # Calculate percentage of neurons that have the best model
         neuron_sum = (
-            neurons_df_sig.groupby("session")[["roi"]].agg(["count"]).values.flatten()
+            neurons_df.groupby("session")[["roi"]].agg(["count"]).values.flatten()
         )
         props = []
         # calculate the proportion of neurons that have the best model for each session
         for i, model in enumerate(model_cols):
             prop = (
-                neurons_df_sig.groupby("session")
+                neurons_df.groupby("session")
                 .apply(lambda x: x[x["best_model"] == model][["roi"]].agg(["count"]))
                 .values.flatten()
             ) / neuron_sum
             props.append(prop)
             # Plot bar plot
             sns.stripplot(
-                y=np.ones(len(prop)) * i,
-                x=prop,
+                x=np.ones(len(prop)) * i,
+                y=prop,
                 size=markersize,
                 alpha=alpha,
                 jitter=0.4,
                 edgecolor="white",
-                orient="h",
                 color=sns.color_palette("Set1")[i],
             )
             plt.plot(
-                [np.median(prop), np.median(prop)],
                 [i - 0.4, i + 0.4],
+                [np.median(prop), np.median(prop)],
                 linewidth=3,
                 color=color,
             )
         sns.despine(offset=5, ax=plt.gca())
-        ax.set_yticks(range(len(models)))
-        ax.set_yticklabels(labels, fontsize=fontsize_dict["label"])
-        ax.set_xlabel(
+        ax.set_xticks(range(len(models)))
+        ax.set_xticklabels(labels, fontsize=fontsize_dict["label"], rotation=90)
+        ax.set_ylabel(
             "Proportion of neurons \nwith best model fit",
             fontsize=fontsize_dict["label"],
         )
-        ax.set_xlim([0, 1])
-        ax.tick_params(axis="x", which="major", labelsize=fontsize_dict["tick"])
+        ax.set_ylim([0, 1])
+        ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"])
         print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(props[0],props[1])}")
         print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(props[0],props[2])}")
 
@@ -583,22 +574,19 @@ def plot_r2_violin(
     neurons_df,
     models,
     model_labels,
-    xlim=(10**-4, 1),
+    ylim=(10**-4, 1),
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    neurons_df_sig = neurons_df[
-        (neurons_df["iscell"] == 1)
-        & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.001)
-        & (neurons_df["preferred_depth_amplitude"] > 0.5)
-    ]
+
     cols = [f"rsof_test_rsq_closedloop_{model}" for model in models]
-    df = neurons_df_sig[cols].melt(var_name="model", value_name="r2")
+    df = neurons_df[cols].melt(var_name="model", value_name="r2")
     df["model"] = df["model"].apply(lambda x: model_labels[cols.index(x)])
-    df["r2"][df["r2"] < xlim[0]] = xlim[0]
+    df["r2"][df["r2"] < ylim[0]] = ylim[0]
+    df["r2"][df["r2"] > ylim[1]] = ylim[1]
     sns.violinplot(
         data=df,
-        x="r2",
-        y="model",
+        y="r2",
+        x="model",
         log_scale=True,
         hue="model",
         cut=0,
@@ -607,19 +595,19 @@ def plot_r2_violin(
         fill=False,
         palette="Set1",
     )
-    plt.xlim(xlim)
-    plt.gca().tick_params(axis="x", labelsize=fontsize_dict["tick"])
-    plt.gca().tick_params(axis="y", labelsize=fontsize_dict["label"])
-    plt.ylabel("")
+    plt.ylim(ylim)
+    plt.gca().tick_params(axis="y", labelsize=fontsize_dict["tick"])
+    plt.gca().tick_params(axis="x", labelsize=fontsize_dict["label"], rotation=90)
+    plt.xlabel("")
     # change the first xtick label
-    xtick_labels = plt.gca().get_xticklabels()
-    xtick_labels[0] = f"< {xlim[0]:.0e}"
-    plt.gca().set_xticklabels(xtick_labels)
-    plt.xlabel("$R^2$", fontsize=fontsize_dict["label"])
+    ytick_labels = plt.gca().get_yticklabels()
+    ytick_labels[1].set_text(f"\u2264 {ytick_labels[1].get_text()}")
+    plt.gca().set_yticklabels(ytick_labels)
+    plt.ylabel("$R^2$", fontsize=fontsize_dict["label"])
     sns.despine(offset=5, ax=plt.gca())
 
 
-def plot_speed_depth_scatter(
+def plot_scatter(
     fig,
     neurons_df,
     xcol,
@@ -633,26 +621,29 @@ def plot_speed_depth_scatter(
     plot_y=0,
     plot_width=1,
     plot_height=1,
-    cbar_width=0.01,
     aspect_equal=False,
     plot_diagonal=False,
+    diagonal_color="r",
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    log_scale=True,
+    edgecolors="none",
 ):
     # Plot scatter
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     X = neurons_df[xcol].values
     y = neurons_df[ycol].values
-    ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors="none")
+    ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors=edgecolors, linewidths=0.5)
     if plot_diagonal:
         ax.plot(
-            np.geomspace(y.min(), y.max(), 1000),
-            np.geomspace(y.min(), y.max(), 1000),
-            c="y",
-            linestyle="dotted",
-            linewidth=2,
+            plt.xlim(),
+            plt.xlim(),
+            c=diagonal_color,
+            linestyle="--",
+            linewidth=1,
         )
-    ax.set_xscale("log")
-    ax.set_yscale("log")
+    if log_scale:
+        ax.set_xscale("log")
+        ax.set_yscale("log")
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
@@ -660,8 +651,7 @@ def plot_speed_depth_scatter(
         ax.set_aspect("equal")
     plotting_utils.despine()
     r, p = scipy.stats.spearmanr(X, y)
-    ax.set_title(f"R = {r:.2f}, p = {p:.2e}", fontsize=fontsize_dict["title"])
-    print(f"Correlation between {xcol} and {ycol}: {scipy.stats.spearmanr(X, y)}")
+    print(f"Correlation between {xcol} and {ycol}: R = {r}, p = {p}")
 
 
 def plot_speed_colored_by_depth(
@@ -680,7 +670,6 @@ def plot_speed_colored_by_depth(
     plot_y=0,
     plot_width=1,
     plot_height=1,
-    cbar_width=0.01,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     # Plot scatter
@@ -695,7 +684,6 @@ def plot_speed_colored_by_depth(
         s=s,
         alpha=alpha,
         ax=ax,
-        linewidth=0,
     )
     sns.despine()
     ax.set_aspect("equal", "box")
@@ -711,23 +699,8 @@ def plot_speed_colored_by_depth(
     )
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
-
-    # Remove the legend and add a colorbar
-    ax2 = fig.add_axes(
-        [
-            plot_x + plot_width + cbar_width,
-            plot_y + 0.05,
-            cbar_width,
-            plot_height * 0.88,
-        ]
+    cbar = plt.colorbar(sm, shrink=0.5, ax=ax)
+    cbar.ax.set_ylabel(
+        zlabel, rotation=270, fontsize=fontsize_dict["label"], labelpad=10
     )
-    ax2.figure.colorbar(sm, cax=ax2)
-    ax2.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict["label"])
-    ax2.tick_params(labelsize=fontsize_dict["legend"])
-    ax2.get_yaxis().labelpad = 15
-
-    # cbar = ax.figure.colorbar(sm)
-    # cbar.ax.set_ylabel(zlabel, rotation=270, fontsize=fontsize_dict['legend'])
-    # cbar.ax.tick_params(labelsize=fontsize_dict['legend'])
-    # cbar.ax.get_yaxis().labelpad = 25
-    # yticks = cbar.ax.get_yticks()
+    cbar.ax.tick_params(labelsize=fontsize_dict["tick"])
