@@ -526,7 +526,11 @@ def get_psth_crossval_all_sessions(
             dataset_type="suite2p_traces",
         )
         fs = list(suite2p_ds.values())[0][-1].extra_attributes["fs"]
-        neurons_df = pd.read_pickle(neurons_ds.path_full)
+        try:
+            neurons_df = pd.read_pickle(neurons_ds.path_full)
+        except FileNotFoundError:
+            print(f"ERROR: SESSION {session_name}: neurons_ds not found")
+            continue
         if (use_cols is None) or (set(use_cols).issubset(neurons_df.columns.tolist())):
             if use_cols is None:
                 neurons_df = neurons_df
@@ -545,26 +549,7 @@ def get_psth_crossval_all_sessions(
             )
             trials_df = trials_df[trials_df.closed_loop == closed_loop]
             neurons_df["session"] = session_name
-            # Create dataframe to store results
-            results = pd.DataFrame(
-                columns=[
-                    "session",
-                    "roi",
-                    "iscell",
-                    "preferred_depth_crossval",
-                    "preferred_depth_rsq",
-                    "psth_crossval",
-                ]
-            )
             # Add roi, preferred depth, iscell to results
-            results["roi"] = np.arange(len(neurons_df))
-            results["session"] = session_name
-            results["preferred_depth_crossval"] = neurons_df[
-                "preferred_depth_closedloop_crossval"
-            ]
-            results["preferred_depth_rsq"] = neurons_df[
-                "depth_tuning_test_rsq_closedloop"
-            ]
             exp_session = flz.get_entity(
                 datatype="session",
                 name=session_name,
@@ -581,8 +566,8 @@ def get_psth_crossval_all_sessions(
             iscell = np.load(
                 suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True
             )[:, 0]
-            results["iscell"] = iscell
-            results["psth_crossval"] = [[np.nan]] * len(neurons_df)
+            neurons_df["iscell"] = iscell
+            neurons_df["psth_crossval"] = [[np.nan]] * len(neurons_df)
 
             # Get the responses for this session that are not included for calculating the cross-validated preferred depth
             choose_trials_resp = list(
@@ -608,10 +593,10 @@ def get_psth_crossval_all_sessions(
                     frame_rate=fs,
                     compute_ci=False,
                 )
-                results.at[roi, "psth_crossval"] = psth
+                neurons_df.at[roi, "psth_crossval"] = psth
 
-            results.to_pickle(psth_path)
-            results_all.append(results)
+            neurons_df.to_pickle(psth_path)
+            results_all.append(neurons_df)
             if verbose:
                 print(f"Finished concat neurons_df from session {session_name}")
         else:
@@ -700,18 +685,12 @@ def plot_psth_raster(
     fig,
     results_df,
     depth_list,
-    use_cols=["preferred_depth_crossval", "psth_crossval", "preferred_depth_rsq"],
-    depth_rsq_thr=0.04,
     plot_x=0,
     plot_y=0,
     plot_width=1,
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    # Filter neurons with a depth tuning fit rsq threshold
-    results_df = results_df[
-        (results_df[use_cols[2]] > depth_rsq_thr) & (results_df["iscell"] == 1)
-    ]
     psths = np.stack(results_df[use_cols[1]])[:, :-1, :]  # exclude blank
     ndepths = psths.shape[1] - 1
     nbins = psths.shape[2]
