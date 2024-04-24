@@ -14,6 +14,7 @@ from cottage_analysis.analysis import (
     find_depth_neurons,
     common_utils,
     size_control,
+    fit_gaussian_blob,
 )
 from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
@@ -174,6 +175,7 @@ def plot_depth_tuning_curve(
     roi,
     param="depth",
     use_col="depth_tuning_popt_closedloop",
+    folds=None,
     rs_thr=None,
     rs_thr_max=None,
     still_only=False,
@@ -227,15 +229,6 @@ def plot_depth_tuning_curve(
     CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
 
-    # Load gaussian fit params for this roi
-    if plot_fit:
-        min_sigma = 0.5
-        [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col]
-        x = np.geomspace(param_list[0], param_list[-1], num=100)
-        gaussian_arr = find_depth_neurons.gaussian_func(
-            np.log(x), a, x0, log_sigma, b, min_sigma
-        )
-
     # Plotting
     plt.plot(
         np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label
@@ -249,8 +242,24 @@ def plot_depth_tuning_curve(
         edgecolor=None,
         rasterized=False,
     )
+    # Load gaussian fit params for this roi
     if plot_fit:
-        plt.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
+        min_sigma = 0.5
+        x = np.geomspace(param_list[0], param_list[-1], num=100)
+        if folds is not None:
+            for fold in np.arange(folds):
+                [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col][fold]
+                gaussian_arr = fit_gaussian_blob.gaussian_1d(
+                    np.log(x), a, x0, log_sigma, b, min_sigma
+                )
+                plt.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
+        else:
+            [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col]
+            gaussian_arr = fit_gaussian_blob.gaussian_1d(
+                np.log(x), a, x0, log_sigma, b, min_sigma
+            )
+            plt.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
+                
     if param == "depth":
         plt.xticks(
             np.log(param_list),
