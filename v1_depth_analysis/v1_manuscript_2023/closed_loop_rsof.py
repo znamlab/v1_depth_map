@@ -623,7 +623,7 @@ def plot_scatter(
     plot_height=1,
     aspect_equal=False,
     plot_diagonal=False,
-    diagonal_color="r",
+    diagonal_color="k",
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
     log_scale=True,
     edgecolors="none",
@@ -634,12 +634,16 @@ def plot_scatter(
     y = neurons_df[ycol].values
     ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors=edgecolors, linewidths=0.5)
     if plot_diagonal:
+        diag = [
+            np.max((plt.xlim()[0], plt.ylim()[0])),
+            np.min((plt.xlim()[1], plt.ylim()[1])),
+        ]
         ax.plot(
-            plt.xlim(),
-            plt.xlim(),
+            diag,
+            diag,
             c=diagonal_color,
-            linestyle="--",
-            linewidth=1,
+            linestyle="dotted",
+            linewidth=0.5,
         )
     if log_scale:
         ax.set_xscale("log")
@@ -671,6 +675,7 @@ def plot_speed_colored_by_depth(
     plot_width=1,
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    edgecolors="none",
 ):
     # Plot scatter
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
@@ -679,11 +684,11 @@ def plot_speed_colored_by_depth(
         x=xcol,
         y=ycol,
         hue=np.log(neurons_df[zcol]),
-        # hue_norm = (np.log(6), np.log(600)),
         palette="cool_r",
         s=s,
         alpha=alpha,
         ax=ax,
+        edgecolor=edgecolors,
     )
     sns.despine()
     ax.set_aspect("equal", "box")

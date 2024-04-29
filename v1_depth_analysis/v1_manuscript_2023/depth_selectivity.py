@@ -125,6 +125,16 @@ def plot_raster_all_depths(
                     bottom=True,
                     labelsize=fontsize_dict["tick"],
                 )
+                # add a text label "Depth (cm):" to the left of the axis title
+                ax.text(
+                    0.05,
+                    1.12,
+                    "Depth (cm):",
+                    horizontalalignment="right",
+                    verticalalignment="center",
+                    transform=ax.transAxes,
+                    fontsize=fontsize_dict["label"],
+                )
             else:
                 ax.tick_params(
                     left=True,
@@ -147,7 +157,7 @@ def plot_raster_all_depths(
                 linewidth=0.5,
             )
             plt.title(
-                f"{int(depth_list[idepth] * 100)} cm", fontsize=fontsize_dict["title"]
+                f"{int(depth_list[idepth] * 100)}", fontsize=fontsize_dict["title"]
             )
             ax.invert_yaxis()
 
@@ -623,12 +633,13 @@ def plot_preferred_depth_hist(
         max_depth,
         num=nbins,
     )
+    tol = 1e-4
     # set rows where use_col = min or max to -inf and inf
     results_df[use_col] = results_df[use_col].apply(
-        lambda x: -np.inf if x == min_depth else x
+        lambda x: -np.inf if x < min_depth + tol else x
     )
     results_df[use_col] = results_df[use_col].apply(
-        lambda x: np.inf if x == max_depth else x
+        lambda x: np.inf if x > max_depth - tol else x
     )
 
     plt.hist(
@@ -682,82 +693,55 @@ def plot_preferred_depth_hist(
 
 
 def plot_psth_raster(
-    fig,
     results_df,
     depth_list,
-    plot_x=0,
-    plot_y=0,
-    plot_width=1,
-    plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    psths = np.stack(results_df[use_cols[1]])[:, :-1, :]  # exclude blank
-    ndepths = psths.shape[1] - 1
+    psths = np.stack(results_df["psth_crossval"])[:, :-1, 10:-10]  # exclude blank
+    ndepths = psths.shape[1]
     nbins = psths.shape[2]
-
     # Sort neurons by preferred depth
-    preferred_depths = results_df[use_cols[0]].values
-    order = preferred_depths.argsort()
-    psths = psths[order]
+    preferred_depths = results_df["preferred_depth_closedloop_crossval"].values
+    psths = psths[preferred_depths.argsort()]
     psths = psths.reshape(psths.shape[0], -1)
-
-    # Normalize PSTHs
-    neuron_max = np.nanmax(psths, axis=1)[:, np.newaxis]
-    neuron_min = np.nanmin(psths, axis=1)[:, np.newaxis]
-    normed_psth = (psths - neuron_min) / (neuron_max - neuron_min)
-
-    # Plot PSTHs
-    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
-    ax.imshow(
-        normed_psth,
-        vmax=1,
-        aspect="auto",
-        cmap=plotting_utils.generate_cmap(cmap_name="WhRd"),
+    # zscore each row
+    normed_psth = (psths - np.nanmean(psths, axis=1)[:, np.newaxis]) / (
+        np.nanstd(psths, axis=1)[:, np.newaxis]
     )
-
+    # Plot PSTHs
+    ax = plt.gca()
+    im = ax.imshow(
+        normed_psth,
+        aspect="auto",
+        cmap="bwr",
+        vmin=-2,
+        vmax=2,
+    )
     # Plot vertical lines to separate different depths
     for i in range(ndepths):
-        ax.axvline((i + 1) * nbins, color="k", linewidth=0.5)
-
+        ax.axvline((i + 1) * nbins, color="k", linewidth=0.5, linestyle="dotted")
     # Change xticks positions to the middle of current ticks and show depth at the tick position
-    xticks = np.arange(0 + 0.5, ndepths + 1 + 0.5) * nbins
+    xticks = (np.arange(ndepths) + 0.5) * nbins
     ax.set_xticks(xticks)
     ax.set_xticklabels(np.round(depth_list))
-    ax.set_xlabel("Preferred depth (cm)", fontsize=fontsize_dict["label"])
+    ax.set_xlabel("Virtual depth (cm)", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="x", labelsize=fontsize_dict["tick"], rotation=60)
-    ax.set_ylabel("Neuron no.", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("Neuron number", fontsize=fontsize_dict["label"])
+    ax.set_yticks([1, len(results_df)])
     ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
+    ax.set_xlim([0, ndepths * nbins])
+    cbar = plt.colorbar(mappable=im, ax=ax)
+    cbar.set_label("Z-score", fontsize=fontsize_dict["label"])
+    cbar.ax.tick_params(labelsize=fontsize_dict["tick"])
 
 
 def plot_depth_neuron_perc_hist(
     results_df,
-    numerator_filter=None,
-    denominator_filter=None,
     bins=50,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
-    if denominator_filter is None:
-        neuron_sum = (
-            results_df.groupby("session").agg(["count"])["roi"].values.flatten()
-        )
-    else:
-        neuron_sum = (
-            results_df[denominator_filter]
-            .groupby("session")
-            .agg(["count"])["roi"]
-            .values.flatten()
-        )
-
-    if numerator_filter is None:
-        prop = results_df.groupby("session").agg(["count"])["roi"].values.flatten()
-    else:
-        prop = (
-            results_df[numerator_filter]
-            .groupby("session")
-            .agg(["count"])["roi"]
-            .values.flatten()
-        )
-    plt.hist(prop / neuron_sum, bins=bins, color="k")
+    session_prop = results_df.groupby("session").agg({"depth_tuned": "mean"})
+    plt.hist(session_prop["depth_tuned"], bins=bins, color="k")
     ax = plt.gca()
     xlim = ax.get_xlim()
     ax.set_xlim([0, xlim[1]])
@@ -765,15 +749,15 @@ def plot_depth_neuron_perc_hist(
     ax.set_ylabel("Number of sessions", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
     # plot median proportion as a triangle along the top of the histogram
-    median_prop = np.median(prop / neuron_sum)
+    median_prop = np.median(session_prop["depth_tuned"])
     print("Median proportion of depth-tuned neurons:", median_prop)
     print(
-        "Range of proportion of depth-tuned neurons:",
-        np.min(prop / neuron_sum),
+        "Range of proportions of depth-tuned neurons:",
+        np.min(session_prop["depth_tuned"]),
         "to",
-        np.max(prop / neuron_sum),
+        np.max(session_prop["depth_tuned"]),
     )
-    print("Number of sessions:", len(prop))
+    print("Number of sessions:", len(session_prop))
     ax.plot(
         median_prop,
         ax.get_ylim()[1],
