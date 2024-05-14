@@ -4,6 +4,7 @@ import matplotlib
 
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import matplotlib.colors as mcolors
 
 import scipy
 import seaborn as sns
@@ -623,7 +624,7 @@ def plot_scatter(
     plot_height=1,
     aspect_equal=False,
     plot_diagonal=False,
-    diagonal_color="r",
+    diagonal_color="k",
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
     log_scale=True,
     edgecolors="none",
@@ -634,16 +635,75 @@ def plot_scatter(
     y = neurons_df[ycol].values
     ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors=edgecolors, linewidths=0.5)
     if plot_diagonal:
+        diag = [
+            np.max((plt.xlim()[0], plt.ylim()[0])),
+            np.min((plt.xlim()[1], plt.ylim()[1])),
+        ]
         ax.plot(
-            plt.xlim(),
-            plt.xlim(),
+            diag,
+            diag,
             c=diagonal_color,
-            linestyle="--",
-            linewidth=1,
+            linestyle="dotted",
+            linewidth=0.5,
         )
     if log_scale:
         ax.set_xscale("log")
         ax.set_yscale("log")
+    ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
+    ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    if aspect_equal:
+        ax.set_aspect("equal")
+    plotting_utils.despine()
+    r, p = scipy.stats.spearmanr(X, y)
+    print(f"Correlation between {xcol} and {ycol}: R = {r}, p = {p}")
+
+
+def plot_2d_hist(
+    fig,
+    neurons_df,
+    xcol,
+    ycol,
+    xlabel="Running speed (cm/s)",
+    ylabel="Preferred depth (cm)",
+    plot_x=0,
+    plot_y=0,
+    plot_width=1,
+    plot_height=1,
+    aspect_equal=False,
+    plot_diagonal=False,
+    diagonal_color="k",
+    fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    log_scale=True,
+    color="k",
+    linewidth=1,
+):
+    # Plot scatter
+    ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    X = neurons_df[xcol].values
+    y = neurons_df[ycol].values
+    # ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors=edgecolors, linewidths=0.5)
+    # plota 2d histogram on log scale
+    sns.kdeplot(
+        x=X,
+        y=y,
+        color=color,
+        log_scale=log_scale,
+        linewidths=linewidth,
+    )
+    if plot_diagonal:
+        diag = [
+            np.max((plt.xlim()[0], plt.ylim()[0])),
+            np.min((plt.xlim()[1], plt.ylim()[1])),
+        ]
+        ax.plot(
+            diag,
+            diag,
+            c=diagonal_color,
+            linestyle="dotted",
+            linewidth=1,
+        )
+
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
@@ -671,20 +731,27 @@ def plot_speed_colored_by_depth(
     plot_width=1,
     plot_height=1,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    edgecolors="none",
+    depths=np.geomspace(5, 640, 8),
 ):
     # Plot scatter
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
+    depth_range = [np.min(depths), np.max(depths)]
+    norm = matplotlib.colors.LogNorm(depth_range[0], depth_range[1])
     sns.scatterplot(
         neurons_df,
         x=xcol,
         y=ycol,
-        hue=np.log(neurons_df[zcol]),
-        # hue_norm = (np.log(6), np.log(600)),
+        hue=neurons_df[zcol],
+        hue_norm=norm,
         palette="cool_r",
         s=s,
         alpha=alpha,
         ax=ax,
+        edgecolor=edgecolors,
     )
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
     sns.despine()
     ax.set_aspect("equal", "box")
     ax.set_xscale("log")
@@ -693,14 +760,43 @@ def plot_speed_colored_by_depth(
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
-
-    norm = matplotlib.colors.LogNorm(
-        np.nanmin(neurons_df[zcol]), np.nanmax(neurons_df[zcol])
-    )
-    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
-    sm.set_array([])
-    cbar = plt.colorbar(sm, shrink=0.5, ax=ax)
+    xrange = ax.get_xlim()
+    yrange = ax.get_ylim()
+    cbar = plt.colorbar(sm, shrink=0.5, ax=ax, ticks=depth_range)
     cbar.ax.set_ylabel(
         zlabel, rotation=270, fontsize=fontsize_dict["label"], labelpad=10
     )
     cbar.ax.tick_params(labelsize=fontsize_dict["tick"])
+    # set colorbar ticks to be at the center of the color range
+    cbar.ax.set_yticklabels(["< 5", "> 640"])
+    # move colorbar down to align with bottom of ax
+    ax_pos = ax.get_position()
+    cbar_pos = cbar.ax.get_position()
+    cbar_pos.y0 = ax_pos.y0
+    cbar_pos.y1 = ax_pos.y0 + 0.2
+    cbar.ax.set_position(cbar_pos)
+
+    ax_inset = fig.add_axes(
+        [
+            ax_pos.x0 + ax_pos.width + 0.01,
+            ax_pos.y0 + ax_pos.height / 2,
+            0.06,
+            0.35,
+        ]
+    )
+    for depth in depths:
+        ax_inset.plot(
+            xrange,
+            np.rad2deg(xrange / depth),
+            c=sm.to_rgba(depth),
+            linewidth=0.5,
+        )
+    sns.despine()
+    ax_inset.set_aspect("equal", "box")
+    ax_inset.set_xscale("log")
+    ax_inset.set_yscale("log")
+    # same x and y ticks as ax without labels
+    ax_inset.set_xticks(ax.get_xticks(), [])
+    ax_inset.set_yticks(ax.get_yticks(), [])
+    ax_inset.set_xlim(xrange)
+    ax_inset.set_ylim(yrange)
