@@ -677,12 +677,15 @@ def plot_2d_hist(
     log_scale=True,
     color="k",
     linewidth=1,
+    plot_scatter=True,
+    s=3,
+    alpha=0.5,
+    edgecolors="none",
 ):
     # Plot scatter
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     X = neurons_df[xcol].values
     y = neurons_df[ycol].values
-    # ax.scatter(X, y, s=s, alpha=alpha, c=c, edgecolors=edgecolors, linewidths=0.5)
     # plota 2d histogram on log scale
     sns.kdeplot(
         x=X,
@@ -690,7 +693,13 @@ def plot_2d_hist(
         color=color,
         log_scale=log_scale,
         linewidths=linewidth,
+        cut=0,
+        levels=5,
     )
+    if plot_scatter:
+        ax.scatter(
+            X, y, s=s, alpha=alpha, c=color, edgecolors=edgecolors, linewidths=0.5
+        )
     if plot_diagonal:
         diag = [
             np.max((plt.xlim()[0], plt.ylim()[0])),
@@ -701,8 +710,11 @@ def plot_2d_hist(
             diag,
             c=diagonal_color,
             linestyle="dotted",
-            linewidth=1,
+            linewidth=2,
         )
+
+    plt.xlim([np.nanmin(X) * 0.9, np.nanmax(X) / 0.9])
+    plt.ylim([np.nanmin(y) * 0.9, np.nanmax(y) / 0.9])
 
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
@@ -778,10 +790,10 @@ def plot_speed_colored_by_depth(
 
     ax_inset = fig.add_axes(
         [
-            ax_pos.x0 + ax_pos.width + 0.01,
-            ax_pos.y0 + ax_pos.height / 2,
-            0.06,
-            0.35,
+            ax_pos.x0 + ax_pos.width + 0.04,
+            ax_pos.y0 + ax_pos.height * 0.4,
+            0.08,
+            0.4,
         ]
     )
     for depth in depths:
@@ -800,3 +812,5 @@ def plot_speed_colored_by_depth(
     ax_inset.set_yticks(ax.get_yticks(), [])
     ax_inset.set_xlim(xrange)
     ax_inset.set_ylim(yrange)
+    ax_inset.set_xlabel("Running speed", fontsize=fontsize_dict["label"])
+    ax_inset.set_ylabel("Optic flow speed", fontsize=fontsize_dict["label"])

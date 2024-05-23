@@ -52,8 +52,8 @@ def plot_stimulus_frame(
             )
         # add text indicating the depth
         ax.text(
-            2,
-            frame.shape[1] * 0.9,
+            5,
+            15,
             f"{int(depths[i] * 100)} cm",
             fontsize=fontsize_dict["tick"],
             color="white",
@@ -366,7 +366,7 @@ def load_sig_rf(
                 neurons_df["rf_sig_ipsi"] = sig_ipsi
                 select_neurons = (neurons_df["iscell"] == 1) & (
                     neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05
-                )
+                ) & (neurons_df["depth_tuning_test_spearmanr_rval_closedloop"] > 0.1)
                 sig = sig[select_neurons]
                 sig_ipsi = sig_ipsi[select_neurons]
                 all_sig.append(np.mean(sig))
