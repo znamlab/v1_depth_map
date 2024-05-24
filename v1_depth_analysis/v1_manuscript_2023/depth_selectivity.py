@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 from tqdm import tqdm
 import scipy
-
+import seaborn as sns
 import flexiznam as flz
 from cottage_analysis.analysis import (
     spheres,
@@ -137,7 +137,7 @@ def plot_raster_all_depths(
                 )
             else:
                 ax.tick_params(
-                    left=True,
+                    left=False,
                     right=False,
                     labelleft=False,
                     labelbottom=True,
@@ -192,9 +192,9 @@ def plot_depth_tuning_curve(
     still_time=0,
     frame_rate=15,
     plot_fit=True,
+    plot_smooth=True,
     linewidth=3,
     linecolor="k",
-    fit_linecolor="r",
     closed_loop=1,
     label=None,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
@@ -226,7 +226,7 @@ def plot_depth_tuning_curve(
             trials_df, use_cols=["size", "depth"], k=1
         )
         param_list = np.sort(trials_df["physical_size"].unique())
-    log_param_list = np.log2(param_list)
+    log_param_list = np.log(param_list)
     mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(
         trials_df=trials_df,
         rs_thr=rs_thr,
@@ -239,21 +239,6 @@ def plot_depth_tuning_curve(
     )[:, :, roi]
     CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
-    # calculate a tuning curve using gaussian smoothing over depths
-    xs = np.linspace(log_param_list[0], log_param_list[-1], num=100)
-    sd = 0.75
-    ys = np.zeros((len(xs)))
-    for i, x in enumerate(xs):
-        weights = np.exp(-((log_param_list - x) ** 2) / (2 * sd**2))
-        ys[i] = np.sum(weights * mean_arr) / np.sum(weights)
-
-    plt.plot(
-        xs,
-        ys,
-        color=linecolor,
-        label=label,
-        linewidth=linewidth,
-    )
     plt.errorbar(
         log_param_list,
         mean_arr,
@@ -266,19 +251,21 @@ def plot_depth_tuning_curve(
         markeredgewidth=linewidth,
     )
 
-    # Plotting
-    # plt.plot(
-    #     np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label
-    # )
-    # plt.fill_between(
-    #     np.log(param_list),
-    #     CI_low,
-    #     CI_high,
-    #     color=linecolor,
-    #     alpha=0.3,
-    #     edgecolor=None,
-    #     rasterized=False,
-    # )
+    if plot_smooth:
+        # calculate a tuning curve using gaussian smoothing over depths
+        xs = np.linspace(log_param_list[0], log_param_list[-1], num=100)
+        sd = 0.75
+        ys = np.zeros((len(xs)))
+        for i, x in enumerate(xs):
+            weights = np.exp(-((log_param_list - x) ** 2) / (2 * sd**2))
+            ys[i] = np.sum(weights * mean_arr) / np.sum(weights)
+        plt.plot(
+            xs,
+            ys,
+            color=linecolor,
+            label=label,
+            linewidth=linewidth,
+        )
     # Load gaussian fit params for this roi
     if plot_fit:
         min_sigma = 0.5
@@ -289,36 +276,35 @@ def plot_depth_tuning_curve(
                 gaussian_arr = fit_gaussian_blob.gaussian_1d(
                     np.log(x), a, x0, log_sigma, b, min_sigma
                 )
-                plt.plot(
-                    np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth
-                )
+                plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth)
         else:
             [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col]
             gaussian_arr = fit_gaussian_blob.gaussian_1d(
                 np.log(x), a, x0, log_sigma, b, min_sigma
             )
-            plt.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
+            plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth)
+    plt.ylim([-round(np.max(CI_high), 1) * 0.05, round(np.max(CI_high), 1)])
+    plt.yticks([0, round(np.max(CI_high), 1)], fontsize=fontsize_dict["tick"])
 
     if param == "depth":
         plt.xticks(
             log_param_list,
             (np.array(param_list) * 100).astype("int"),
-            fontsize=fontsize_dict["tick"],
-            rotation=45,
         )
         plt.xlabel(f"Virtual depth (cm)", fontsize=fontsize_dict["label"])
     elif param == "size":
         plt.xticks(
             log_param_list,
             np.round(np.array(param_list) * 0.87 / 10 * 20, 1),
-            fontsize=fontsize_dict["tick"],
-            rotation=45,
         )
         plt.xlabel(f"Virtual radius (cm)", fontsize=fontsize_dict["label"])
+    sns.despine(ax=plt.gca(), offset=3, trim=True)
     plt.yticks(fontsize=fontsize_dict["tick"])
     plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
-
-    plotting_utils.despine()
+    plt.xticks(
+        fontsize=fontsize_dict["tick"],
+        rotation=45,
+    )
 
 
 def get_PSTH(
