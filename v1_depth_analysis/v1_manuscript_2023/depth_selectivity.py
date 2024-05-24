@@ -226,6 +226,7 @@ def plot_depth_tuning_curve(
             trials_df, use_cols=["size", "depth"], k=1
         )
         param_list = np.sort(trials_df["physical_size"].unique())
+    log_param_list = np.log2(param_list)
     mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(
         trials_df=trials_df,
         rs_thr=rs_thr,
@@ -238,20 +239,46 @@ def plot_depth_tuning_curve(
     )[:, :, roi]
     CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
+    # calculate a tuning curve using gaussian smoothing over depths
+    xs = np.linspace(log_param_list[0], log_param_list[-1], num=100)
+    sd = 0.75
+    ys = np.zeros((len(xs)))
+    for i, x in enumerate(xs):
+        weights = np.exp(-((log_param_list - x) ** 2) / (2 * sd**2))
+        ys[i] = np.sum(weights * mean_arr) / np.sum(weights)
+
+    plt.plot(
+        xs,
+        ys,
+        color=linecolor,
+        label=label,
+        linewidth=linewidth,
+    )
+    plt.errorbar(
+        log_param_list,
+        mean_arr,
+        yerr=(mean_arr - CI_low, CI_high - mean_arr),
+        fmt=".",
+        color=linecolor,
+        ls="none",
+        fillstyle="none",
+        linewidth=linewidth,
+        markeredgewidth=linewidth,
+    )
 
     # Plotting
-    plt.plot(
-        np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label
-    )
-    plt.fill_between(
-        np.log(param_list),
-        CI_low,
-        CI_high,
-        color=linecolor,
-        alpha=0.3,
-        edgecolor=None,
-        rasterized=False,
-    )
+    # plt.plot(
+    #     np.log(param_list), mean_arr, color=linecolor, linewidth=linewidth, label=label
+    # )
+    # plt.fill_between(
+    #     np.log(param_list),
+    #     CI_low,
+    #     CI_high,
+    #     color=linecolor,
+    #     alpha=0.3,
+    #     edgecolor=None,
+    #     rasterized=False,
+    # )
     # Load gaussian fit params for this roi
     if plot_fit:
         min_sigma = 0.5
@@ -262,17 +289,19 @@ def plot_depth_tuning_curve(
                 gaussian_arr = fit_gaussian_blob.gaussian_1d(
                     np.log(x), a, x0, log_sigma, b, min_sigma
                 )
-                plt.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
+                plt.plot(
+                    np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth
+                )
         else:
             [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col]
             gaussian_arr = fit_gaussian_blob.gaussian_1d(
                 np.log(x), a, x0, log_sigma, b, min_sigma
             )
             plt.plot(np.log(x), gaussian_arr, color=fit_linecolor, linewidth=linewidth)
-                
+
     if param == "depth":
         plt.xticks(
-            np.log(param_list),
+            log_param_list,
             (np.array(param_list) * 100).astype("int"),
             fontsize=fontsize_dict["tick"],
             rotation=45,
@@ -280,7 +309,7 @@ def plot_depth_tuning_curve(
         plt.xlabel(f"Virtual depth (cm)", fontsize=fontsize_dict["label"])
     elif param == "size":
         plt.xticks(
-            np.log(param_list),
+            log_param_list,
             np.round(np.array(param_list) * 0.87 / 10 * 20, 1),
             fontsize=fontsize_dict["tick"],
             rotation=45,
@@ -646,19 +675,22 @@ def plot_preferred_depth_hist(
         results_df[use_col],
         bins=depth_bins,
         weights=np.ones(len(results_df)) / len(results_df),
-        color="k",
+        color="cornflowerblue",
+        edgecolor="royalblue",
     )
     # plot proportion of rows with -inf and inf values as separate bars at min_depth/2 and max_depth*2
     plt.bar(
         min_depth - 1,
         np.sum(results_df[use_col] == -np.inf) / len(results_df),
-        color="k",
+        color="cornflowerblue",
+        edgecolor="royalblue",
         width=(max_depth - min_depth) / nbins,
     )
     plt.bar(
         max_depth + 1,
         np.sum(results_df[use_col] == np.inf) / len(results_df),
-        color="k",
+        color="cornflowerblue",
+        edgecolor="royalblue",
         width=(max_depth - min_depth) / nbins,
     )
 
@@ -741,7 +773,12 @@ def plot_depth_neuron_perc_hist(
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     session_prop = results_df.groupby("session").agg({"depth_tuned": "mean"})
-    plt.hist(session_prop["depth_tuned"], bins=bins, color="k")
+    plt.hist(
+        session_prop["depth_tuned"],
+        bins=bins,
+        color="cornflowerblue",
+        edgecolor="royalblue",
+    )
     ax = plt.gca()
     xlim = ax.get_xlim()
     ax.set_xlim([0, xlim[1]])
