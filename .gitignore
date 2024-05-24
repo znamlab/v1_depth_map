@@ -6,3 +6,4 @@ slurm*
 *.egg-info
 .vscode/combined.workspace.code-workspace
 build
+*code-workspace
