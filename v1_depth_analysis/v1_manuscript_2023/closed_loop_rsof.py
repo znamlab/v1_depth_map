@@ -5,10 +5,12 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib import cm
 import matplotlib.colors as mcolors
+import matplotlib.patches as patches
 
 import scipy
 import seaborn as sns
 
+import flexiznam as flz
 from cottage_analysis.analysis import (
     find_depth_neurons,
     fit_gaussian_blob,
@@ -814,3 +816,141 @@ def plot_speed_colored_by_depth(
     ax_inset.set_ylim(yrange)
     ax_inset.set_xlabel("Running speed", fontsize=fontsize_dict["label"])
     ax_inset.set_ylabel("Optic flow speed", fontsize=fontsize_dict["label"])
+
+
+def plot_speed_trace(
+    trials_df,
+    trial_list,
+    param,
+    fs,
+    ax,
+    ylabel,
+    linecolor="k",
+    linewidth=1,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
+):
+    if param == "RS":
+        trials_df[f"{param}_merged"] = trials_df.apply(
+            lambda x: np.concatenate([x[f"{param}_stim"], x[f"{param}_blank"]]),
+            axis=1,
+        )
+        param_trace = np.concatenate(
+            [row[f"{param}_merged"] for _, row in trials_df.iloc[trial_list].iterrows()]
+        )
+        param_trace = np.concatenate(
+            [trials_df.iloc[trial_list[0]][f"{param}_blank_pre"], param_trace]
+        )
+        param_trace = param_trace * 100
+    elif param == "OF":
+        trials_df[f"{param}_merged"] = trials_df.apply(
+            lambda x: np.concatenate(
+                [x[f"{param}_stim"], np.full(len(x[f"{param}_blank"]), np.nan)]
+            ),
+            axis=1,
+        )
+        param_trace = np.concatenate(
+            [row[f"{param}_merged"] for _, row in trials_df.iloc[trial_list].iterrows()]
+        )
+        param_trace = np.degrees(param_trace)
+        param_trace = np.concatenate(
+            [
+                np.full(
+                    len(trials_df.iloc[trial_list[0]][f"{param}_blank_pre"]), np.nan
+                ),
+                param_trace,
+            ]
+        )
+        param_trace[param_trace < 1e-4] = np.nan
+        param_trace[0] = 1e-4
+
+    trial_starts = np.cumsum(
+        [
+            len(row[f"{param}_merged"])
+            for _, row in trials_df.iloc[trial_list].iterrows()
+        ]
+    )
+    trial_lengths = [
+        len(row[f"{param}_stim"]) for _, row in trials_df.iloc[trial_list].iterrows()
+    ]
+    trial_starts = np.concatenate([[0], trial_starts[:-1]]) + len(
+        trials_df.iloc[trial_list[0]][f"{param}_blank_pre"]
+    )
+    print(param_trace)
+
+    depths = trials_df.iloc[trial_list]["depth"].values
+    depth_list = np.sort(trials_df.depth.unique())
+
+    # plot param
+    ax.plot(
+        np.linspace(0, len(param_trace) / fs, len(param_trace)),
+        param_trace,
+        c=linecolor,
+        linewidth=linewidth,
+    )
+    if param == "OF":
+        ax.set_yscale("log")
+        ax.set_ylim(1e-2, np.nanmax(param_trace) * 2)
+    ax.set_ylabel(ylabel, rotation=90, labelpad=15, fontsize=fontsize_dict["label"])
+    ax.set_xlim(0.0001, len(param_trace) / fs)
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["ticks"])
+
+    # plot trials
+    for i, trial_start in enumerate(trial_starts):
+        color = basic_vis_plots.get_depth_color(
+            depths[i], depth_list, cmap=cm.cool.reversed()
+        )
+        rect = patches.Rectangle(
+            (trial_starts[i] / fs, np.nanmin(param_trace)),
+            trial_lengths[i] / fs,
+            (np.nanmax(param_trace) - np.nanmin(param_trace)) * 1.1,
+            linewidth=0,
+            edgecolor="none",
+            facecolor=color,
+            alpha=0.3,
+        )
+        ax.add_patch(rect)
+
+    # remove upper and right frame of the plot
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+
+
+def plot_speed_trace_closed_open_loop(
+    flexilims_session,
+    session_name,
+    trials_df,
+    trial_list,
+    fig,
+    axes,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
+):
+    suite2p_datasets = flz.get_datasets(
+        origin_name=session_name,
+        dataset_type="suite2p_rois",
+        flexilims_session=flexilims_session,
+        return_dataseries=False,
+        filter_datasets={"anatomical_only": 3},
+    )
+    fs = suite2p_datasets[0].extra_attributes["fs"]
+
+    i = 0
+    for closed_loop, title in zip([1, 0], ["Closed loop", "Open loop"]):
+        for param, ylabel in zip(
+            ["RS", "OF"], ["Running speed \n(cm/s)", "Optic flow speed \n(degrees/s"]
+        ):
+            ax = axes[i]
+            plot_speed_trace(
+                trials_df=trials_df[trials_df.closed_loop == closed_loop],
+                trial_list=trial_list,
+                param=param,
+                fs=fs,
+                ax=ax,
+                ylabel=ylabel,
+                linecolor="k",
+                linewidth=0.3,
+                fontsize_dict=fontsize_dict,
+            )
+            i += 1
+        ax.set_xlabel("Time (s)", fontsize=fontsize_dict["label"])
+        ax.set_title(title, fontsize=fontsize_dict["title"])
+    plt.tight_layout()
