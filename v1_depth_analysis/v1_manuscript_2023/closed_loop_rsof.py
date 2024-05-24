@@ -820,14 +820,14 @@ def plot_speed_colored_by_depth(
 
 def plot_speed_trace(
     trials_df,
-    trial_list,
-    param,
-    fs,
-    ax,
-    ylabel,
-    linecolor="k",
-    linewidth=1,
-    fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
+    trial_list, 
+    param, 
+    fs, 
+    ax, 
+    ylabel, 
+    linecolor="k", 
+    linewidth=1, 
+    fontsize_dict={"title": 15, "label": 10, "ticks": 10}
 ):
     if param == "RS":
         trials_df[f"{param}_merged"] = trials_df.apply(
@@ -837,9 +837,14 @@ def plot_speed_trace(
         param_trace = np.concatenate(
             [row[f"{param}_merged"] for _, row in trials_df.iloc[trial_list].iterrows()]
         )
-        param_trace = np.concatenate(
-            [trials_df.iloc[trial_list[0]][f"{param}_blank_pre"], param_trace]
-        )
+        if trial_list[0] == 0:
+            blank_start = trials_df.iloc[trial_list[0]][f"{param}_blank_pre"][
+                -int(fs * 10) :
+            ]
+            param_trace = np.concatenate([blank_start, param_trace])
+        else:
+            blank_start = trials_df.iloc[trial_list[0]][f"{param}_blank_pre"]
+            param_trace = np.concatenate([blank_start, param_trace])
         param_trace = param_trace * 100
     elif param == "OF":
         trials_df[f"{param}_merged"] = trials_df.apply(
@@ -852,15 +857,17 @@ def plot_speed_trace(
             [row[f"{param}_merged"] for _, row in trials_df.iloc[trial_list].iterrows()]
         )
         param_trace = np.degrees(param_trace)
-        param_trace = np.concatenate(
-            [
-                np.full(
-                    len(trials_df.iloc[trial_list[0]][f"{param}_blank_pre"]), np.nan
-                ),
-                param_trace,
+        if trial_list[0] == 0:
+            blank_start = trials_df.iloc[trial_list[0]][f"{param}_blank_pre"][
+                -int(fs * 10) :
             ]
-        )
-        param_trace[param_trace < 1e-4] = np.nan
+            param_trace = np.concatenate([np.full(int(fs * 10), np.nan), param_trace])
+        else:
+            blank_start = trials_df.iloc[trial_list[0]][f"{param}_blank_pre"]
+            param_trace = np.concatenate(
+                [np.full(len(blank_start), np.nan), param_trace]
+            )
+        param_trace[param_trace < 1e-4] = 1e-5
         param_trace[0] = 1e-4
 
     trial_starts = np.cumsum(
@@ -872,9 +879,7 @@ def plot_speed_trace(
     trial_lengths = [
         len(row[f"{param}_stim"]) for _, row in trials_df.iloc[trial_list].iterrows()
     ]
-    trial_starts = np.concatenate([[0], trial_starts[:-1]]) + len(
-        trials_df.iloc[trial_list[0]][f"{param}_blank_pre"]
-    )
+    trial_starts = np.concatenate([[0], trial_starts[:-1]]) + len(blank_start)
     print(param_trace)
 
     depths = trials_df.iloc[trial_list]["depth"].values
@@ -891,7 +896,8 @@ def plot_speed_trace(
         ax.set_yscale("log")
         ax.set_ylim(1e-2, np.nanmax(param_trace) * 2)
     ax.set_ylabel(ylabel, rotation=90, labelpad=15, fontsize=fontsize_dict["label"])
-    ax.set_xlim(0.0001, len(param_trace) / fs)
+    ax.set_xlim(0, len(param_trace) / fs)
+    # ax.set_xlim(0, 100)
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["ticks"])
 
     # plot trials
@@ -922,7 +928,7 @@ def plot_speed_trace_closed_open_loop(
     trial_list,
     fig,
     axes,
-    fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
+    fontsize_dict={"title": 8, "label": 8, "ticks": 6},
 ):
     suite2p_datasets = flz.get_datasets(
         origin_name=session_name,
@@ -936,7 +942,7 @@ def plot_speed_trace_closed_open_loop(
     i = 0
     for closed_loop, title in zip([1, 0], ["Closed loop", "Open loop"]):
         for param, ylabel in zip(
-            ["RS", "OF"], ["Running speed \n(cm/s)", "Optic flow speed \n(degrees/s"]
+            ["RS", "OF"], ["Running speed \n(cm/s)", "Optic flow \nspeed (degrees/s"]
         ):
             ax = axes[i]
             plot_speed_trace(
@@ -947,10 +953,11 @@ def plot_speed_trace_closed_open_loop(
                 ax=ax,
                 ylabel=ylabel,
                 linecolor="k",
-                linewidth=0.3,
-                fontsize_dict=fontsize_dict,
+                linewidth=0.2,
             )
+            if param == "RS":
+                ax.set_title(title, fontsize=fontsize_dict["title"])
+            if closed_loop == 0:
+                ax.set_ylabel("")
             i += 1
-        ax.set_xlabel("Time (s)", fontsize=fontsize_dict["label"])
-        ax.set_title(title, fontsize=fontsize_dict["title"])
     plt.tight_layout()
