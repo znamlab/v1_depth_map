@@ -68,14 +68,14 @@ session_list = [
     # "PZAH8.2i_S20230203",
     # "PZAH8.2i_S20230209",
     # "PZAH8.2i_S20230216",
-    # "PZAH8.2i_S20230220",
+    "PZAH8.2i_S20230220",
     # "PZAH8.2i_S20230324",
     # "PZAH8.2i_S20230330",
     # "PZAH8.2i_S20230404",
         
     # "PZAH8.2f_S20230109",
     # "PZAH8.2f_S20230117",
-    "PZAH8.2f_S20230126",  # need more memory for RF
+    # "PZAH8.2f_S20230126",  # need more memory for RF
     # "PZAH8.2f_S20230131",
     # "PZAH8.2f_S20230202",
     # "PZAH8.2f_S20230206",
@@ -136,10 +136,11 @@ session_list = [
     # "PZAH10.2f_S20230924",
     
 ]
-run_depth_fit = 1
-run_rf = 1
-run_rsof_fit = 0
+run_depth_fit = 0
+run_rf = 0
+run_rsof_fit = 1
 run_plot = 0
+run_rsof_fit_separate_recordings = 1
 
 use_slurm = 1
 
@@ -169,4 +170,4 @@ def main(
 if __name__ == "__main__":
     main(project, session_list, pipeline_filename, conflicts, 
          use_slurm=use_slurm, 
-         run_depth_fit=run_depth_fit, run_rf=run_rf, run_rsof_fit=run_rsof_fit, run_plot=run_plot)
+         run_depth_fit=run_depth_fit, run_rf=run_rf, run_rsof_fit=run_rsof_fit, run_plot=run_plot, run_rsof_fit_separate_recordings=run_rsof_fit_separate_recordings)
