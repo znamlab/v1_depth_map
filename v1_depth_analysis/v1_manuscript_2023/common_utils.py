@@ -23,6 +23,9 @@ def concatenate_all_neurons_df(
         )
         if os.path.exists(neurons_ds.path_full.parent / filename):
             neurons_df = pd.read_pickle(neurons_ds.path_full.parent / filename)
+            if isinstance(neurons_df, dict):
+                neurons_df_temp = pd.DataFrame(columns=cols, index=[0])
+                neurons_df = dict2df(neurons_df, neurons_df_temp, cols, 0)
             if (cols is None) or (set(cols).issubset(neurons_df.columns.tolist())):
                 if cols is None:
                     neurons_df = neurons_df
@@ -52,7 +55,7 @@ def concatenate_all_neurons_df(
                     )
 
                 if verbose:
-                    print(f"Finished concat neurons_df from session {session}")
+                    print(f"Finished concat {filename} from session {session}")
                 isess += 1
             else:
                 print(f"ERROR: SESSION {session}: specified cols not all in neurons_df")
@@ -60,3 +63,24 @@ def concatenate_all_neurons_df(
             print(f"ERROR: SESSION {session}: {filename} not found")
 
     return neurons_df_all
+
+
+def create_nested_nan_list(levels):
+    nested_list = np.nan  # Start with np.nan
+    for _ in range(levels):
+        nested_list = [nested_list]  # Wrap the current structure in a new list
+    return [nested_list]
+
+
+def dict2df(dict, df, cols, index):
+    for (key, item) in dict.items():
+        if key in cols:
+            if isinstance(item, float):
+                df[key].iloc[index] = item
+            elif isinstance(item, list):
+                df[key] = create_nested_nan_list(np.array(item).ndim)
+                df[key].iloc[index] = item
+            elif isinstance(item, np.ndarray):
+                df[key] = create_nested_nan_list(item.ndim)
+                df[key].iloc[index]= item.tolist()
+    return df
