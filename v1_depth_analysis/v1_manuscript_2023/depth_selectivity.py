@@ -197,6 +197,7 @@ def plot_depth_tuning_curve(
     linecolor="k",
     closed_loop=1,
     label=None,
+    ylim=None,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
 ):
     """
@@ -276,15 +277,19 @@ def plot_depth_tuning_curve(
                 gaussian_arr = fit_gaussian_blob.gaussian_1d(
                     np.log(x), a, x0, log_sigma, b, min_sigma
                 )
-                plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth)
+                plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth, label=label)
         else:
             [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col]
             gaussian_arr = fit_gaussian_blob.gaussian_1d(
                 np.log(x), a, x0, log_sigma, b, min_sigma
             )
-            plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth)
-    plt.ylim([-round(np.max(CI_high), 1) * 0.05, round(np.max(CI_high), 1)])
-    plt.yticks([0, round(np.max(CI_high), 1)], fontsize=fontsize_dict["tick"])
+            plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth, label=label)
+    if ylim is None:
+        plt.ylim([-round(np.max(CI_high), 1) * 0.05, round(np.max(CI_high), 1)])
+        plt.yticks([0, round(np.max(CI_high), 1)], fontsize=fontsize_dict["tick"])
+    else:
+        plt.ylim(ylim)
+        plt.yticks([0, ylim[1]], fontsize=fontsize_dict["tick"])
 
     if param == "depth":
         plt.xticks(
@@ -300,7 +305,7 @@ def plot_depth_tuning_curve(
         plt.xlabel(f"Virtual radius (cm)", fontsize=fontsize_dict["label"])
     sns.despine(ax=plt.gca(), offset=3, trim=True)
     plt.yticks(fontsize=fontsize_dict["tick"])
-    plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
+    plt.ylabel("\u0394F/F", fontsize=fontsize_dict["label"], labelpad=-5)
     plt.xticks(
         fontsize=fontsize_dict["tick"],
         rotation=45,
@@ -600,7 +605,7 @@ def get_psth_crossval_all_sessions(
                 - set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0])
             )
             trials_df_resp, _, _ = common_utils.choose_trials_subset(
-                trials_df, choose_trials_resp
+                trials_df, choose_trials_resp, by_depth=True
             )
 
             for roi in tqdm(range(len(neurons_df))):
