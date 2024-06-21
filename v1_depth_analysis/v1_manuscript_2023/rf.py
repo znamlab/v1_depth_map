@@ -7,6 +7,7 @@ from cottage_analysis.analysis import spheres
 from cottage_analysis.plotting import plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 from v1_depth_analysis.v1_manuscript_2023.roi_location import determine_roi_locations
+import plotly.graph_objects as go
 
 
 def plot_stimulus_frame(
@@ -470,3 +471,114 @@ def plot_sig_rf_perc(
     )
     plotting_utils.despine()
     plt.tick_params(labelsize=fontsize_dict["tick"])
+
+
+def plot_rf_3d(neurons_df, rois, depths, savepath, fontsize_dict):
+    depth, ele, azi = np.mgrid[0:8, -37.5:37.5:16j, 2.5:117.5:24j]
+
+    data = []
+    for roi, rf_color, line_color in zip(
+        rois, ["Reds", "Greens", "Blues"], ["red", "green", "blue"]
+    ):
+        coef = neurons_df.loc[roi, f"rf_coef_closedloop"][:, :-1]
+        coef = coef.reshape(coef.shape[0], 8, 16, 24)
+        coef_mean = np.mean(coef, axis=0)
+        data.append(
+            go.Volume(
+                x=depth.flatten(),
+                y=azi.flatten(),
+                z=ele.flatten(),
+                value=coef_mean.flatten(),
+                isomin=coef_mean.max() / 2,
+                isomax=coef_mean.max(),
+                opacity=0.2,  # needs to be small to see through all surfaces
+                surface_count=11,  # needs to be a large number for good volume rendering
+                colorscale=rf_color,
+            )
+        )
+        rf_center = np.argmax(coef_mean)
+        # add a line from the centre of the RF to the edge along each axis
+        data.append(
+            go.Scatter3d(
+                x=depth.flatten()[[rf_center, 0]],
+                y=azi.flatten()[[rf_center, rf_center]],
+                z=ele.flatten()[[rf_center, rf_center]],
+                mode="lines",
+                line=dict(color=line_color, width=2),
+            )
+        )
+        data.append(
+            go.Scatter3d(
+                x=depth.flatten()[[rf_center, rf_center]],
+                y=azi.flatten()[[rf_center, 0]],
+                z=ele.flatten()[[rf_center, rf_center]],
+                mode="lines",
+                line=dict(color=line_color, width=2),
+            )
+        )
+        data.append(
+            go.Scatter3d(
+                x=depth.flatten()[[rf_center, rf_center]],
+                y=azi.flatten()[[rf_center, rf_center]],
+                z=ele.flatten()[[rf_center, 0]],
+                mode="lines",
+                line=dict(color=line_color, width=2),
+            )
+        )
+        data.append(
+            go.Scatter3d(
+                x=[
+                    depth.flatten()[rf_center],
+                ],
+                y=[
+                    azi.flatten()[rf_center],
+                ],
+                z=[
+                    ele.flatten()[rf_center],
+                ],
+                mode="markers",
+                marker=dict(color=line_color, size=5, symbol="circle"),
+            )
+        )
+    fig = go.Figure(data=data)
+    font_params = dict(
+        title_font_family="Arial",
+        title_font_size=fontsize_dict["label"],
+        tickfont=dict(
+            family="Arial",
+            size=fontsize_dict["tick"],
+        ),
+    )
+    fig.update_layout(
+        scene=dict(
+            xaxis=dict(
+                title="Depth (cm)",
+                tickmode="array",
+                tickvals=np.arange(0, 8),
+                ticktext=depths * 100,
+                **font_params,
+            ),
+            yaxis=dict(
+                title="Azimuth<br>(degrees)",
+                nticks=4,
+                range=[0, 90],
+                tickvals=[0, 90],
+                **font_params,
+            ),
+            zaxis=dict(
+                title="Elevation<br>(degrees)",
+                nticks=4,
+                range=[-20, 20],
+                tickvals=[-15, 0, 15],
+                **font_params,
+            ),
+            camera=dict(
+                eye=dict(x=1.75, y=1.75, z=1.75),
+            ),
+        ),
+        showlegend=False,
+    )
+    fig.update_coloraxes(showscale=False)
+
+    fig.show()
+    fig.write_image(savepath)
