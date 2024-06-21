@@ -166,7 +166,7 @@ def plot_raster_all_depths(
                 plot_x
                 + (len(depth_list) - 1) * each_plot_width
                 + each_plot_width * plot_prop
-                + 0.01,
+                +0.005,
                 plot_y,
                 cbar_width * 0.8,
                 plot_height / 3,
@@ -174,7 +174,7 @@ def plot_raster_all_depths(
         )
         plt.colorbar(im, cax=ax2, label="\u0394F/F")
         ax2.tick_params(labelsize=fontsize_dict["tick"])
-        ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["label"])
+        ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
 
     return dffs_binned
 
@@ -316,6 +316,7 @@ def get_PSTH(
     trials_df,
     roi,
     is_closed_loop,
+    use_col="dff",
     rs_thr_min=None,  # m/s
     rs_thr_max=None,  # m/s
     still_only=False,
@@ -347,13 +348,22 @@ def get_PSTH(
         all_dff = []
         for itrial in np.arange(trial_number):
             # concatenate dff_blank_pre, dff, and dff_blank
-            dff = np.concatenate(
-                (
-                    grouped.get_group(depth).dff_blank_pre.values[itrial][:, roi],
-                    grouped.get_group(depth).dff_stim.values[itrial][:, roi],
-                    grouped.get_group(depth).dff_blank.values[itrial][:, roi],
+            if use_col == "dff":
+                dff = np.concatenate(
+                    (
+                        grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial][:, roi],
+                        grouped.get_group(depth)[f"{use_col}_stim"].values[itrial][:, roi],
+                        grouped.get_group(depth)[f"{use_col}_blank"].values[itrial][:, roi],
+                    )
                 )
-            )
+            else:
+                dff = np.concatenate(
+                    (
+                        grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial],
+                        grouped.get_group(depth)[f"{use_col}_stim"].values[itrial],
+                        grouped.get_group(depth)[f"{use_col}_blank"].values[itrial],
+                    )
+                )
             rs_arr = np.concatenate(
                 (
                     grouped.get_group(depth).RS_blank_pre.values[itrial],
@@ -425,6 +435,7 @@ def plot_PSTH(
     trials_df,
     roi,
     is_closed_loop,
+    use_col="dff",
     corridor_length=6,
     blank_length=0,
     nbins=20,
@@ -454,6 +465,7 @@ def plot_PSTH(
         trials_df=trials_df,
         roi=roi,
         is_closed_loop=is_closed_loop,
+        use_col=use_col,
         rs_thr_min=rs_thr_min,
         rs_thr_max=rs_thr_max,
         still_only=still_only,
@@ -507,7 +519,7 @@ def plot_PSTH(
     if legend_on:
         plt.legend(
             loc="lower right",
-            bbox_to_anchor=(1.2, 0.2),
+            bbox_to_anchor=(1.4, -0.6),
             fontsize=fontsize_dict["legend"],
             frameon=False,
             handlelength=1,
@@ -749,12 +761,22 @@ def plot_psth_raster(
     ax.set_xticklabels(np.round(depth_list))
     ax.set_xlabel("Virtual depth (cm)", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="x", labelsize=fontsize_dict["tick"], rotation=60)
-    ax.set_ylabel("Neuron number", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("Neuron number", fontsize=fontsize_dict["label"], labelpad=-5)
     ax.set_yticks([1, len(results_df)])
     ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
     ax.set_xlim([0, ndepths * nbins])
-    cbar = plt.colorbar(mappable=im, ax=ax)
-    cbar.set_label("Z-score", fontsize=fontsize_dict["label"])
+    
+    ax_pos = ax.get_position()
+    ax2 = plt.gcf().add_axes(
+        [
+            ax_pos.x1 + ax_pos.width*0.05,
+            ax_pos.y0,
+            0.01,
+            ax_pos.height/2,
+        ]
+    )
+    cbar = plt.colorbar(mappable=im, cax=ax2)
+    cbar.set_label("Z-score", fontsize=fontsize_dict["legend"])
     cbar.ax.tick_params(labelsize=fontsize_dict["tick"])
 
 
@@ -773,7 +795,7 @@ def plot_depth_neuron_perc_hist(
     ax = plt.gca()
     xlim = ax.get_xlim()
     ax.set_xlim([0, xlim[1]])
-    ax.set_xlabel("Proportion of depth-tuned neurons", fontsize=fontsize_dict["label"])
+    ax.set_xlabel("Proportion of \ndepth-tuned neurons", fontsize=fontsize_dict["label"])
     ax.set_ylabel("Number of sessions", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
     # plot median proportion as a triangle along the top of the histogram
@@ -1080,3 +1102,70 @@ def plot_fov_mean_img(im, vmax=700, fov_width=572.867):
         (40, im.shape[0] * 0.93), scalebar_length_px, 20, color="white"
     )
     plt.gca().add_patch(rect)
+
+
+def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df, ax, depth_tuning_kwargs, fontsize_dict, fov_ax=None, ops=None, stat=None, legend_loc="upper right", text_pos="upper_left"):
+    for rs_thr, rs_thr_max, still_only, still_time, i_running, linecolor, label, use_col in zip(
+        [0.05, None],
+        [None, 0.05],
+        [0,1],
+        [0, 1],
+        [0, 1],
+        ["royalblue", "gray"],
+        ["Running", "Stationary"],
+        ["depth_tuning_popt_closedloop_running", "depth_tuning_popt_closedloop_notrunning"]
+    ):
+        depth_tuning_running_kwargs = depth_tuning_kwargs.copy()
+        depth_tuning_running_kwargs["rs_thr"] = rs_thr
+        depth_tuning_running_kwargs["rs_thr_max"] = rs_thr_max
+        depth_tuning_running_kwargs["still_only"] = still_only
+        depth_tuning_running_kwargs["still_time"] = still_time
+        depth_tuning_running_kwargs["linecolor"] = linecolor
+        depth_tuning_running_kwargs["use_col"] = use_col
+        if i_running == 0:
+            plot_depth_tuning_curve(
+                neurons_df=neurons_df,
+                trials_df=trials_df,
+                roi=roi,
+                **depth_tuning_running_kwargs,
+                label=label,
+            )
+        else:
+            plot_depth_tuning_curve(
+                neurons_df=neurons_df,
+                trials_df=trials_df,
+                roi=roi,
+                **depth_tuning_running_kwargs,
+                ylim = (ylim[0], np.round(ylim[1]*1.05,1)),
+                label=label,
+            )
+        if i_running == 0:
+            ylim = plt.ylim()
+        if i != 1:
+            plt.ylabel("")
+        if i % 3 != 2:
+            plt.xlabel("")
+            ax.set_xticklabels([])
+        if i_running == 0:
+            if text_pos == "upper_left":
+                x_label = plt.xlim()[0] + 0.05 * (plt.xlim()[1] - plt.xlim()[0])
+            elif text_pos == "upper_right":
+                x_label = plt.xlim()[1] - 0.3 * (plt.xlim()[1] - plt.xlim()[0])
+            plt.text(
+                x_label,
+                ylim[1],
+                f"ROI {roi_num}",
+                fontsize=fontsize_dict["legend"],
+            )
+            if fov_ax:
+                fov_ax.annotate(
+                    f"{roi_num}",
+                    (ops["meanImg"].shape[0] - stat[roi]["med"][1], stat[roi]["med"][0]),
+                    xytext=(5, 5),
+                    textcoords="offset points",
+                    color="w",
+                    fontsize=fontsize_dict["label"],
+                    arrowprops=dict(facecolor="w", edgecolor="w", arrowstyle="->"),
+                )
+    if i == 0:
+        plt.legend(loc=legend_loc, fontsize=fontsize_dict["legend"], framealpha=1, borderpad=0, frameon=False, handlelength=0.5) 

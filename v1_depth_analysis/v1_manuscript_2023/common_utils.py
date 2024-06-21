@@ -84,3 +84,7 @@ def dict2df(dict, df, cols, index):
                 df[key] = create_nested_nan_list(item.ndim)
                 df[key].iloc[index]= item.tolist()
     return df
+
+
+def find_columns_containing_string(df, substring):
+    return [col for col in df.columns if substring in col]
