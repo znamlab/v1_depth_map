@@ -191,27 +191,25 @@ def find_rf_centers(
     coef_ = (coef[:, :, :-1]).reshape(
         coef.shape[0], coef.shape[1], ndepths, frame_shape[0], frame_shape[1]
     )
-    coef_mean = np.mean(np.mean(coef_, axis=1), axis=1)
+    coef_mean = np.mean(coef_, axis=1)
 
     # Find the center (index of maximum value of fitted RF)
     max_idx = [
-        [
-            np.unravel_index(coef_mean[i, :, :].argmax(), coef_mean[0, :, :].shape)[0],
-            np.unravel_index(coef_mean[i, :, :].argmax(), coef_mean[0, :, :].shape)[1],
-        ]
+        np.unravel_index(coef_mean[i, :, :].argmax(), coef_mean[0, :, :].shape)
         for i in range(coef_mean.shape[0])
     ]
     max_idx = np.array(max_idx)
 
     def index_to_deg(idx, resolution=resolution, n_ele=80):
-        azi = (idx[:, 1] + 0.5) * resolution
-        ele = (idx[:, 0] + 0.5 - n_ele / 2) * resolution
+        azi = (idx[:, 2] + 0.5) * resolution
+        ele = (idx[:, 1] + 0.5 - n_ele / 2) * resolution
         return azi, ele
 
     azi, ele = index_to_deg(max_idx, n_ele=frame_shape[0])
+    idepth = max_idx[:, 0]
     neurons_df["rf_azi"] = azi
     neurons_df["rf_ele"] = ele
-    return azi, ele, coef
+    return azi, ele, idepth, coef
 
 
 def plot_rf_centers(
@@ -240,7 +238,7 @@ def plot_rf_centers(
         # Get the coef and ipsi+_coef from each session
         session = sessions[i]
         results_sess = results[results.session == session]
-        azi, ele, coef = find_rf_centers(
+        azi, ele, _, coef = find_rf_centers(
             neurons_df=results_sess,
             is_closed_loop=is_closed_loop,
             ndepths=ndepths,
@@ -364,9 +362,11 @@ def load_sig_rf(
                 )
                 neurons_df["rf_sig"] = sig
                 neurons_df["rf_sig_ipsi"] = sig_ipsi
-                select_neurons = (neurons_df["iscell"] == 1) & (
-                    neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05
-                ) & (neurons_df["depth_tuning_test_spearmanr_rval_closedloop"] > 0.1)
+                select_neurons = (
+                    (neurons_df["iscell"] == 1)
+                    & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+                    & (neurons_df["depth_tuning_test_spearmanr_rval_closedloop"] > 0.1)
+                )
                 sig = sig[select_neurons]
                 sig_ipsi = sig_ipsi[select_neurons]
                 all_sig.append(np.mean(sig))
@@ -375,7 +375,7 @@ def load_sig_rf(
                     ndepths = 5
                 else:
                     ndepths = 8
-                azi, ele, _ = find_rf_centers(
+                azi, ele, _, _ = find_rf_centers(
                     neurons_df,
                     ndepths=ndepths,
                     frame_shape=(16, 24),
