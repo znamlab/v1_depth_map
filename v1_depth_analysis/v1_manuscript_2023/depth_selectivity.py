@@ -92,89 +92,157 @@ def plot_raster_all_depths(
     # colormap
     WhRdcmap = basic_vis_plots.generate_cmap(cmap_name="WhRd")
 
-    # plot each depth as a heatmap
+    # plot all depths as one heatmap
     if plot:
         plot_x, plot_y, plot_width, plot_height = position
         plot_prop = 0.9
         each_plot_width = (plot_width - cbar_width) / len(depth_list)
-        for idepth, depth in enumerate(depth_list):
-            ax = plt.gcf().add_axes(
-                [
-                    plot_x + idepth * each_plot_width,
-                    plot_y,
-                    each_plot_width * plot_prop,
-                    plot_height,
-                ]
-            )
-            im = ax.imshow(
-                dffs_binned[idepth],
-                aspect="auto",
-                cmap=WhRdcmap,
-                vmin=0,
-                vmax=vmax,
-                interpolation="nearest",
-                extent=[min_distance, max_distance, 0, trial_number],
-            )
-            if idepth == 0:
-                ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"])
-                ax.tick_params(
-                    left=True,
-                    right=False,
-                    labelleft=True,
-                    labelbottom=True,
-                    bottom=True,
-                    labelsize=fontsize_dict["tick"],
-                )
-                # add a text label "Depth (cm):" to the left of the axis title
-                ax.text(
-                    0.05,
-                    1.12,
-                    "Depth (cm):",
-                    horizontalalignment="right",
-                    verticalalignment="center",
-                    transform=ax.transAxes,
-                    fontsize=fontsize_dict["label"],
-                )
-            else:
-                ax.tick_params(
-                    left=False,
-                    right=False,
-                    labelleft=False,
-                    labelbottom=True,
-                    bottom=True,
-                    labelsize=fontsize_dict["tick"],
-                )
-                # set length of y-ticks to 1
-                ax.tick_params(axis="y", length=1)
-            if idepth == len(depth_list) // 2:
-                ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
-            ax.set_xticks([0, corridor_length])
-            plt.plot([0, 0], [0, trial_number], "k--", linewidth=0.5)
-            plt.plot(
-                [corridor_length, corridor_length],
-                [0, trial_number],
-                "k--",
-                linewidth=0.5,
-            )
-            plt.title(
-                f"{int(depth_list[idepth] * 100)}", fontsize=fontsize_dict["title"]
-            )
-            ax.invert_yaxis()
-
+        ax = plt.gcf().add_axes([plot_x, plot_y, plot_width, plot_height])
+        im = ax.imshow(
+            np.swapaxes(dffs_binned, 0, 1).reshape(-1, nbins*len(depth_list)),
+            aspect="auto",
+            cmap=WhRdcmap,
+            vmin=0,
+            vmax=vmax,
+            interpolation="nearest",
+        )
+        # Plot vertical lines to separate different depths
+        ndepths = len(depth_list)
+        for i in range(ndepths-1):
+            ax.axvline((i + 1) * nbins, color="k", linewidth=0.5, linestyle="dotted")
+        # Change y ticks to trial number
+        ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"], labelpad=-5)
+        ax.set_yticks([1, dffs_binned.shape[1]])
+        ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
+        # Change xticks positions to the middle of current ticks and show depth at the tick position
+        blank_prop = blank_length / (corridor_length + blank_length*2)
+        xticks1 = np.linspace(blank_prop*nbins, blank_prop*nbins+(ndepths-1)*nbins, ndepths).astype("int")
+        xticks2 = np.linspace(nbins-blank_prop*nbins, ndepths*nbins - blank_prop*nbins, ndepths).astype("int")
+        ax.set_xticks(np.concatenate([xticks1,xticks2]))
+        ax.set_xticklabels(np.concatenate([np.repeat(0,ndepths),np.repeat(corridor_length,ndepths)]))
+        ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
+        ax.tick_params(axis="x", labelsize=fontsize_dict["tick"], rotation=0)
+        sns.despine()
+        
         ax2 = plt.gcf().add_axes(
             [
-                plot_x
-                + (len(depth_list) - 1) * each_plot_width
-                + each_plot_width * plot_prop
-                +0.005,
+                plot_x + plot_width + 0.01,
                 plot_y,
                 cbar_width * 0.8,
                 plot_height / 3,
             ]
         )
+        # set colorbar
         plt.colorbar(im, cax=ax2, label="\u0394F/F")
         ax2.tick_params(labelsize=fontsize_dict["tick"])
         ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
+        
+        # add a text label "Depth (cm):" to the left of the axis title
+        for idepth, depth in enumerate(depth_list):
+            if idepth == 0:
+                ax.text(
+                    0.07,
+                    1.12,
+                    f"Depth (cm): {int(depth_list[idepth] * 100)}",
+                    horizontalalignment="right",
+                    verticalalignment="center",
+                    transform=ax.transAxes,
+                    fontsize=fontsize_dict["label"],
+                )
+            
+            else:
+                ax.text(
+                    0.07 + idepth * each_plot_width * 3.6,
+                    1.12,
+                    f"{int(depth_list[idepth] * 100)}",
+                    horizontalalignment="right",
+                    verticalalignment="center",
+                    transform=ax.transAxes,
+                    fontsize=fontsize_dict["label"],
+                )
+        
+        
+        # plot_x, plot_y, plot_width, plot_height = position
+        # plot_prop = 0.9
+        # each_plot_width = (plot_width - cbar_width) / len(depth_list)
+        # for idepth, depth in enumerate(depth_list):
+        #     ax = plt.gcf().add_axes(
+        #         [
+        #             plot_x + idepth * each_plot_width,
+        #             plot_y,
+        #             each_plot_width * plot_prop,
+        #             plot_height,
+        #         ]
+        #     )
+        #     im = ax.imshow(
+        #         dffs_binned[idepth],
+        #         aspect="auto",
+        #         cmap=WhRdcmap,
+        #         vmin=0,
+        #         vmax=vmax,
+        #         interpolation="nearest",
+        #         extent=[min_distance, max_distance, 0, trial_number],
+        #     )
+        #     if idepth == 0:
+        #         ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"])
+        #         ax.tick_params(
+        #             left=True,
+        #             right=False,
+        #             labelleft=True,
+        #             labelbottom=True,
+        #             bottom=True,
+        #             labelsize=fontsize_dict["tick"],
+        #         )
+        #         # add a text label "Depth (cm):" to the left of the axis title
+        #         ax.text(
+        #             0.05,
+        #             1.12,
+        #             "Depth (cm):",
+        #             horizontalalignment="right",
+        #             verticalalignment="center",
+        #             transform=ax.transAxes,
+        #             fontsize=fontsize_dict["label"],
+        #         )
+        #     else:
+        #         ax.tick_params(
+        #             left=False,
+        #             right=False,
+        #             labelleft=False,
+        #             labelbottom=True,
+        #             bottom=True,
+        #             labelsize=fontsize_dict["tick"],
+        #         )
+        #         # set length of y-ticks to 1
+        #         ax.tick_params(axis="y", length=1)
+        #     if idepth == len(depth_list) // 2:
+        #         ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
+        #     ax.set_xticks([0, corridor_length])
+        #     plt.plot([0, 0], [0, trial_number], "k--", linewidth=0.5)
+        #     plt.plot(
+        #         [corridor_length, corridor_length],
+        #         [0, trial_number],
+        #         "k--",
+        #         linewidth=0.5,
+        #     )
+        #     plt.title(
+        #         f"{int(depth_list[idepth] * 100)}", fontsize=fontsize_dict["title"]
+        #     )
+        #     ax.invert_yaxis()
+
+        # ax2 = plt.gcf().add_axes(
+        #     [
+        #         plot_x
+        #         + (len(depth_list) - 1) * each_plot_width
+        #         + each_plot_width * plot_prop
+        #         +0.005,
+        #         plot_y,
+        #         cbar_width * 0.8,
+        #         plot_height / 3,
+        #     ]
+        # )
+        # plt.colorbar(im, cax=ax2, label="\u0394F/F")
+        # ax2.tick_params(labelsize=fontsize_dict["tick"])
+        # ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
 
     return dffs_binned
 
@@ -448,6 +516,7 @@ def plot_PSTH(
     linewidth=3,
     legend_on=False,
     show_ci=True,
+    ylim=(None,None),
 ):
     """PSTH of a neuron for each depth and blank period.
 
@@ -506,7 +575,18 @@ def plot_PSTH(
         fontsize=fontsize_dict["tick"],
     )
     plt.yticks(fontsize=fontsize_dict["tick"])
-    ylim = plt.gca().get_ylim()
+    if (ylim[0] is None) and (ylim[1] is None):
+        ylim = plt.gca().get_ylim()
+    elif ylim[0] is not None:
+        if ylim[1] is None:
+            ylim = (ylim[0], plt.gca().get_ylim()[1])
+            plt.ylim(ylim)
+        else:
+            ylim=ylim
+        plt.ylim(ylim) 
+    elif (ylim[1] is not None) and (ylim[0] is None):
+        ylim = (plt.gca().get_ylim()[0], ylim[1])
+        plt.ylim(ylim) 
     plt.plot([0, 0], ylim, "k--", linewidth=0.5, label="_nolegend_")
     plt.plot(
         [corridor_length, corridor_length],
