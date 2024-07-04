@@ -232,10 +232,20 @@ def calculate_error(conmat):
     return mean_error
 
 
+def make_change_level_conmat(conmat):
+    conmat = np.array(conmat)
+    sum = np.sum(conmat)
+    each = sum//(conmat.shape[0]**2)
+    conmat_chance = np.ones_like(conmat) * each
+    return conmat_chance
+
+
 def calculate_error_all_sessions(decoder_results):
     for sfx in ["closedloop", "openloop"]:
         if f"conmat_{sfx}" in decoder_results.columns:
+            decoder_results[f"conmat_chance_{sfx}"] = decoder_results[f"conmat_{sfx}"].apply(make_change_level_conmat)
             decoder_results[f"error_{sfx}"] = decoder_results[f"conmat_{sfx}"].apply(calculate_error)
+            decoder_results[f"error_chance_{sfx}"] = decoder_results[f"conmat_chance_{sfx}"].apply(calculate_error)
             for i in range(len(decoder_results[f"conmat_speed_bins_{sfx}"].iloc[0])):
                 decoder_results[f"conmat_speed_bins_{sfx}_{i}"] = decoder_results.conmat_speed_bins_closedloop.apply(lambda x: x[i])
             conmat_speed_bins_cols = plt_common_utils.find_columns_containing_string(decoder_results, f"conmat_speed_bins_{sfx}_")
@@ -246,10 +256,13 @@ def calculate_error_all_sessions(decoder_results):
 
 def plot_decoder_err_by_speeds(decoder_df, 
                                all_speed_bin_edges, 
+                               highest_bin=6,
                                closed_loop=1, 
                                linecolor="k", 
+                               linecolor_chance="r",
                                linewidth=1, 
                                alpha=1,
+                               alpha_chance=0.5,
                                markersize=5, 
                                fontsize_dict={"title": 10, "label": 5, "tick": 5, "legend":5}):
     # find decoder_df for 5 depth session
@@ -263,8 +276,11 @@ def plot_decoder_err_by_speeds(decoder_df,
     err_speed_bins = np.zeros((len(decoder_df), use_nbins))
     for i in range(use_nbins):
         err_speed_bins[:,i] = decoder_df[f"error_speed_bins_{sfx}_{i}"]
-    mean_err = np.nanmean(err_speed_bins, axis=0)
-    CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins.T)
+    err_speed_bins = err_speed_bins*2 # convert log 2 to folds (so log2 = 1 is 2 folds)
+    
+    # bins that are below the highest bin (<1m/s)
+    mean_err = np.nanmean(err_speed_bins[:,:highest_bin], axis=0)
+    CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:,:highest_bin].T)
     ax.errorbar(
         x=np.arange(1),
         y=mean_err.flatten()[0],
@@ -279,7 +295,7 @@ def plot_decoder_err_by_speeds(decoder_df,
     )
     
     ax.errorbar(
-        x=np.linspace(1, use_nbins-1, use_nbins-1),
+        x=np.linspace(1, highest_bin-1, highest_bin-1),
         y=mean_err.flatten()[1:use_nbins],
         yerr=((mean_err - CI_low)[1:use_nbins],(CI_high-mean_err)[1:use_nbins]),
         fmt=".",
@@ -291,19 +307,41 @@ def plot_decoder_err_by_speeds(decoder_df,
         markersize=markersize,
     )
     
-    xticks = np.arange(use_nbins).tolist()
+    # bins that are within the highest bin (<1m/s)
+    mean_err = np.nanmean(err_speed_bins[highest_bin:])
+    CI_low, CI_high = common_utils.get_bootstrap_ci(np.nanmean(err_speed_bins[:,highest_bin:], axis=1))
+    ax.errorbar(
+        x=[highest_bin],
+        y=mean_err,
+        yerr=mean_err - CI_low,
+        fmt=".",
+        color=linecolor,
+        ls="none",
+        fillstyle="none",
+        linewidth=linewidth,
+        markeredgewidth=linewidth,
+        markersize=markersize,
+    )
+    
+    # add chance level error
+    ax.axhline(np.nanmean(decoder_df[f"error_chance_{sfx}"])*2, color=linecolor_chance, linestyle="dotted", linewidth=linewidth, alpha=alpha_chance) # convert log 2 to folds (so log2 = 1 is 2 folds)
+    
+    # set xticks
+    xticks = np.arange(highest_bin+1).tolist()
     ax.set_xticks(xticks)
 
     new_tick_labels = []
     for i, tick in enumerate(xticks):
         if i == 0:
             new_tick_labels.append("stationary")
+        elif i < highest_bin:
+            new_tick_labels.append(np.round(all_speed_bin_edges[:highest_bin][i-1],1))
         else:
-            new_tick_labels.append(np.round(all_speed_bin_edges[i-1],1))
+            new_tick_labels.append(f"> {all_speed_bin_edges[highest_bin-2]}")
     ax.set_xticklabels(new_tick_labels)
     plt.tick_params(axis="both", labelsize=fontsize_dict["tick"])
     ax.set_xlabel("Running speed (m/s)", fontsize=fontsize_dict["label"])
-    ax.set_ylabel("Log2(decoding error)", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("Mean ratio of decoded depth\nto true depth", fontsize=fontsize_dict["label"])
     sns.despine()
     return err_speed_bins
 
