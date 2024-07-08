@@ -7,15 +7,22 @@ def get_sessions(
     closedloop_only=True,
     openloop_only=False,
     v1_only=True,
+    mouse_list=None,
 ):
     """
     Get a list of sessions to include.
 
     Args:
         flexilims_session (str): flexilims session
-        exclude_sessions (list): list of sessions to exclude manually
-        closedloop_only (bool): only include closedloop sessions
-        openloop_only (bool): only include openloop sessions
+        exclude_sessions (list, optional): list of sessions to exclude manually.
+            Defaults to ().
+        closedloop_only (bool, optional): only include closedloop sessions. Defaults to
+            True.
+        openloop_only (bool, optional): only include openloop sessions. Defaults to
+            False.
+        v1_only (bool, optional): only include V1 sessions. Defaults to True.
+        mouse_list (list, optional): list of mice to include, if None, include all.
+            Default to None.
 
     Returns:
         list: list of sessions to include
@@ -25,7 +32,9 @@ def get_sessions(
         closedloop_only and openloop_only
     ), "Both closedloop_only and openloop_only cannot be True"
     session_list = []
-    mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
+    if mouse_list is None:
+        mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
+
     for mouse in mouse_list["name"].values:
         sessions_mouse = flz.get_children(
             parent_name=mouse,
@@ -148,7 +157,7 @@ def get_all_sessions(project, mouse_list, closedloop_only=True, openloop_only=Fa
         "PZAH10.2f_S20230907",
     ]
 
-    if (closedloop_only == True) and (openloop_only == True):
+    if closedloop_only and openloop_only:
         print(
             "WARNING: Both closedloop_only and openloop_only are True. No session is returned."
         )
@@ -240,7 +249,7 @@ def get_all_sessions(project, mouse_list, closedloop_only=True, openloop_only=Fa
                 session for session in openloop_sessions if mouse in session
             ]
 
-    elif (closedloop_only == False) and (openloop_only == False):
+    elif (not closedloop_only) and (not openloop_only):
         session_list = session_list + (
             get_sessions(project, mouse_list, exclude_sessions=exclude_sessions)
         )
