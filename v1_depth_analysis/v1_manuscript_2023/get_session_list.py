@@ -4,8 +4,8 @@ import flexiznam as flz
 def get_sessions(
     flexilims_session,
     exclude_sessions=(),
-    closedloop_only=True,
-    openloop_only=False,
+    exclude_openloop=True,
+    exclude_pure_closedloop=False,
     v1_only=True,
     trialnum_min=10,
     mouse_list=None,
@@ -17,10 +17,10 @@ def get_sessions(
         flexilims_session (str): flexilims session
         exclude_sessions (list, optional): list of sessions to exclude manually.
             Defaults to ().
-        closedloop_only (bool, optional): only include closedloop sessions. Defaults to
-            True.
-        openloop_only (bool, optional): only include openloop sessions. Defaults to
-            False.
+        exclude_openloop (bool, optional): only include closedloop sessions. Defaults to
+            True. To include all sessions, set to False.
+        exclude_pure_closedloop (bool, optional): only include openloop sessions. Defaults to
+            False. To include all sessions, set to False.
         v1_only (bool, optional): only include V1 sessions. Defaults to True.
         mouse_list (list, optional): list of mice to include, if None, include all.
             Default to None.
@@ -30,7 +30,7 @@ def get_sessions(
 
     """
     assert not (
-        closedloop_only and openloop_only
+        exclude_openloop and exclude_pure_closedloop
     ), "Both closedloop_only and openloop_only cannot be True"
     session_list = []
     if mouse_list is None:
@@ -73,15 +73,11 @@ def get_sessions(
         )
         closed_loop = len(recs[recs["protocol"] == "SpheresPermTubeReward"]) > 0
         open_loop = len(recs[recs["protocol"] == "SpheresPermTubeRewardPlayback"]) > 0
-        if (
-            (closedloop_only and closed_loop and not open_loop) # closedloop_only: only closedloop, no openloop
-            or (openloop_only and closed_loop and open_loop) # openloop_only: only sessions with openloop and closedloop
-            or (                                             # if closedloop_only and openloop_only are both false, include sessions with either closedloop or openloop trials
-                (not closedloop_only and not openloop_only)
-                and (closed_loop) or open_loop
-            )
-        ):
-            keep_sessions.append(session)
+        if exclude_openloop and open_loop:
+            continue
+        if exclude_pure_closedloop and (not open_loop):
+            continue
+        keep_sessions.append(session)
     return keep_sessions
 
 
