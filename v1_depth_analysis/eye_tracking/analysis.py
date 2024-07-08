@@ -50,12 +50,13 @@ def get_data(project, mouse, session, recording):
         pd.DataFrame: Gaze data with behaviour info
     """
     flm_sess = flz.get_flexilims_session(project_id=project)
-    dlc_res, ellipse, dlc_ds = get_gaze(
+    dlc_res, gaze_data, dlc_ds = get_gaze(
         project, mouse, session, recording, flm_sess=flm_sess
     )
     trials_df = get_trial_df(mouse, project, session, recording, flm_sess=flm_sess)
-    ellipse = add_behaviour(ellipse, trials_df)
-    return ellipse
+    gaze_data = add_behaviour(gaze_data, trials_df)
+    gaze_data = cleanup_data(gaze_data)
+    return gaze_data
 
 
 def get_gaze(
@@ -234,3 +235,44 @@ def add_behaviour(ellipse, trials_df):
     # Interpolate missing harptimes
     ellipse["harptime"] = ellipse.harptime.interpolate()
     return ellipse
+
+
+def cleanup_data(gaze_data, filt_window=5):
+    """Clean up gaze data
+
+    Fix depth to 2 decimal places, interpolate NaN values, and filter with a median
+    filter. Compute displacement and velocity.
+
+    Args:
+        gaze_data (pd.DataFrame): Gaze data
+        filt_window (int, optional): Window size for median filter. Defaults to 5.
+
+    Returns:
+        pd.DataFrame: Cleaned gaze data
+    """
+    # round depth
+    gaze_data["depth"] = gaze_data["depth"].round(2)
+
+    # replace NaN with linear interpolation
+    gaze_data["azimuth_interp"] = gaze_data["azimuth"].interpolate()
+    gaze_data["elevation_interp"] = gaze_data["elevation"].interpolate()
+    # filter with a box median filter
+    gaze_data["azimuth_filt"] = (
+        gaze_data["azimuth_interp"].rolling(filt_window=5, center=True).mean()
+    )
+    gaze_data["elevation_filt"] = (
+        gaze_data["elevation_interp"].rolling(filt_window=5, center=True).mean()
+    )
+
+    dt = np.nanmedian(np.diff(gaze_data["harptime"].values))
+    fs = 1 / dt
+    print(f"Sampling rate: {fs:.2f} Hz")
+    displacement = np.sqrt(
+        np.diff(gaze_data["azimuth_filt"]) ** 2
+        + np.diff(gaze_data["elevation_filt"]) ** 2
+    )
+    velocity = displacement / dt
+    gaze_data["displacement"] = np.concatenate([[0], displacement])
+    gaze_data["velocity"] = np.concatenate([[0], velocity])
+    gaze_data["depth_label"] = [f"{d:.2f}m" for d in gaze_data["depth"]]
+    return gaze_data
