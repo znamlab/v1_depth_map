@@ -7,6 +7,7 @@ def get_sessions(
     closedloop_only=True,
     openloop_only=False,
     v1_only=True,
+    trialnum_min=10,
 ):
     """
     Get a list of sessions to include.
@@ -42,8 +43,9 @@ def get_sessions(
                 ]
             else:
                 sessions_mouse = sessions_mouse[
-                    (sessions_mouse["exclude_reason"].isna())
-                    | (sessions_mouse["exclude_reason"].str.isspace())
+                    ((sessions_mouse["exclude_reason"].isna())
+                    | (sessions_mouse["exclude_reason"].str.isspace()))
+                    & (sessions_mouse["closedloop_trials"]/sessions_mouse["ndepths"] > trialnum_min)
                 ]
         if len(sessions_mouse) > 0:
             session_list.append(sessions_mouse.name.values.tolist())
@@ -63,11 +65,11 @@ def get_sessions(
         closed_loop = len(recs[recs["protocol"] == "SpheresPermTubeReward"]) > 0
         open_loop = len(recs[recs["protocol"] == "SpheresPermTubeRewardPlayback"]) > 0
         if (
-            (closedloop_only and open_loop and closed_loop)
-            or (openloop_only and closed_loop and open_loop)
-            or (
+            (closedloop_only and closed_loop and not open_loop) # closedloop_only: only closedloop, no openloop
+            or (openloop_only and closed_loop and open_loop) # openloop_only: only sessions with openloop and closedloop
+            or (                                             # if closedloop_only and openloop_only are both false, include sessions with either closedloop or openloop trials
                 (not closedloop_only and not openloop_only)
-                and (closed_loop or open_loop)
+                and (closed_loop) or open_loop
             )
         ):
             keep_sessions.append(session)
