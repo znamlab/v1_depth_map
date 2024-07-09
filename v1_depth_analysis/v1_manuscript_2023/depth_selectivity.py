@@ -9,6 +9,7 @@ from tqdm import tqdm
 import scipy
 import seaborn as sns
 import flexiznam as flz
+from scipy.stats import pearsonr
 from cottage_analysis.analysis import (
     spheres,
     find_depth_neurons,
@@ -253,6 +254,7 @@ def plot_depth_tuning_curve(
     roi,
     param="depth",
     use_col="depth_tuning_popt_closedloop",
+    min_sigma=0.5,
     folds=None,
     rs_thr=None,
     rs_thr_max=None,
@@ -260,9 +262,10 @@ def plot_depth_tuning_curve(
     still_time=0,
     frame_rate=15,
     plot_fit=True,
-    plot_smooth=True,
+    plot_smooth=False,
     linewidth=3,
     linecolor="k",
+    markersize=5,
     closed_loop=1,
     label=None,
     ylim=None,
@@ -308,7 +311,8 @@ def plot_depth_tuning_curve(
     )[:, :, roi]
     CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
-    plt.errorbar(
+    ax=plt.gca()
+    ax.errorbar(
         log_param_list,
         mean_arr,
         yerr=(mean_arr - CI_low, CI_high - mean_arr),
@@ -318,6 +322,7 @@ def plot_depth_tuning_curve(
         fillstyle="none",
         linewidth=linewidth,
         markeredgewidth=linewidth,
+        markersize=markersize
     )
 
     if plot_smooth:
@@ -337,7 +342,6 @@ def plot_depth_tuning_curve(
         )
     # Load gaussian fit params for this roi
     if plot_fit:
-        min_sigma = 0.5
         x = np.geomspace(param_list[0], param_list[-1], num=100)
         if folds is not None:
             for fold in np.arange(folds):
@@ -607,6 +611,34 @@ def plot_PSTH(
     plotting_utils.despine()
 
 
+def calculate_openloop_rs_correlation(imaging_df_openloop, trials_df, separate_depths=False):
+    if not separate_depths:
+        rs_actual = imaging_df_openloop["RS"][
+            (imaging_df_openloop["RS"].notnull()) 
+            & (imaging_df_openloop["RS_eye"].notnull())
+            ]
+        rs_eye = imaging_df_openloop["RS_eye"][
+            (imaging_df_openloop["RS"].notnull()) 
+            & (imaging_df_openloop["RS_eye"].notnull())
+            ]
+        r_all,p_all = pearsonr(rs_actual, rs_eye)
+    else:
+        trials_df_openloop = trials_df[trials_df.closed_loop == 0]
+        depth_list = find_depth_neurons.find_depth_list(trials_df)
+        r_all = []
+        p_all = []
+        for depth in depth_list:
+            rs_actual = np.hstack(trials_df_openloop[trials_df_openloop.depth == depth]["RS_stim"])
+            rs_eye = np.hstack(trials_df_openloop[trials_df_openloop.depth == depth]["RS_eye_stim"])
+            nan_vals = (np.isnan(rs_actual) | np.isnan(rs_eye))
+            rs_actual = rs_actual[~nan_vals]
+            rs_eye = rs_eye[~nan_vals]
+            r,p = pearsonr(rs_actual, rs_eye)
+            r_all.append(r)
+            p_all.append(p)
+    return r_all, p_all
+
+
 def get_psth_crossval_all_sessions(
     flexilims_session,
     session_list,
@@ -616,6 +648,9 @@ def get_psth_crossval_all_sessions(
         "preferred_depth_closedloop_crossval",
         "depth_tuning_test_rsq_closedloop",
     ],
+    calculate_rs=True, #rs is not crossval, but all trials
+    calculate_dff=True,
+    calculate_rs_correlation=True,
     rs_thr_min=None,
     rs_thr_max=None,
     still_only=False,
@@ -625,6 +660,27 @@ def get_psth_crossval_all_sessions(
     blank_length=0,
     overwrite=False,
 ):
+    '''Calculate the PSTH for all sessions in session_list.
+    Also calculate running speed PSTH; the correlation between actual and virtual running speeds for openloop sessions.
+
+    Args:
+        flexilims_session (Series): flexilims session.
+        session_list (list): list of session names.
+        nbins (int, optional): number of bins for raster. Defaults to 10.
+        closed_loop (int, optional): whether it's closedloop or openloop. Defaults to 1.
+        use_cols (list, optional): list of useful columns. Defaults to [ "preferred_depth_closedloop_crossval", "depth_tuning_test_rsq_closedloop", ].
+        rs_thr_min (float, optional): running speed min threshold. Defaults to None.
+        rs_thr_max (float, optional): running speed max threshold. Defaults to None.
+        still_only (bool, optional): whether to only take stationary frames. Defaults to False.
+        still_time (float, optional): duration of stationary time. Defaults to 1.
+        verbose (bool, optional): verbose. Defaults to 1.
+        corridor_length (float, optional): corridor length for one trial. Defaults to 6.
+        blank_length (float, optional): length of blank period at each end of the corridor. Defaults to 0.
+        overwrite (bool, optional): whether to overwrite the existing results or not. Defaults to False.
+
+    Returns:
+        pd.DataFrame: concatenated neurons_df dataframe
+    '''
     results_all = []
     for isess, session_name in enumerate(session_list):
         print(f"{isess}/{len(session_list)}: calculating PSTH for {session_name}")
@@ -669,6 +725,7 @@ def get_psth_crossval_all_sessions(
                 photodiode_protocol=photodiode_protocol,
                 return_volumes=True,
             )
+            trials_df_original=trials_df.copy()
             trials_df = trials_df[trials_df.closed_loop == closed_loop]
             neurons_df["session"] = session_name
             # Add roi, preferred depth, iscell to results
@@ -690,20 +747,41 @@ def get_psth_crossval_all_sessions(
             )[:, 0]
             neurons_df["iscell"] = iscell
             neurons_df["psth_crossval"] = [[np.nan]] * len(neurons_df)
+            neurons_df["rs_psth_stim"] = [[np.nan]] * len(neurons_df)
+            neurons_df["rs_psth"] = [[np.nan]] * len(neurons_df)
+            neurons_df["rs_mean_trials"] = [[np.nan]] * len(neurons_df)
+            neurons_df["rs_mean"] = [[np.nan]] * len(neurons_df)
+            neurons_df["rs_correlation_rval_openloop"] = np.nan
+            neurons_df["rs_correlation_pval_openloop"] = np.nan
+            neurons_df["rs_correlation_rval_openloop_alldepths"] = [[np.nan]] * len(neurons_df)
+            neurons_df["rs_correlation_pval_openloop_alldepths"] = [[np.nan]] * len(neurons_df)
 
-            # Get the responses for this session that are not included for calculating the cross-validated preferred depth
-            choose_trials_resp = list(
-                set(neurons_df.depth_tuning_trials_closedloop.iloc[0])
-                - set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0])
-            )
-            trials_df_resp, _, _ = common_utils.choose_trials_subset(
-                trials_df, choose_trials_resp, by_depth=True
-            )
-
-            for roi in tqdm(range(len(neurons_df))):
-                psth, _, _ = get_PSTH(
-                    trials_df=trials_df_resp,
-                    roi=roi,
+            if calculate_rs:
+                # Calculate the running speed psth 
+                print("Calculating running speed PSTH")
+                # just for stim period
+                rs_psth_stim, _, _ = get_PSTH(
+                    trials_df=trials_df,
+                    roi=0,
+                    use_col="RS",
+                    is_closed_loop=closed_loop,
+                    max_distance=corridor_length,
+                    min_distance=0,
+                    nbins=nbins,
+                    rs_thr_min=rs_thr_min,
+                    rs_thr_max=rs_thr_max,
+                    still_only=still_only,
+                    still_time=still_time,
+                    frame_rate=fs,
+                    compute_ci=False,
+                )
+                neurons_df.at[0, "rs_psth_stim"] = rs_psth_stim
+                
+                # stim + some blank period
+                rs_psth, _, _ = get_PSTH(
+                    trials_df=trials_df,
+                    roi=0,
+                    use_col="RS",
                     is_closed_loop=closed_loop,
                     max_distance=corridor_length + blank_length,
                     min_distance=-blank_length,
@@ -715,7 +793,74 @@ def get_psth_crossval_all_sessions(
                     frame_rate=fs,
                     compute_ci=False,
                 )
-                neurons_df.at[roi, "psth_crossval"] = psth
+                neurons_df.at[0, "rs_psth"] = rs_psth
+                
+                mean_rs = find_depth_neurons.average_dff_for_all_trials(
+                    trials_df=trials_df,
+                    use_col="RS_stim",
+                    rs_col="RS_stim",
+                    rs_thr=rs_thr_min,
+                    rs_thr_max=rs_thr_max,
+                    still_only=still_only,
+                    still_time=still_time,
+                    frame_rate=fs,
+                    closed_loop=closed_loop,
+                    param="depth",
+                )
+                neurons_df.at[0, "rs_mean_trials"] = mean_rs
+                neurons_df.at[0, "rs_mean"] = np.mean(mean_rs, axis=1)
+            
+            # Calculate openloop rs and rs_eye correlation
+            if (len(trials_df_original.closed_loop.unique()) == 2) & calculate_rs_correlation:
+                print("Calculating openloop RS correlation")
+                _, imaging_df_openloop = spheres.regenerate_frames_all_recordings(
+                    session_name=session_name,
+                    flexilims_session=flexilims_session,
+                    project=None,
+                    filter_datasets={"anatomical_only": 3},
+                    recording_type="two_photon",
+                    is_closedloop=0,
+                    protocol_base="SpheresPermTubeReward",
+                    photodiode_protocol=photodiode_protocol,
+                    return_volumes=True,
+                    resolution=5,
+                    regenerate_frames=False,
+                )
+                r, p = calculate_openloop_rs_correlation(imaging_df_openloop, trials_df_original, separate_depths=False)
+                neurons_df.at[0,"rs_correlation_rval_openloop"] = r
+                neurons_df.at[0,"rs_correlation_pval_openloop"] = p
+                r_all, p_all = calculate_openloop_rs_correlation(imaging_df_openloop, trials_df_original, separate_depths=True)
+                neurons_df.at[0,"rs_correlation_rval_openloop_alldepths"] = r_all
+                neurons_df.at[0,"rs_correlation_pval_openloop_alldepths"] = p_all
+            
+            # Calculate dff psth crossval
+            # Get the responses for this session that are not included for calculating the cross-validated preferred depth
+            choose_trials_resp = list(
+                set(neurons_df.depth_tuning_trials_closedloop.iloc[0])
+                - set(neurons_df.depth_tuning_trials_closedloop_crossval.iloc[0])
+            )
+            trials_df_resp, _, _ = common_utils.choose_trials_subset(
+                trials_df, choose_trials_resp, by_depth=True
+            )
+            
+            if calculate_dff:
+                print("Calculating dff PSTH")
+                for roi in tqdm(range(len(neurons_df))):
+                    psth, _, _ = get_PSTH(
+                        trials_df=trials_df_resp,
+                        roi=roi,
+                        is_closed_loop=closed_loop,
+                        max_distance=corridor_length + blank_length,
+                        min_distance=-blank_length,
+                        nbins=nbins,
+                        rs_thr_min=rs_thr_min,
+                        rs_thr_max=rs_thr_max,
+                        still_only=still_only,
+                        still_time=still_time,
+                        frame_rate=fs,
+                        compute_ci=False,
+                    )
+                    neurons_df.at[roi, "psth_crossval"] = psth
 
             neurons_df.to_pickle(psth_path)
             results_all.append(neurons_df)
