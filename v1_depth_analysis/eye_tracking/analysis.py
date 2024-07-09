@@ -186,7 +186,8 @@ def get_trial_df(mouse, project, session, recording, flm_sess=None):
     )
     n_recordings = len(trials_df.recording_name.unique())
     if n_recordings > 1:
-        raise NotImplementedError("I need to check how to handle multiple recordings")
+        # filter only for the recording of interest
+        trials_df = trials_df[trials_df.recording_name == recording].copy()
     assert recording == trials_df.recording_name.unique()[0]
     return trials_df
 
@@ -252,17 +253,19 @@ def cleanup_data(gaze_data, filt_window=5):
     """
     # round depth
     gaze_data["depth"] = gaze_data["depth"].round(2)
+    gaze_data.reset_index(drop=True, inplace=True)
 
-    # replace NaN with linear interpolation
-    gaze_data["azimuth_interp"] = gaze_data["azimuth"].interpolate()
-    gaze_data["elevation_interp"] = gaze_data["elevation"].interpolate()
-    # filter with a box median filter
-    gaze_data["azimuth_filt"] = (
-        gaze_data["azimuth_interp"].rolling(filt_window=5, center=True).mean()
-    )
-    gaze_data["elevation_filt"] = (
-        gaze_data["elevation_interp"].rolling(filt_window=5, center=True).mean()
-    )
+    for col in ["azimuth", "elevation"]:
+        # replace NaN with linear interpolation
+        gaze_data[f"{col}_interp"] = gaze_data[col].interpolate()
+        # filter with a box median filter
+        gaze_data[f"{col}_filt"] = (
+            gaze_data[f"{col}_interp"].rolling(window=filt_window, center=True).mean()
+        )
+        # rolling is actually rolling, NaN the beginning/end that are using data from the
+        # opposite end
+        gaze_data.loc[: filt_window // 2, f"{col}_filt"] = np.nan
+        gaze_data.loc[len(gaze_data) - filt_window // 2 - 1 :, f"{col}_filt"] = np.nan
 
     dt = np.nanmedian(np.diff(gaze_data["harptime"].values))
     fs = 1 / dt
