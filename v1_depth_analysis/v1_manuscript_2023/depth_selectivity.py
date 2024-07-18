@@ -385,9 +385,11 @@ def plot_depth_tuning_curve(
 
 
 def get_PSTH(
-    trials_df,
     roi,
-    is_closed_loop,
+    psth=[], 
+    depth_list=[],
+    is_closed_loop=1,
+    trials_df=None,
     use_col="dff",
     rs_thr_min=None,  # m/s
     rs_thr_max=None,  # m/s
@@ -402,81 +404,92 @@ def get_PSTH(
     # confidence interval z calculation
     ci_range = 0.95
 
-    # choose the trials with closed or open loop to visualize
-    trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
-
-    depth_list = find_depth_neurons.find_depth_list(trials_df)
-    grouped = trials_df.groupby(by="depth")
-    # trial_number = len(trials_df) // len(depth_list)
-
-    # bin dff according to distance travelled for each trial
-    all_means = np.zeros((len(depth_list) + 1, nbins))
-    all_ci = np.zeros((2, len(depth_list) + 1, nbins))
+    if len(depth_list) > 0:
+        all_ci = np.zeros((2, len(depth_list) + 1, nbins))
     bins = np.linspace(
         start=min_distance, stop=max_distance, num=nbins + 1, endpoint=True
     )
     bin_centers = (bins[1:] + bins[:-1]) / 2
-    
-    all_trial_numbers = []
-    for idepth, depth in enumerate(depth_list):
-        all_trial_numbers.append(len(grouped.get_group(depth)))
-    trial_number = np.min(all_trial_numbers)
-    
-    for idepth, depth in enumerate(depth_list):
-        all_dff = []
-        for itrial in np.arange(trial_number):
-            # concatenate dff_blank_pre, dff, and dff_blank
-            if use_col == "dff":
-                dff = np.concatenate(
+    if len(psth)==0:
+        # choose the trials with closed or open loop to visualize
+        trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
+
+        depth_list = find_depth_neurons.find_depth_list(trials_df)
+        grouped = trials_df.groupby(by="depth")
+        # trial_number = len(trials_df) // len(depth_list)
+
+        # bin dff according to distance travelled for each trial
+        all_means = np.zeros((len(depth_list) + 1, nbins))
+        all_ci = np.zeros((2, len(depth_list) + 1, nbins))
+        
+        all_trial_numbers = []
+        for idepth, depth in enumerate(depth_list):
+            all_trial_numbers.append(len(grouped.get_group(depth)))
+        trial_number = np.min(all_trial_numbers)
+        
+        for idepth, depth in enumerate(depth_list):
+            all_dff = []
+            for itrial in np.arange(trial_number):
+                # concatenate dff_blank_pre, dff, and dff_blank
+                if use_col == "dff":
+                    dff = np.concatenate(
+                        (
+                            grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial][:, roi],
+                            grouped.get_group(depth)[f"{use_col}_stim"].values[itrial][:, roi],
+                            grouped.get_group(depth)[f"{use_col}_blank"].values[itrial][:, roi],
+                        )
+                    )
+                else:
+                    dff = np.concatenate(
+                        (
+                            grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial],
+                            grouped.get_group(depth)[f"{use_col}_stim"].values[itrial],
+                            grouped.get_group(depth)[f"{use_col}_blank"].values[itrial],
+                        )
+                    )
+                rs_arr = np.concatenate(
                     (
-                        grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial][:, roi],
-                        grouped.get_group(depth)[f"{use_col}_stim"].values[itrial][:, roi],
-                        grouped.get_group(depth)[f"{use_col}_blank"].values[itrial][:, roi],
+                        grouped.get_group(depth).RS_blank_pre.values[itrial],
+                        grouped.get_group(depth).RS_stim.values[itrial],
+                        grouped.get_group(depth).RS_blank.values[itrial],
                     )
                 )
-            else:
-                dff = np.concatenate(
+                pos_arr = np.concatenate(
                     (
-                        grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial],
-                        grouped.get_group(depth)[f"{use_col}_stim"].values[itrial],
-                        grouped.get_group(depth)[f"{use_col}_blank"].values[itrial],
+                        grouped.get_group(depth).mouse_z_harp_blank_pre.values[itrial],
+                        grouped.get_group(depth).mouse_z_harp_stim.values[itrial],
+                        grouped.get_group(depth).mouse_z_harp_blank.values[itrial],
                     )
                 )
-            rs_arr = np.concatenate(
-                (
-                    grouped.get_group(depth).RS_blank_pre.values[itrial],
-                    grouped.get_group(depth).RS_stim.values[itrial],
-                    grouped.get_group(depth).RS_blank.values[itrial],
+                pos_arr -= grouped.get_group(depth).mouse_z_harp_stim.values[itrial][0]
+
+                take_idx = apply_rs_threshold(
+                    rs_arr, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
                 )
-            )
-            pos_arr = np.concatenate(
-                (
-                    grouped.get_group(depth).mouse_z_harp_blank_pre.values[itrial],
-                    grouped.get_group(depth).mouse_z_harp_stim.values[itrial],
-                    grouped.get_group(depth).mouse_z_harp_blank.values[itrial],
+
+                dff = dff[take_idx]
+                # bin dff according to distance travelled
+                dff, _, _ = scipy.stats.binned_statistic(
+                    x=pos_arr,
+                    values=dff,
+                    statistic="mean",
+                    bins=bins,
                 )
-            )
-            pos_arr -= grouped.get_group(depth).mouse_z_harp_stim.values[itrial][0]
-
-            take_idx = apply_rs_threshold(
-                rs_arr, rs_thr_min, rs_thr_max, still_only, still_time, frame_rate
-            )
-
-            dff = dff[take_idx]
-            # bin dff according to distance travelled
-            dff, _, _ = scipy.stats.binned_statistic(
-                x=pos_arr,
-                values=dff,
-                statistic="mean",
-                bins=bins,
-            )
-            all_dff.append(dff)
-        all_means[idepth, :] = np.nanmean(all_dff, axis=0)
-        if compute_ci:
-            all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
-                np.array(all_dff).T, sig_level=1 - ci_range
-            )
-
+                all_dff.append(dff)
+            all_means[idepth, :] = np.nanmean(all_dff, axis=0)
+            if compute_ci:
+                all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
+                    np.array(all_dff).T, sig_level=1 - ci_range
+                )
+    else:
+        all_dff = psth
+        all_means = np.nanmean(all_dff, axis=0)
+        for idepth, depth in enumerate(depth_list):
+            if compute_ci:
+                all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
+                    np.array(all_dff[:,idepth,:]).T, sig_level=1 - ci_range
+                )
+        
     return all_means, all_ci, bin_centers
 
 
@@ -510,9 +523,11 @@ def apply_rs_threshold(
 
 
 def plot_PSTH(
-    trials_df,
     roi,
     is_closed_loop,
+    trials_df=None,
+    psth=[],
+    depth_list=[],
     use_col="dff",
     corridor_length=6,
     blank_length=0,
@@ -525,6 +540,8 @@ def plot_PSTH(
     fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
     linewidth=3,
     legend_on=False,
+    legend_loc="lower right",
+    legend_bbox_to_anchor=(1.4, -0.6),
     show_ci=True,
     ylim=(None,None),
 ):
@@ -540,8 +557,13 @@ def plot_PSTH(
     """
     max_distance = corridor_length + blank_length
     min_distance = -blank_length
+    if trials_df:
+        depth_list = find_depth_neurons.find_depth_list(trials_df)
+    
     all_means, all_ci, bin_centers = get_PSTH(
         trials_df=trials_df,
+        psth=psth,
+        depth_list=depth_list,
         roi=roi,
         is_closed_loop=is_closed_loop,
         use_col=use_col,
@@ -555,7 +577,6 @@ def plot_PSTH(
         frame_rate=frame_rate,
     )
 
-    depth_list = find_depth_neurons.find_depth_list(trials_df)
     for idepth, depth in enumerate(depth_list):
         linecolor = basic_vis_plots.get_depth_color(
             depth, depth_list, cmap=cm.cool.reversed()
@@ -608,8 +629,8 @@ def plot_PSTH(
 
     if legend_on:
         plt.legend(
-            loc="lower right",
-            bbox_to_anchor=(1.4, -0.6),
+            loc=legend_loc,
+            bbox_to_anchor=legend_bbox_to_anchor,
             fontsize=fontsize_dict["legend"],
             frameon=False,
             handlelength=1,
@@ -1511,3 +1532,51 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
                 )
     if i == 0:
         plt.legend(loc=legend_loc, fontsize=fontsize_dict["legend"], framealpha=1, borderpad=0, frameon=False, handlelength=0.5) 
+        
+        
+def plot_mean_running_speed_alldepths(results, depth_list, fontsize_dict, param="RS", of_threshold=0.01, linewidth=3, elinewidth=3, jitter=0.2, scatter_markersize=2, scatter_alpha=0.5, capsize=3, capthick=10):
+    ax=plt.gca()
+    if param=="RS":
+        rs_means = np.vstack([j for i in results.rs_mean_closedloop.values for j in i])
+    elif param=="OF":
+        rs_means = np.vstack([j for i in results.rs_mean_closedloop.values for j in i])/depth_list.reshape(1,-1)
+        rs_means[rs_means<of_threshold] = of_threshold
+    CI_low, CI_high = common_utils.get_bootstrap_ci(rs_means.T, sig_level=0.05)
+    for idepth in range(len(depth_list)):
+        color = basic_vis_plots.get_depth_color(
+            depth_list[idepth], depth_list, cmap=cm.cool.reversed()
+        )
+        sns.stripplot(
+            x=np.ones(rs_means.shape[0])*idepth,
+            y=rs_means[:,idepth],
+            jitter=jitter,
+            edgecolor="white",
+            color=color,
+            alpha=scatter_alpha,
+            size=scatter_markersize,
+        )
+        plt.plot(
+            [idepth - 0.4, idepth + 0.4],
+            [np.mean(rs_means[:,idepth]), np.mean(rs_means[:,idepth])],
+            linewidth=linewidth,
+            color=color,
+        )
+        plt.errorbar(
+            x=idepth,
+            y=np.mean(rs_means[:,idepth]),
+            yerr = np.array([np.mean(rs_means[:,idepth])-CI_low[idepth], CI_high[idepth]-np.mean(rs_means[:,idepth])]).reshape(2,1),
+            capsize=capsize,
+            elinewidth=elinewidth,
+            ecolor=color,
+            capthick=capthick,
+        )
+    ax.set_xticklabels((depth_list*100).astype("int"), fontsize=fontsize_dict["label"])
+    if param == "RS":
+        ax.set_ylabel("Average running speed (m/s)", fontsize=fontsize_dict["label"])
+        ax.set_ylim(0, ax.get_ylim()[1])
+    elif param == "OF":
+        ax.set_ylabel("Average optic flow\nspeed (degrees/s)", fontsize=fontsize_dict["label"])
+        ax.set_yscale("log")
+    ax.set_xlabel("Depth (cm)", fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    sns.despine(ax=ax)
