@@ -81,6 +81,8 @@ def decoder_accuracy(
     decoder_results,
     markersize=5,
     colors=["b", "g"],
+    markers=["o", "^"],
+    markerfacecolors=["k", "none"],
     linewidth=0.5,
     xlabel=["Closed loop", "Open loop"],
     ylabel="Classification accuracy",
@@ -88,30 +90,35 @@ def decoder_accuracy(
     mode="accuracy"
 ):
     ndepths_list = decoder_results["ndepths"].unique()
-    for ndepths, color in zip(ndepths_list, colors):
+    for ndepths, color, marker, markerfacecolor in zip(ndepths_list, colors, markers, markerfacecolors):
         this_ndepths = decoder_results[decoder_results["ndepths"] == ndepths]
         plt.plot(
             [1, 2],
             [this_ndepths[f"{mode}_closedloop"], this_ndepths[f"{mode}_openloop"]],
-            f"{color}o-",
+            f"{color}{marker}-",
             alpha=0.7,
             label=f"{ndepths} depths",
             markersize=markersize,
             linewidth=linewidth,
+            markerfacecolor=markerfacecolor,
         )
         if mode == "accuracy":
-            plt.axhline(y=1 / ndepths, color=color, linestyle="dashed", linewidth=linewidth)
+            plt.axhline(y=1 / ndepths, color=color, linestyle="dashed", linewidth=linewidth) 
+
         plt.plot(
             [1, 2],
             [
                 np.median(this_ndepths[f"{mode}_closedloop"]),
                 np.median(this_ndepths[f"{mode}_openloop"]),
             ],
-            f"{color}-",
+            f"{color}{marker}-",
             alpha=0.7,
-            markersize=markersize,
+            markersize=0,
             linewidth=linewidth * 2,
+            markerfacecolor=markerfacecolor,
         )
+        handles, legend_labels = plt_common_utils.get_unique_labels(plt.gca())
+        plt.legend(handles, legend_labels, fontsize=fontsize_dict["legend"], frameon=False, loc="upper right", handlelength=3)
         for icol, col in enumerate([f"{mode}_closedloop", f"{mode}_openloop"]):
             plt.plot(
                 [icol + 0.8, icol + 1.2],
@@ -124,7 +131,7 @@ def decoder_accuracy(
     )
     print(f"p-value: {p_value}")
     plotting_utils.despine()
-    plt.xticks([1, 2], xlabel, fontsize=fontsize_dict["label"], rotation=45, ha="right")
+    plt.xticks([1, 2], xlabel, fontsize=fontsize_dict["label"], rotation=0, ha="center")
     plt.yticks(fontsize=fontsize_dict["tick"])
     plt.xlim([0.5, 2.5])
     if mode == "accuracy":
@@ -168,7 +175,7 @@ def plot_confusion_matrix(
         # )
     plt.xticks(np.arange(len(depths)), depths, fontsize=fontsize_dict["tick"])
     plt.yticks(np.arange(len(depths)), depths, fontsize=fontsize_dict["tick"])
-    plt.xlabel("Predicted virtual\ndepth (cm)", fontsize=fontsize_dict["label"])
+    plt.xlabel("Predicted virtual depth (cm)", fontsize=fontsize_dict["label"])
     plt.ylabel("True virtual depth (cm)", fontsize=fontsize_dict["label"])
     return im
 
@@ -177,10 +184,8 @@ def plot_closed_open_conmat(
     conmat_mean,
     normalize,
     fig,
-    plot_x,
-    plot_y,
-    plot_width,
-    plot_height,
+    ax1,
+    ax2,
     fontsize_dict,
 ):
     conmat_closed = conmat_mean["closedloop"]
@@ -189,25 +194,25 @@ def plot_closed_open_conmat(
         conmat_closed = conmat_closed / conmat_closed.sum(axis=1)[:, np.newaxis]
         conmat_open = conmat_open / conmat_open.sum(axis=1)[:, np.newaxis]
     vmax = conmat_closed.max()
-    ax = fig.add_axes([plot_x, plot_y, plot_width / 2 * 0.8, plot_height * 0.8])
     if len(conmat_closed) == 8:
         depths = np.logspace(np.log2(5), np.log2(640), 8, base=2)
     else:
         depths = np.logspace(np.log2(6), np.log2(600), 5, base=2)
     depths = np.round(depths).astype(int)
-    plot_confusion_matrix(conmat_closed, ax, vmax, fontsize_dict, depths=depths)
-    ax.set_title("Closed loop", fontsize=fontsize_dict["label"])
-    ax = fig.add_axes(
-        [plot_x + plot_width / 2, plot_y, plot_width / 2 * 0.8, plot_height * 0.8]
-    )
-    im = plot_confusion_matrix(conmat_open, ax, vmax, fontsize_dict, depths=depths)
-    ax.set_title("Open loop", fontsize=fontsize_dict["label"])
-    ax.set_yticks([])
-    ax.set_ylabel("")
-    bounds = ax.get_position().bounds
+    plot_confusion_matrix(conmat_closed, ax1, vmax, fontsize_dict, depths=depths)
+    ax1.set_title("Closed loop", fontsize=fontsize_dict["label"])
+    im = plot_confusion_matrix(conmat_open, ax2, vmax, fontsize_dict, depths=depths)
+    ax2.set_title("Open loop", fontsize=fontsize_dict["label"])
+    ax1.set_xlabel("Predicted virtual depth (cm)", fontsize=fontsize_dict["label"])
+    ax1.set_ylabel("True virtual depth (cm)", fontsize=fontsize_dict["label"])
+    ax2.set_yticks([])
+    ax2.set_ylabel("")
+    ax1.tick_params(labelsize=fontsize_dict["tick"])
+    ax2.tick_params(labelsize=fontsize_dict["tick"])
+    bounds = ax2.get_position().bounds
     cbar_ax = fig.add_axes([bounds[0] + bounds[2] + 0.01, bounds[1], 0.01, bounds[3] / 2])
     fig.colorbar(
-        ax=ax,
+        ax=ax2,
         mappable=im,
         cax=cbar_ax,
     )
