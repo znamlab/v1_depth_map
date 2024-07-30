@@ -6,7 +6,7 @@
 #SBATCH --mem=8G
 #SBATCH --partition=ncpu
 #SBATCH --mail-type=END,FAIL
-#SBATCH --output="/camp/lab/znamenskiyp/home/users/hey2/codes/cottage_analysis/logs/2p_analysis_%j.log"
+#SBATCH --output="/camp/lab/znamenskiyp/home/users/hey2/codes/cottage_analysis/logs/batch_analysis_%j.log"
 
 . ~/.bash_profile
 ml purge

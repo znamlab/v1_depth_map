@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-#SBATCH --job-name=2p_analysis
+#SBATCH --job-name=batch_preprocess
 #SBATCH --ntasks=1
 #SBATCH --time=2:00:00
-#SBATCH --mem=8G
-#SBATCH --partition=cpu
+#SBATCH --mem=4G
+#SBATCH --partition=ncpu
 #SBATCH --mail-type=END,FAIL
-#SBATCH --output="/camp/lab/znamenskiyp/home/users/hey2/codes/2p-preprocess/logs/2p_preprocess_%j.log"
+#SBATCH --output="/camp/lab/znamenskiyp/home/users/hey2/codes/3d-vision-analysis-2p/v1_depth_analysis/v1_manuscript_2023/batch_preprocess/logs/batch_preprocess_%j.log"
 
 ml purge
 ml Anaconda3/2022.05
@@ -14,6 +14,6 @@ ml Anaconda3/2022.05
 source activate base
 
 conda activate 2p-preprocess
-cd "/camp/lab/znamenskiyp/home/users/hey2/codes/2p-preprocess/twop_preprocess/pipelines/"
+cd "/camp/lab/znamenskiyp/home/users/hey2/codes/3d-vision-analysis-2p/v1_depth_analysis/v1_manuscript_2023/batch_preprocess/"
 echo Processing ${SESSION} in project ${PROJECT}
-python preprocess_all_sessions.py
+python twop_preprocess_all_sessions.py

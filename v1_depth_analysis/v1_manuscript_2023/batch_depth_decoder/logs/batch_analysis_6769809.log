@@ -1,0 +1,7 @@
+/camp/home/hey2/.conda/envs/2p_analysis_cottage2/lib/python3.9/site-packages/sklearn/utils/multiclass.py:14: DeprecationWarning: Please use `spmatrix` from the `scipy.sparse` namespace, the `scipy.sparse.base` namespace is deprecated.
+  from scipy.sparse.base import spmatrix
+/camp/home/hey2/.conda/envs/2p_analysis_cottage2/lib/python3.9/site-packages/sklearn/utils/optimize.py:18: DeprecationWarning: Please use `line_search_wolfe2` from the `scipy.optimize` namespace, the `scipy.optimize.linesearch` namespace is deprecated.
+  from scipy.optimize.linesearch import line_search_wolfe2, line_search_wolfe1
+/camp/home/hey2/.conda/envs/2p_analysis_cottage2/lib/python3.9/site-packages/sklearn/utils/optimize.py:18: DeprecationWarning: Please use `line_search_wolfe1` from the `scipy.optimize` namespace, the `scipy.optimize.linesearch` namespace is deprecated.
+  from scipy.optimize.linesearch import line_search_wolfe2, line_search_wolfe1
+sbatch --export=PROJECT=hey2_3d-vision_foodres_20220101,SESSION_NAME=PZAH6.4b_S20220526,CONFLICTS=overwrite,PHOTODIODE_PROTOCOL=2,USE_SLURM=1 --output=/nemo/lab/znamenskiyp/home/users/hey2/codes/cottage_analysis/logs/PZAH6.4b_S20220526_decoder_%j.out /nemo/lab/znamenskiyp/home/users/hey2/codes/cottage_analysis/sbatch/run_depth_decoder_pipeline.sh

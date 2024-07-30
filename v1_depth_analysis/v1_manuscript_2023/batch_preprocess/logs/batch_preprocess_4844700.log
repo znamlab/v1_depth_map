@@ -1,0 +1,2 @@
+Processing in project
+sbatch --export=PROJECT=hey2_3d-vision_foodres_20220101,SESSION=PZAH6.4b_S20220503,CONFLICTS=overwrite,TAU=0.7 --output=/nemo/lab/znamenskiyp/home/users/hey2/codes/2p-preprocess/logs/PZAH6.4b_S20220503_%j.log /nemo/lab/znamenskiyp/home/users/hey2/codes/2p-preprocess/run_suite2p_gpu_copy.sh

@@ -48,12 +48,12 @@ session_list = [
     # "PZAH8.2h_S20221216",
     # "PZAH8.2h_S20230113", # need more memory for RF fit
     # "PZAH8.2h_S20230116", # need more memory for RF fit
-    ## "PZAH8.2h_S20230126", # imaging trigger needs to be processed
+    # # "PZAH8.2h_S20230126", # imaging trigger needs to be processed
     # "PZAH8.2h_S20230127", # need more memory for RF fit
     # "PZAH8.2h_S20230202",
-    # "PZAH8.2h_S20230224",
-    # "PZAH8.2h_S20230302",
-    # "PZAH8.2h_S20230303",
+    # "PZAH8.2h_S20230224", # need longer tine for RF fit
+    # "PZAH8.2h_S20230302",# need longer tine for RF fit
+    # "PZAH8.2h_S20230303",# need longer tine for RF fit
     # "PZAH8.2h_S20230314",
     # "PZAH8.2h_S20230321",
 
@@ -65,10 +65,10 @@ session_list = [
     # "PZAH8.2i_S20230116",
     # "PZAH8.2i_S20230117",
     # "PZAH8.2i_S20230127",
-    # "PZAH8.2i_S20230203",
-    # "PZAH8.2i_S20230209",
-    # "PZAH8.2i_S20230216",
-    "PZAH8.2i_S20230220",
+    # "PZAH8.2i_S20230203",# need longer tine for RF fit
+    # "PZAH8.2i_S20230209",# need longer tine for RF fit
+    # "PZAH8.2i_S20230216",# need longer tine for RF fit
+    # "PZAH8.2i_S20230220",# need longer tine for RF fit
     # "PZAH8.2i_S20230324",
     # "PZAH8.2i_S20230330",
     # "PZAH8.2i_S20230404",
@@ -79,31 +79,31 @@ session_list = [
     # "PZAH8.2f_S20230131",
     # "PZAH8.2f_S20230202",
     # "PZAH8.2f_S20230206",
-    # "PZAH8.2f_S20230214",
+    # "PZAH8.2f_S20230214", # need longer tine for RF fit
     # "PZAH8.2f_S20230223",
     # "PZAH8.2f_S20230313", # need more memory for RF
     
-    # "PZAH10.2d_S20230526",
-    # "PZAH10.2d_S20230531",
-    # "PZAH10.2d_S20230602",
-    # "PZAH10.2d_S20230608",
-    # "PZAH10.2d_S20230613",
-    # "PZAH10.2d_S20230615",
-    # "PZAH10.2d_S20230616",
-    # "PZAH10.2d_S20230623",
-    # "PZAH10.2d_S20230626",
-    # "PZAH10.2d_S20230627",
-    # "PZAH10.2d_S20230628",
-    # "PZAH10.2d_S20230703",
-    # "PZAH10.2d_S20230706",
-    ## "PZAH10.2d_S20230704", # depth tuning fit needs more iteration
-    # "PZAH10.2d_S20230707",
-    # "PZAH10.2d_S20230725",
-    # "PZAH10.2d_S20230728",
-    # "PZAH10.2d_S20230818",
-    # "PZAH10.2d_S20230821",
-    # "PZAH10.2d_S20230920",
-    # "PZAH10.2d_S20230922",
+    "PZAH10.2d_S20230526",
+    "PZAH10.2d_S20230531",
+    "PZAH10.2d_S20230602",
+    "PZAH10.2d_S20230608",
+    "PZAH10.2d_S20230613",
+    "PZAH10.2d_S20230615",
+    "PZAH10.2d_S20230616",
+    "PZAH10.2d_S20230623",
+    "PZAH10.2d_S20230626",
+    "PZAH10.2d_S20230627",
+    "PZAH10.2d_S20230628",
+    "PZAH10.2d_S20230703",
+    "PZAH10.2d_S20230706",
+    "PZAH10.2d_S20230704", # depth tuning fit needs more iteration
+    "PZAH10.2d_S20230707",
+    "PZAH10.2d_S20230725",
+    "PZAH10.2d_S20230728",
+    "PZAH10.2d_S20230818",
+    "PZAH10.2d_S20230821",
+    "PZAH10.2d_S20230920",
+    "PZAH10.2d_S20230922",
 
 
     # "PZAH10.2f_S20230525",
@@ -126,11 +126,11 @@ session_list = [
     # "PZAH10.2f_S20230801",
     # "PZAH10.2f_S20230804",
     # "PZAH10.2f_S20230807", 
-    # "PZAH10.2f_S20230808",
+    # "PZAH10.2f_S20230808", # need longer tine for RF fit
     # "PZAH10.2f_S20230811",
     # "PZAH10.2f_S20230817",
     # "PZAH10.2f_S20230822",
-    # "PZAH10.2f_S20230908",
+    # "PZAH10.2f_S20230908", # need longer tine for RF fit
     # "PZAH10.2f_S20230912",
     # "PZAH10.2f_S20230914",
     # "PZAH10.2f_S20230924",
@@ -140,7 +140,6 @@ run_depth_fit = 0
 run_rf = 0
 run_rsof_fit = 1
 run_plot = 0
-run_rsof_fit_separate_recordings = 1
 
 use_slurm = 1
 
@@ -170,4 +169,4 @@ def main(
 if __name__ == "__main__":
     main(project, session_list, pipeline_filename, conflicts, 
          use_slurm=use_slurm, 
-         run_depth_fit=run_depth_fit, run_rf=run_rf, run_rsof_fit=run_rsof_fit, run_plot=run_plot, run_rsof_fit_separate_recordings=run_rsof_fit_separate_recordings)
+         run_depth_fit=run_depth_fit, run_rf=run_rf, run_rsof_fit=run_rsof_fit, run_plot=run_plot)
