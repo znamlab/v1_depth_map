@@ -2,6 +2,14 @@ import numpy as np
 import pandas as pd
 import scipy
 import flexiznam as flz
+import matplotlib
+matplotlib.rcParams['pdf.fonttype'] = 42 # for pdfs
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy.stats import pearsonr, spearmanr
+
+from matplotlib.transforms import Affine2D
+import mpl_toolkits.axisartist.floating_axes as floating_axes
 
 from cottage_analysis.plotting import plotting_utils
 
@@ -79,6 +87,55 @@ def plot_depth_size_fit_comparison(
             f"median {np.median(diff):.4f}, p = {scipy.stats.wilcoxon(diff)[1]:.2e}",
             fontsize=fontsize_dict["title"],
         )
+        ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
         print(f"median {np.median(diff)}")
 
     plotting_utils.despine()
+
+
+def plot_preferred_depths_sizes_scatter(neurons_df, sizes, plot_x, plot_y, plot_width, plot_height, fontsize_dict):
+    fig = plt.gcf()
+    for i, (size_x, size_y) in enumerate(zip([sizes[0],sizes[0],sizes[1]],[sizes[1],sizes[2],sizes[2]])):
+        ax = fig.add_axes([plot_x + i*plot_width, plot_y, plot_width*0.6, plot_height*0.6])
+        ax.scatter(
+            neurons_df[f"preferred_depth_size{size_x}"],
+            neurons_df[f"preferred_depth_size{size_y}"],
+            s=1,
+            c="k",
+            alpha=0.2,
+        )
+        xlim = ax.get_xlim()
+        # add diagonal line
+        ax.plot(xlim, xlim, "k", linestyle="dotted", linewidth=1)
+        # set labels
+        ax.set_xscale('log')
+        ax.set_yscale('log')
+        ax.set_xlabel(f"Preferred depth with \n{size_x} degree spheres", fontsize=fontsize_dict["label"], labelpad=1)
+        ax.set_ylabel(f"Preferred depth with \n{size_y} degree spheres", fontsize=fontsize_dict["label"], labelpad=1)
+        ax.tick_params(axis='both', which='major', labelsize=fontsize_dict["tick"])
+        ax.set_aspect("equal")
+        sns.despine()
+        
+        
+        # add histogram
+        ax2 = fig.add_axes([plot_x + (i+0.3)*plot_width, plot_y + plot_height*0.7, plot_width*0.3, plot_height*0.15])
+        ratio = neurons_df[f"preferred_depth_size{size_y}"]/neurons_df[f"preferred_depth_size{size_x}"]
+        ax2.hist(
+            neurons_df[f"preferred_depth_size{size_y}"]/neurons_df[f"preferred_depth_size{size_x}"],
+            bins=np.geomspace(np.nanmin(ratio), np.nanmax(ratio), 20),
+            color="k",
+            alpha=1,
+        )
+        ax2.vlines(1, 0, 150, color="white", linestyle="dotted", linewidth=1)
+        ax2.set_xscale("log")
+        ax2.set_xticks([0.1, 1, 10])
+        ax2.tick_params(axis='both', which='major', labelsize=fontsize_dict["tick"])
+        ax2.set_ylabel("Frequency", fontsize=fontsize_dict["tick"])
+        sns.despine()
+        print(f"pearsonr {pearsonr(neurons_df[f'preferred_depth_size{size_x}'], neurons_df[f'preferred_depth_size{size_y}'])},\
+            spearmarnr {spearmanr(neurons_df[f'preferred_depth_size{size_x}'], neurons_df[f'preferred_depth_size{size_y}'])},\
+              median {np.median(ratio.values)},\
+              mean {np.mean(ratio.values)},\
+              stats {scipy.stats.wilcoxon(neurons_df[f'preferred_depth_size{size_x}'], neurons_df[f'preferred_depth_size{size_y}'])}")
+        
+        

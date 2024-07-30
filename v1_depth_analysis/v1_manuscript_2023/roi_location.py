@@ -45,6 +45,7 @@ def align_across_mice(neurons_df, ref_mouse="PZAH10.2d"):
         y_all = neurons_df[col].values
         y_corrected = y_all - np.dot(X_all[:, 2:], mouse_offset) + ref_mouse_offset
         neurons_df[f"{col}_aligned"] = y_corrected
+    return neurons_df
 
 
 def check_neurons_in_v1(
