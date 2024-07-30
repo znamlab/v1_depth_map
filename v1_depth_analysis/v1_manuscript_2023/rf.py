@@ -8,6 +8,7 @@ from cottage_analysis.plotting import plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 from v1_depth_analysis.v1_manuscript_2023.roi_location import determine_roi_locations
 import plotly.graph_objects as go
+import os
 
 
 def plot_stimulus_frame(
@@ -100,7 +101,7 @@ def plot_rf(
                 plot_height / ndepths * plot_prop,
             ]
         )
-        plt.imshow(
+        im = plt.imshow(
             coef_mean[i, :, :],
             origin="lower",
             cmap="bwr",
@@ -116,6 +117,20 @@ def plot_rf(
             ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
         ax.tick_params(axis="both", labelsize=fontsize_dict["tick"], length=1.5)
         ax.set_xticks([0, 60, 120])
+        
+        if i == ndepths-1:
+            ax_pos = ax.get_position()
+            ax2 = plt.gcf().add_axes(
+                [
+                    ax_pos.x1 + ax_pos.width*0.05,
+                    ax_pos.y0,
+                    0.005,
+                    ax_pos.height/2,
+                ]
+            )
+            cbar = plt.colorbar(mappable=im, cax=ax2)
+            # cbar.set_label("Z-score", fontsize=fontsize_dict["legend"])
+            cbar.ax.tick_params(labelsize=fontsize_dict["legend"], length=2, pad=1)
 
 
 def get_rf_results(project, sessions, is_closed_loop=1):
@@ -582,3 +597,110 @@ def plot_rf_3d(neurons_df, rois, depths, savepath, fontsize_dict):
 
     fig.show()
     fig.write_image(savepath)
+
+
+def calculate_rf_gradient(flexilims_session, neurons_ds, neurons_df, session_name, n_std=6,):
+    # load iscell
+    suite2p_ds = flz.get_datasets(
+        flexilims_session=flexilims_session,
+        origin_name=session_name,
+        dataset_type="suite2p_rois",
+        filter_datasets={"anatomical_only": 3},
+        allow_multiple=False,
+        return_dataseries=False,
+    )
+    iscell = np.load(suite2p_ds.path_full / "plane0" / "iscell.npy", allow_pickle=True)[
+        :, 0
+    ]
+    neurons_df["iscell"] = iscell
+
+    # calculate gradients of azimuth and elevation
+    session_df = pd.DataFrame([session_name], columns=["session_name"])
+    coef = np.stack(neurons_df[f"rf_coef_closedloop"].values)
+    coef_ipsi = np.stack(neurons_df[f"rf_coef_ipsi_closedloop"].values)
+    sig, _ = spheres.find_sig_rfs(
+        np.swapaxes(np.swapaxes(coef, 0, 2), 0, 1),
+        np.swapaxes(np.swapaxes(coef_ipsi, 0, 2), 0, 1),
+        n_std=n_std,
+    )
+    select_neurons = neurons_df[(sig == 1) & (neurons_df["iscell"] == 1)]
+    null_neurons = neurons_df[(sig == 0) & (neurons_df["iscell"] == 1)]
+    # find the gradient of col w.r.t. center_x and center_y
+    for neurons, sfx in zip([select_neurons, null_neurons],
+                            ["rf_sig", "rf_null"]):
+        for col in ["rf_azi", "rf_ele"]:
+            slope_x = scipy.stats.linregress(
+                x=neurons["center_x"], y=neurons[col]
+            ).slope
+            slope_y = scipy.stats.linregress(
+                x=neurons["center_y"], y=neurons[col]
+            ).slope
+            norm = np.linalg.norm(np.array([slope_x, slope_y]))
+            slope_x /= norm
+            slope_y /= norm
+            session_df[f"slope_x_{col[-3:]}_{sfx}"] = slope_x
+            session_df[f"slope_y_{col[-3:]}_{sfx}"] = slope_y
+            
+    # save file
+    session_df.to_pickle(neurons_ds.path_full.parent/"rf_gradients.pkl")
+    return session_df
+
+
+def calculate_rf_gradient_all_sessions(flexilims_session,
+                                       session_list,
+                                       neurons_df_all_aligned,
+                                       filename='rf_gradients.pkl',
+                                       conflicts='skip',
+                                       verbose=False,
+                                       ):
+    for isess, session in enumerate(session_list):
+        neurons_ds = pipeline_utils.create_neurons_ds(
+            session_name=session,
+            flexilims_session=flexilims_session,
+            project=None,
+            conflicts="skip",
+        )
+        if os.path.exists(neurons_ds.path_full.parent / filename) and (conflicts=="skip"):
+            # print(f"File {filename} already exists. Skipping calculation for session {session}")
+            session_df = pd.read_pickle(neurons_ds.path_full.parent / filename)
+        else:
+            neurons_df = neurons_df_all_aligned[neurons_df_all_aligned.session==session]
+            session_df = calculate_rf_gradient(flexilims_session=flexilims_session,
+                                                  neurons_ds=neurons_ds, 
+                                                  neurons_df=neurons_df, 
+                                                  session_name=session, 
+                                                  n_std=6,)
+        if isess == 0:
+            session_df_all = session_df
+        else:
+            session_df_all = pd.concat(
+                [session_df_all, session_df], ignore_index=True
+            )
+        if verbose:
+            print(f"Finished concat rf gradient from session {session}")
+        
+    return session_df_all
+
+
+def plot_gradient_polar(angles, 
+                        nbins=36, 
+                        plot_x=0, 
+                        plot_y=0, 
+                        plot_width=0.2,
+                        plot_height=0.2,
+                        edgecolor='k',
+                        facecolor='k',
+                        alpha=1,
+                        fontsize_dict={"title": 15, "label": 10, "tick": 5}
+                        ):
+    ax = plt.gcf().add_axes([plot_x, plot_y, plot_width, plot_height], polar=True)
+    # Create a histogram
+    counts, bins = np.histogram(angles, bins=np.linspace(0,360,nbins+1))
+
+    # Convert bins to centers
+    bin_centers = 0.5 * (bins[:-1] + bins[1:])
+
+    # Create the bar plot on the polar axis
+    ax.bar(np.radians(bin_centers), counts, width=(2 * np.pi) / nbins, edgecolor=edgecolor, facecolor=facecolor, alpha=alpha)
+    
+    ax.tick_params(axis='both', which='major', labelsize=fontsize_dict["tick"])
