@@ -557,7 +557,7 @@ def plot_PSTH(
     """
     max_distance = corridor_length + blank_length
     min_distance = -blank_length
-    if trials_df:
+    if trials_df is not None:
         depth_list = find_depth_neurons.find_depth_list(trials_df)
     
     all_means, all_ci, bin_centers = get_PSTH(
@@ -1419,7 +1419,7 @@ def plot_example_fov(
             dy=slope_y * arrow_length,
             color="white",
             width=2,
-            head_width=10,
+            head_width=50,
         )
         print(f"{col}: slope x {slope_x}, slope y {slope_y}")
     plt.axis("off")
@@ -1434,7 +1434,7 @@ def plot_example_fov(
         cbar.set_ticklabels(np.linspace(ele_min, ele_max, 3).astype("int"))
     cbar.ax.tick_params(labelsize=fontsize_dict["legend"])
     cbar_pos = np.array(plt.gca().get_position().bounds)
-    cbar_pos[0] = cbar_pos[0] + cbar_pos[2] + 0.005
+    cbar_pos[0] = cbar_pos[0] + cbar_pos[2] + 0.01
     cbar_pos[2] = 0.25
     cbar_pos[3] = cbar_pos[3] * 0.3
     cbar.ax.set_position(cbar_pos)
@@ -1442,7 +1442,7 @@ def plot_example_fov(
     # Add scalebar
     scalebar_length_px = im.shape[0] / fov_width * 100  # Scale bar length in pixels
     rect = plt.Rectangle(
-        (40, im.shape[0] * 0.93), scalebar_length_px, 20, color="white"
+        (40, im.shape[0] * 0.93), scalebar_length_px, scalebar_length_px*0.05, color="white"
     )
     plt.gca().invert_xaxis()
     plt.gca().add_patch(rect)
