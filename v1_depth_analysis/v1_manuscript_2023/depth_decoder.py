@@ -126,10 +126,11 @@ def decoder_accuracy(
                 color,
                 lw=2,
             )
-    _, p_value = wilcoxon(
-        decoder_results[f"{mode}_closedloop"], decoder_results[f"{mode}_openloop"]
-    )
-    print(f"p-value: {p_value}")
+            
+        print(f"decoder accuracy {ndepths} depths 2-sided: {wilcoxon(this_ndepths[f'{mode}_closedloop'], this_ndepths[f'{mode}_openloop'])}")
+        print(f"decoder accuracy {ndepths} depths 1-sided greater: {wilcoxon(this_ndepths[f'{mode}_closedloop'], this_ndepths[f'{mode}_openloop'], alternative='greater',)}")
+    print(f"decoder accuracy all 2-sided: {wilcoxon(decoder_results[f'{mode}_closedloop'], decoder_results[f'{mode}_openloop'])}")
+    print(f"decoder accuracy all 1-sided greater: {wilcoxon(decoder_results[f'{mode}_closedloop'], decoder_results[f'{mode}_openloop'],alternative='greater',)}")
     plotting_utils.despine()
     plt.xticks([1, 2], xlabel, fontsize=fontsize_dict["label"], rotation=0, ha="center")
     plt.yticks(fontsize=fontsize_dict["tick"])

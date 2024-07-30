@@ -733,7 +733,8 @@ def plot_2d_hist(
         ax.set_aspect("equal")
     plotting_utils.despine()
     r, p = scipy.stats.spearmanr(X, y)
-    print(f"Correlation between {xcol} and {ycol}: R = {r}, p = {p}")
+    print(f"Correlation between {xcol} and {ycol}: R = {r:.3g}, p = {p:.3g}")
+    return r, p
 
 
 def plot_speed_colored_by_depth(
