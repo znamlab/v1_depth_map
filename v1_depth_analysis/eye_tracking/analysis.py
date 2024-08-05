@@ -37,7 +37,7 @@ IS_MIRRORED = {
 }
 
 
-def get_data(project, mouse, session, recording):
+def get_data(project, mouse, session, recording, filt_window=5, verbose=True):
     """Get gaze data with behaviour info for a given recording
 
     Args:
@@ -45,6 +45,8 @@ def get_data(project, mouse, session, recording):
         mouse (str): Mouse name
         session (str): Session name
         recording (str): Recording name
+        filt_window (int, optional): Window size for median filter. Defaults to 5.
+        verbose (bool, optional): Whether to print verbose output. Defaults to True.
 
     Returns:
         pd.DataFrame: Gaze data with behaviour info
@@ -55,8 +57,10 @@ def get_data(project, mouse, session, recording):
     )
     trials_df = get_trial_df(mouse, project, session, recording, flm_sess=flm_sess)
     gaze_data = add_behaviour(gaze_data, trials_df)
-    gaze_data = cleanup_data(gaze_data)
-    return gaze_data
+    gaze_data = cleanup_data(
+        gaze_data, dlc_res, filt_window=filt_window, verbose=verbose
+    )
+    return gaze_data, dlc_res
 
 
 def get_gaze(
