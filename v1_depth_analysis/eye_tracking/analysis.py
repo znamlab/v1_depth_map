@@ -238,19 +238,38 @@ def add_behaviour(ellipse, trials_df):
     return ellipse
 
 
-def cleanup_data(gaze_data, filt_window=5):
+def cleanup_data(gaze_data, tracking_data, filt_window=5, verbose=True):
     """Clean up gaze data
 
-    Fix depth to 2 decimal places, interpolate NaN values, and filter with a median
-    filter. Compute displacement and velocity.
+    Find when the eye is closed and filter out those frames. Fix depth to 2 decimal
+    places, interpolate NaN values, and filter with a median filter. Compute
+    displacement and velocity.
 
     Args:
         gaze_data (pd.DataFrame): Gaze data
-        filt_window (int, optional): Window size for median filter. Defaults to 5.
+        tracking_data (pd.DataFrame): Tracking data from deeplabcut
+        filt_window (int, optional): Window size for mean filter. Defaults to 5.
+        verbose (bool, optional): Whether to print verbose output. Defaults to True.
 
     Returns:
         pd.DataFrame: Cleaned gaze data
     """
+    # remove the moment when the mouse closes the eye
+    eye_open = gaze_data.reflection_dlc_likelihood > 0.8
+    gaze_data["valid"] &= eye_open
+    tracking_data = tracking_data.copy()
+    tracking_data.columns = tracking_data.columns.droplevel(0)
+    top = tracking_data["top_eye_lid"]
+    bottom = tracking_data["bottom_eye_lid"]
+    # calculate the distance between top and bottom
+    distance = np.sqrt((top["x"] - bottom["x"]) ** 2 + (top["y"] - bottom["y"]) ** 2)
+    gaze_data["eye_is_open"] = distance > np.nanmean(distance) - 3 * np.nanstd(
+        distance[gaze_data["valid"]]
+    )
+    gaze_data["eye_opening"] = distance
+    gaze_data["valid"] &= gaze_data["eye_is_open"]
+    if verbose:
+        print(f"Eye closed in {np.sum(~gaze_data['valid'])}/{len(gaze_data)} frames")
     # round depth
     gaze_data["depth"] = gaze_data["depth"].round(2)
     gaze_data.reset_index(drop=True, inplace=True)
@@ -258,7 +277,7 @@ def cleanup_data(gaze_data, filt_window=5):
     for col in ["azimuth", "elevation"]:
         # replace NaN with linear interpolation
         gaze_data[f"{col}_interp"] = gaze_data[col].interpolate()
-        # filter with a box median filter
+        # filter with a box mean filter
         gaze_data[f"{col}_filt"] = (
             gaze_data[f"{col}_interp"].rolling(window=filt_window, center=True).mean()
         )
