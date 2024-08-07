@@ -117,13 +117,20 @@ def plot_raster_all_depths(
         ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
         # Change xticks positions to the middle of current ticks and show depth at the tick position
         blank_prop = blank_length / (corridor_length + blank_length*2)
-        xticks1 = np.linspace(blank_prop*nbins, blank_prop*nbins+(ndepths-1)*nbins, ndepths).astype("int")
-        xticks2 = np.linspace(nbins-blank_prop*nbins, ndepths*nbins - blank_prop*nbins, ndepths).astype("int")
-        ax.set_xticks(np.concatenate([xticks1,xticks2]))
-        ax.set_xticklabels(np.concatenate([np.repeat(0,ndepths),np.repeat(corridor_length,ndepths)]))
-        ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
+        # xticks1 = np.linspace(blank_prop*nbins, blank_prop*nbins+(ndepths-1)*nbins, ndepths).astype("int")
+        # xticks2 = np.linspace(nbins-blank_prop*nbins, ndepths*nbins - blank_prop*nbins, ndepths).astype("int")
+        # ax.set_xticks(np.concatenate([xticks1,xticks2]))
+        # ax.set_xticklabels(np.concatenate([np.repeat(0,ndepths),np.repeat(corridor_length,ndepths)]))
+        xticks = np.linspace(nbins/2, nbins * (ndepths-1/2), ndepths)
+        ax.set_xticks(xticks)
+        ax.set_xticklabels(depth_list)
+        ax.set_xlabel("Virtual depth (cm)", fontsize=fontsize_dict["label"])
         ax.tick_params(axis="x", labelsize=fontsize_dict["tick"], rotation=0)
         sns.despine()
+        
+        # # for aligning with the scalebar
+        # ax.vlines(blank_prop*nbins, 0, dffs_binned.shape[1], color="k", linestyle="--", linewidth=0.5)
+        # ax.vlines(nbins-blank_prop*nbins, 0, dffs_binned.shape[1], color="k", linestyle="--", linewidth=0.5)
         
         ax2 = plt.gcf().add_axes(
             [
@@ -138,29 +145,29 @@ def plot_raster_all_depths(
         ax2.tick_params(labelsize=fontsize_dict["tick"])
         ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
         
-        # add a text label "Depth (cm):" to the left of the axis title
-        for idepth, depth in enumerate(depth_list):
-            if idepth == 0:
-                ax.text(
-                    0.07,
-                    1.12,
-                    f"Depth (cm): {int(depth_list[idepth] * 100)}",
-                    horizontalalignment="right",
-                    verticalalignment="center",
-                    transform=ax.transAxes,
-                    fontsize=fontsize_dict["label"],
-                )
+        # # add a text label "Depth (cm):" to the left of the axis title
+        # for idepth, depth in enumerate(depth_list):
+        #     if idepth == 0:
+        #         ax.text(
+        #             0.07,
+        #             1.12,
+        #             f"Depth (cm): {int(depth_list[idepth] * 100)}",
+        #             horizontalalignment="right",
+        #             verticalalignment="center",
+        #             transform=ax.transAxes,
+        #             fontsize=fontsize_dict["label"],
+        #         )
             
-            else:
-                ax.text(
-                    0.07 + idepth * each_plot_width * 3.6,
-                    1.12,
-                    f"{int(depth_list[idepth] * 100)}",
-                    horizontalalignment="right",
-                    verticalalignment="center",
-                    transform=ax.transAxes,
-                    fontsize=fontsize_dict["label"],
-                )
+        #     else:
+        #         ax.text(
+        #             0.07 + idepth * each_plot_width * 3.6,
+        #             1.12,
+        #             f"{int(depth_list[idepth] * 100)}",
+        #             horizontalalignment="right",
+        #             verticalalignment="center",
+        #             transform=ax.transAxes,
+        #             fontsize=fontsize_dict["label"],
+        #         )
         
         
         # plot_x, plot_y, plot_width, plot_height = position
@@ -245,7 +252,7 @@ def plot_raster_all_depths(
         # ax2.tick_params(labelsize=fontsize_dict["tick"])
         # ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
 
-    return dffs_binned
+    return dffs_binned, ax
 
 
 def plot_depth_tuning_curve(
@@ -312,17 +319,25 @@ def plot_depth_tuning_curve(
     CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
     ax=plt.gca()
+    if linecolor == "royalblue":
+        markeredgecolor = "navy"
+    elif linecolor == ("gray" or "grey"):
+        markeredgecolor = "k"
+    else:
+        markeredgecolor = "k"       
     ax.errorbar(
         log_param_list,
         mean_arr,
         yerr=(mean_arr - CI_low, CI_high - mean_arr),
         fmt=".",
         color=linecolor,
+        markeredgecolor=markeredgecolor,
+        markeredgewidth=0.5,
+        markerfacecolor=linecolor,
         ls="none",
-        fillstyle="none",
+        fillstyle="full",
         linewidth=linewidth,
-        markeredgewidth=linewidth,
-        markersize=markersize
+        markersize=markersize,
     )
 
     if plot_smooth:
@@ -1129,6 +1144,10 @@ def plot_psth_raster(
     ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
     ax.set_xlim([0, ndepths * nbins])
     
+    # # for aligning with the scalebar
+    # ax.vlines(1/4*60-10, -10, 9000, color="k", linestyle="--", linewidth=0.5)
+    # ax.vlines(60-1/4*60-10, -10, 9000, color="k", linestyle="--", linewidth=0.5)
+    
     ax_pos = ax.get_position()
     ax2 = plt.gcf().add_axes(
         [
@@ -1467,7 +1486,9 @@ def plot_fov_mean_img(im, vmax=700, fov_width=572.867):
     plt.gca().add_patch(rect)
 
 
-def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df, ax, depth_tuning_kwargs, fontsize_dict, fov_ax=None, ops=None, stat=None, legend_loc="upper right", text_pos="upper_left"):
+def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df, ax, depth_tuning_kwargs, fontsize_dict, 
+                                         ylim_scale=1.05,ylim_precision=1,
+                                         fov_ax=None, ops=None, stat=None, legend_loc="upper right", text_pos="upper_left"):
     for rs_thr, rs_thr_max, still_only, still_time, i_running, linecolor, label, use_col in zip(
         [0.05, None],
         [None, 0.05],
@@ -1499,7 +1520,7 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
                 trials_df=trials_df,
                 roi=roi,
                 **depth_tuning_running_kwargs,
-                ylim = (ylim[0], np.round(ylim[1]*1.05,1)),
+                ylim = (ylim[0], np.round(ylim[1]*ylim_scale,ylim_precision)),
                 label=label,
             )
         if i_running == 0:
@@ -1517,7 +1538,7 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
             plt.text(
                 x_label,
                 ylim[1],
-                f"ROI {roi_num}",
+                f"Cell {roi_num}",
                 fontsize=fontsize_dict["legend"],
             )
             if fov_ax:
