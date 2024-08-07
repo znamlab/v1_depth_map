@@ -140,14 +140,18 @@ def decoder_accuracy(
     plt.ylabel(ylabel, fontsize=fontsize_dict["label"])
 
 
-def calculate_average_confusion_matrix(decoder_results):
+def calculate_average_confusion_matrix(decoder_results, col="", recording_types=["closedloop", "openloop"]):
     conmat_mean = {}
-    for sfx in ["closedloop", "openloop"]:
-        decoder_results[f"conmat_prop_{sfx}"] = decoder_results[f"conmat_{sfx}"].apply(
+    for recording_type in recording_types:
+        if col == "":
+            col = f"conmat_{recording_type}"
+        else:
+            print(f"Using {col} for confusion matrix")
+        decoder_results[f"conmat_prop_{recording_type}"] = decoder_results[col].apply(
             lambda x: x / np.sum(x)
         )
-        conmat_mean[sfx] = np.mean(
-            np.stack(decoder_results[f"conmat_prop_{sfx}"]), axis=0
+        conmat_mean[recording_type] = np.mean(
+            np.stack(decoder_results[f"conmat_prop_{recording_type}"]), axis=0
         )
     return conmat_mean
 
@@ -158,6 +162,8 @@ def plot_confusion_matrix(
     vmax,
     fontsize_dict,
     depths=np.logspace(np.log2(5), np.log2(640), 8, base=2),
+    colorbar_on=True,
+    xtick_rotation=0,
 ):
     im = ax.imshow(conmat, interpolation="nearest", cmap="magma", vmax=vmax, vmin=0)
     for i, j in itertools.product(range(conmat.shape[0]), range(conmat.shape[1])):
@@ -174,10 +180,27 @@ def plot_confusion_matrix(
         #     color="black" if conmat[i, j] > vmax / 2 else "white",
         #     fontsize=fontsize_dict["tick"],
         # )
-    plt.xticks(np.arange(len(depths)), depths, fontsize=fontsize_dict["tick"])
-    plt.yticks(np.arange(len(depths)), depths, fontsize=fontsize_dict["tick"])
-    plt.xlabel("Predicted virtual depth (cm)", fontsize=fontsize_dict["label"])
-    plt.ylabel("True virtual depth (cm)", fontsize=fontsize_dict["label"])
+    ax.set_xticks(np.arange(len(depths)))
+    ax.set_xticklabels(depths, fontsize=fontsize_dict["tick"], rotation=xtick_rotation)
+    ax.set_yticks(np.arange(len(depths)))
+    ax.set_yticklabels(depths, fontsize=fontsize_dict["tick"])
+    ax.set_xlabel("Predicted virtual depth (cm)", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("True virtual depth (cm)", fontsize=fontsize_dict["label"])
+    
+    plot_x, plot_y, plot_width, plot_height = ax.get_position().x0, ax.get_position().y0, ax.get_position().width, ax.get_position().height
+    if colorbar_on:  
+        ax2 = plt.gcf().add_axes(
+            [
+                plot_x + plot_width + 0.01,
+                plot_y,
+                plot_width * 0.05,
+                plot_height / 3,
+            ]
+        )
+        # set colorbar
+        plt.colorbar(im, cax=ax2, label="Accuracy")
+        ax2.tick_params(labelsize=fontsize_dict["tick"])
+        ax2.set_ylabel("Accuracy", fontsize=fontsize_dict["legend"])
     return im
 
 
@@ -285,66 +308,96 @@ def plot_decoder_err_by_speeds(decoder_df,
     err_speed_bins = err_speed_bins*2 # convert log 2 to folds (so log2 = 1 is 2 folds)
     
     # bins that are below the highest bin (<1m/s)
-    mean_err = np.nanmean(err_speed_bins[:,:highest_bin], axis=0)
-    CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:,:highest_bin].T)
-    ax.errorbar(
-        x=np.arange(1),
-        y=mean_err.flatten()[0],
-        yerr=(mean_err - CI_low)[0],
-        fmt=".",
-        color=linecolor,
-        ls="none",
-        fillstyle="none",
+    mean_err = np.nanmean(err_speed_bins[:, :highest_bin], axis=0)
+    CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:, :highest_bin].T)
+    # bins that are within the highest bin (>1m/s)
+    mean_err = np.concatenate([mean_err, [np.nanmean(err_speed_bins[highest_bin:])]])
+    CI_low_highest, CI_high_highest = common_utils.get_bootstrap_ci(np.nanmean(err_speed_bins[:,highest_bin:].T, axis=1))
+    CI_low = np.concatenate([CI_low, CI_low_highest])
+    CI_high = np.concatenate([CI_high, mean_err[-1]-CI_low_highest + mean_err[-1]])
+    ax.plot(
+        np.linspace(0, highest_bin, highest_bin+1),
+        mean_err.flatten(),
+        f"{linecolor}-",
+        marker=".",
+        alpha=alpha,
         linewidth=linewidth,
         markeredgewidth=linewidth,
         markersize=markersize,
     )
     
-    ax.errorbar(
-        x=np.linspace(1, highest_bin-1, highest_bin-1),
-        y=mean_err.flatten()[1:use_nbins],
-        yerr=((mean_err - CI_low)[1:use_nbins],(CI_high-mean_err)[1:use_nbins]),
-        fmt=".",
+    ax.fill_between(
+        np.linspace(0, highest_bin+0.01, highest_bin+1),
+        CI_low,
+        CI_high,
         color=linecolor,
-        ls="-",
-        fillstyle="none",
-        linewidth=linewidth,
-        markeredgewidth=linewidth,
-        markersize=markersize,
+        alpha=0.2,
+        edgecolor="none",
     )
     
-    # bins that are within the highest bin (<1m/s)
-    mean_err = np.nanmean(err_speed_bins[highest_bin:])
-    CI_low, CI_high = common_utils.get_bootstrap_ci(np.nanmean(err_speed_bins[:,highest_bin:], axis=1))
-    ax.errorbar(
-        x=[highest_bin],
-        y=mean_err,
-        yerr=mean_err - CI_low,
-        fmt=".",
-        color=linecolor,
-        ls="none",
-        fillstyle="none",
-        linewidth=linewidth,
-        markeredgewidth=linewidth,
-        markersize=markersize,
-    )
+    # mean_err = np.nanmean(err_speed_bins[:,:highest_bin], axis=0)
+    # CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:,:highest_bin].T)
     
+    # ax.errorbar(
+    #     x=np.arange(1),
+    #     y=mean_err.flatten()[0],
+    #     yerr=(mean_err - CI_low)[0],
+    #     fmt=".",
+    #     color=linecolor,
+    #     ls="none",
+    #     fillstyle="none",
+    #     linewidth=linewidth,
+    #     markeredgewidth=linewidth,
+    #     markersize=markersize,
+    # )
+    
+    # ax.errorbar(
+    #     x=np.linspace(1, highest_bin-1, highest_bin-1),
+    #     y=mean_err.flatten()[1:use_nbins],
+    #     yerr=((mean_err - CI_low)[1:use_nbins],(CI_high-mean_err)[1:use_nbins]),
+    #     fmt=".",
+    #     color=linecolor,
+    #     ls="-",
+    #     fillstyle="none",
+    #     linewidth=linewidth,
+    #     markeredgewidth=linewidth,
+    #     markersize=markersize,
+    # )
+    
+    # # bins that are within the highest bin (<1m/s)
+    # mean_err = np.nanmean(err_speed_bins[highest_bin:])
+    # CI_low_highest, CI_high_highest = common_utils.get_bootstrap_ci(np.nanmean(err_speed_bins[:,highest_bin:], axis=1))
+    # CI_low_all = np.concatenate([CI_low, CI_low_highest])
+    # CI_high_all = np.concatenate([CI_high, CI_high_highest])
+    # ax.errorbar(
+    #     x=[highest_bin],
+    #     y=mean_err,
+    #     yerr=mean_err - CI_low_highest,
+    #     fmt=".",
+    #     color=linecolor,
+    #     ls="none",
+    #     fillstyle="none",
+    #     linewidth=linewidth,
+    #     markeredgewidth=linewidth,
+    #     markersize=markersize,
+    # )
     # add chance level error
     ax.axhline(np.nanmean(decoder_df[f"error_chance_{sfx}"])*2, color=linecolor_chance, linestyle="dotted", linewidth=linewidth, alpha=alpha_chance) # convert log 2 to folds (so log2 = 1 is 2 folds)
     
     # set xticks
     xticks = np.arange(highest_bin+1).tolist()
-    ax.set_xticks(xticks)
+    ax.set_xticks([0] + np.linspace(0.5, highest_bin-0.5, highest_bin).tolist() + [highest_bin])
 
     new_tick_labels = []
     for i, tick in enumerate(xticks):
         if i == 0:
             new_tick_labels.append("stationary")
+            new_tick_labels.append(0)
         elif i < highest_bin:
             new_tick_labels.append(np.round(all_speed_bin_edges[:highest_bin][i-1],1))
         else:
             new_tick_labels.append(f"> {all_speed_bin_edges[highest_bin-2]}")
-    ax.set_xticklabels(new_tick_labels)
+    ax.set_xticklabels(new_tick_labels, rotation=60)
     plt.tick_params(axis="both", labelsize=fontsize_dict["tick"])
     ax.set_xlabel("Running speed (m/s)", fontsize=fontsize_dict["label"])
     ax.set_ylabel("Mean ratio of decoded depth\nto true depth", fontsize=fontsize_dict["label"])
