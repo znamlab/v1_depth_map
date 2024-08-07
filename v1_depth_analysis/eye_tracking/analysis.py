@@ -21,6 +21,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 import flexiznam as flz
+import pandas as pd
 import wayla
 from cottage_analysis.analysis import spheres
 from wayla import eye_model_fitting as emf
@@ -37,7 +38,7 @@ IS_MIRRORED = {
 }
 
 
-def get_data(project, mouse, session, recording, filt_window=5, verbose=True):
+def get_data(project, mouse, session, recording, filt_window=3, verbose=True):
     """Get gaze data with behaviour info for a given recording
 
     Args:
@@ -53,7 +54,7 @@ def get_data(project, mouse, session, recording, filt_window=5, verbose=True):
     """
     flm_sess = flz.get_flexilims_session(project_id=project)
     dlc_res, gaze_data, dlc_ds = get_gaze(
-        project, mouse, session, recording, flm_sess=flm_sess
+        project, mouse, session, recording, flm_sess=flm_sess, verbose=verbose
     )
     trials_df = get_trial_df(mouse, project, session, recording, flm_sess=flm_sess)
     gaze_data = add_behaviour(gaze_data, trials_df)
@@ -150,6 +151,8 @@ def get_gaze(
         print(f"Loaded camera extrinsics for {camel_cam_name}")
 
     # apply extrinsics to ellipse
+    if "phi" not in ellipse.columns:
+        print("PB No phi column found in ellipse")
     gaze_vec = wayla.utils.get_gaze_vector(ellipse.phi.values, ellipse.theta.values)
     rotated_gaze_vec = emf.convert_to_world(gaze_vec, rvec=rvec)
     azimuth, elevation = emf.gaze_to_azel(
@@ -302,3 +305,31 @@ def cleanup_data(gaze_data, tracking_data, filt_window=5, verbose=True):
     gaze_data["velocity"] = np.concatenate([[0], velocity])
     gaze_data["depth_label"] = [f"{d:.2f}m" for d in gaze_data["depth"]]
     return gaze_data
+
+
+def get_saccades(gaze_data, threshold=100):
+    """Get saccades from gaze data
+
+    Args:
+        gaze_data (pd.DataFrame): Gaze data
+        threshold (int, optional): Velocity threshold for saccades. Defaults to 100.
+
+    Returns:
+        pd.DataFrame: Saccade data
+    """
+    vel = gaze_data.velocity.values
+    is_in_saccade = vel > threshold
+    # saccade starts when velocity is above threshold
+    saccade_starts = is_in_saccade[1:] & ~is_in_saccade[:-1]
+    # saccade ends when velocity is below threshold
+    saccade_ends = ~is_in_saccade[1:] & is_in_saccade[:-1]
+    saccade_starts = np.where(saccade_starts)[0].astype(int)
+    saccade_ends = np.where(saccade_ends)[0].astype(int) + 1
+    # peak velocity for each saccade
+    peak_vel = [
+        vel[start:end].max() for start, end in zip(saccade_starts, saccade_ends)
+    ]
+    saccades = pd.DataFrame(
+        {"start": saccade_starts, "end": saccade_ends, "peak_vel": peak_vel}
+    )
+    return saccades
