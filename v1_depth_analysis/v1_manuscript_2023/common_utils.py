@@ -27,6 +27,7 @@ def concatenate_all_neurons_df(
             if isinstance(neurons_df, dict):
                 neurons_df_temp = pd.DataFrame(columns=cols, index=[0])
                 neurons_df = dict2df(neurons_df, neurons_df_temp, cols, 0)
+                neurons_df = neurons_df.drop("trials_df", axis=1)
             if (cols is None) or (set(cols).issubset(neurons_df.columns.tolist())):
                 if cols is None:
                     neurons_df = neurons_df
@@ -111,6 +112,6 @@ def draw_axis_scalebars(ax, scalebar_x, scalebar_y, scalebar_width, scalebar_hei
     if bottom:
         bottom_edge = patches.FancyBboxPatch((scalebar_x, scalebar_y), scalebar_width, 0, boxstyle="square,pad=0", linewidth=linewidth, edgecolor='black', facecolor='none')
         ax.add_patch(bottom_edge)
-        ax.text(scalebar_x + scalebar_width/2, scalebar_y-scalebar_height*0.7, scalebar_labels[0], fontsize=label_fontsize, ha='center', va='bottom')
+        ax.text(scalebar_x, scalebar_y+scalebar_height*0.1, scalebar_labels[0], fontsize=label_fontsize, ha='left', va='bottom')
     ax.set_xlim(xlim)
     ax.axis('off')
