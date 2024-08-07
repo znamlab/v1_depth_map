@@ -502,6 +502,9 @@ def plot_r2_comparison(
         print(
             f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[0]], results['rsq'][results['model'] == labels[2]])}"
         )
+        print(
+            f"{labels[1]} vs {labels[2]}: {scipy.stats.wilcoxon(results['rsq'][results['model'] == labels[1]], results['rsq'][results['model'] == labels[2]])}"
+        )
 
     elif plot_type == "bar":
         model_cols = [f"rsof_test_rsq_closedloop_{model}" for model in models]
@@ -549,7 +552,7 @@ def plot_r2_comparison(
         ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"])
         print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(props[0],props[1])}")
         print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(props[0],props[2])}")
-
+        print(f"{labels[1]} vs {labels[2]}: {scipy.stats.wilcoxon(props[1],props[2])}")
 
 def plot_r2_cdfs(
     neurons_df,
