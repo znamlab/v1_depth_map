@@ -21,6 +21,7 @@ import cv2
 import numpy as np
 from pathlib import Path
 import flexiznam as flz
+import pandas as pd
 import wayla
 from cottage_analysis.analysis import spheres
 from wayla import eye_model_fitting as emf
@@ -37,7 +38,7 @@ IS_MIRRORED = {
 }
 
 
-def get_data(project, mouse, session, recording):
+def get_data(project, mouse, session, recording, filt_window=3, verbose=True):
     """Get gaze data with behaviour info for a given recording
 
     Args:
@@ -45,18 +46,22 @@ def get_data(project, mouse, session, recording):
         mouse (str): Mouse name
         session (str): Session name
         recording (str): Recording name
+        filt_window (int, optional): Window size for median filter. Defaults to 5.
+        verbose (bool, optional): Whether to print verbose output. Defaults to True.
 
     Returns:
         pd.DataFrame: Gaze data with behaviour info
     """
     flm_sess = flz.get_flexilims_session(project_id=project)
     dlc_res, gaze_data, dlc_ds = get_gaze(
-        project, mouse, session, recording, flm_sess=flm_sess
+        project, mouse, session, recording, flm_sess=flm_sess, verbose=verbose
     )
     trials_df = get_trial_df(mouse, project, session, recording, flm_sess=flm_sess)
     gaze_data = add_behaviour(gaze_data, trials_df)
-    gaze_data = cleanup_data(gaze_data)
-    return gaze_data
+    gaze_data = cleanup_data(
+        gaze_data, dlc_res, filt_window=filt_window, verbose=verbose
+    )
+    return gaze_data, dlc_res
 
 
 def get_gaze(
@@ -146,6 +151,8 @@ def get_gaze(
         print(f"Loaded camera extrinsics for {camel_cam_name}")
 
     # apply extrinsics to ellipse
+    if "phi" not in ellipse.columns:
+        print("PB No phi column found in ellipse")
     gaze_vec = wayla.utils.get_gaze_vector(ellipse.phi.values, ellipse.theta.values)
     rotated_gaze_vec = emf.convert_to_world(gaze_vec, rvec=rvec)
     azimuth, elevation = emf.gaze_to_azel(
@@ -186,7 +193,8 @@ def get_trial_df(mouse, project, session, recording, flm_sess=None):
     )
     n_recordings = len(trials_df.recording_name.unique())
     if n_recordings > 1:
-        raise NotImplementedError("I need to check how to handle multiple recordings")
+        # filter only for the recording of interest
+        trials_df = trials_df[trials_df.recording_name == recording].copy()
     assert recording == trials_df.recording_name.unique()[0]
     return trials_df
 
@@ -237,32 +245,53 @@ def add_behaviour(ellipse, trials_df):
     return ellipse
 
 
-def cleanup_data(gaze_data, filt_window=5):
+def cleanup_data(gaze_data, tracking_data, filt_window=5, verbose=True):
     """Clean up gaze data
 
-    Fix depth to 2 decimal places, interpolate NaN values, and filter with a median
-    filter. Compute displacement and velocity.
+    Find when the eye is closed and filter out those frames. Fix depth to 2 decimal
+    places, interpolate NaN values, and filter with a median filter. Compute
+    displacement and velocity.
 
     Args:
         gaze_data (pd.DataFrame): Gaze data
-        filt_window (int, optional): Window size for median filter. Defaults to 5.
+        tracking_data (pd.DataFrame): Tracking data from deeplabcut
+        filt_window (int, optional): Window size for mean filter. Defaults to 5.
+        verbose (bool, optional): Whether to print verbose output. Defaults to True.
 
     Returns:
         pd.DataFrame: Cleaned gaze data
     """
+    # remove the moment when the mouse closes the eye
+    eye_open = gaze_data.reflection_dlc_likelihood > 0.8
+    gaze_data["valid"] &= eye_open
+    tracking_data = tracking_data.copy()
+    tracking_data.columns = tracking_data.columns.droplevel(0)
+    top = tracking_data["top_eye_lid"]
+    bottom = tracking_data["bottom_eye_lid"]
+    # calculate the distance between top and bottom
+    distance = np.sqrt((top["x"] - bottom["x"]) ** 2 + (top["y"] - bottom["y"]) ** 2)
+    gaze_data["eye_is_open"] = distance > np.nanmean(distance) - 3 * np.nanstd(
+        distance[gaze_data["valid"]]
+    )
+    gaze_data["eye_opening"] = distance
+    gaze_data["valid"] &= gaze_data["eye_is_open"]
+    if verbose:
+        print(f"Eye closed in {np.sum(~gaze_data['valid'])}/{len(gaze_data)} frames")
     # round depth
     gaze_data["depth"] = gaze_data["depth"].round(2)
+    gaze_data.reset_index(drop=True, inplace=True)
 
-    # replace NaN with linear interpolation
-    gaze_data["azimuth_interp"] = gaze_data["azimuth"].interpolate()
-    gaze_data["elevation_interp"] = gaze_data["elevation"].interpolate()
-    # filter with a box median filter
-    gaze_data["azimuth_filt"] = (
-        gaze_data["azimuth_interp"].rolling(filt_window=5, center=True).mean()
-    )
-    gaze_data["elevation_filt"] = (
-        gaze_data["elevation_interp"].rolling(filt_window=5, center=True).mean()
-    )
+    for col in ["azimuth", "elevation"]:
+        # replace NaN with linear interpolation
+        gaze_data[f"{col}_interp"] = gaze_data[col].interpolate()
+        # filter with a box mean filter
+        gaze_data[f"{col}_filt"] = (
+            gaze_data[f"{col}_interp"].rolling(window=filt_window, center=True).mean()
+        )
+        # rolling is actually rolling, NaN the beginning/end that are using data from the
+        # opposite end
+        gaze_data.loc[: filt_window // 2, f"{col}_filt"] = np.nan
+        gaze_data.loc[len(gaze_data) - filt_window // 2 - 1 :, f"{col}_filt"] = np.nan
 
     dt = np.nanmedian(np.diff(gaze_data["harptime"].values))
     fs = 1 / dt
@@ -276,3 +305,31 @@ def cleanup_data(gaze_data, filt_window=5):
     gaze_data["velocity"] = np.concatenate([[0], velocity])
     gaze_data["depth_label"] = [f"{d:.2f}m" for d in gaze_data["depth"]]
     return gaze_data
+
+
+def get_saccades(gaze_data, threshold=100):
+    """Get saccades from gaze data
+
+    Args:
+        gaze_data (pd.DataFrame): Gaze data
+        threshold (int, optional): Velocity threshold for saccades. Defaults to 100.
+
+    Returns:
+        pd.DataFrame: Saccade data
+    """
+    vel = gaze_data.velocity.values
+    is_in_saccade = vel > threshold
+    # saccade starts when velocity is above threshold
+    saccade_starts = is_in_saccade[1:] & ~is_in_saccade[:-1]
+    # saccade ends when velocity is below threshold
+    saccade_ends = ~is_in_saccade[1:] & is_in_saccade[:-1]
+    saccade_starts = np.where(saccade_starts)[0].astype(int)
+    saccade_ends = np.where(saccade_ends)[0].astype(int) + 1
+    # peak velocity for each saccade
+    peak_vel = [
+        vel[start:end].max() for start, end in zip(saccade_starts, saccade_ends)
+    ]
+    saccades = pd.DataFrame(
+        {"start": saccade_starts, "end": saccade_ends, "peak_vel": peak_vel}
+    )
+    return saccades

@@ -36,12 +36,13 @@ def get_sessions(
     if mouse_list is None:
         mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
 
-    for mouse in mouse_list["name"].values:
-        sessions_mouse = flz.get_children(
-            parent_name=mouse,
-            children_datatype="session",
-            flexilims_session=flexilims_session,
-        )
+    # get children is too slow. It's better to get everything and filter
+    project_sessions = flz.get_entities("session", flexilims_session=flexilims_session)
+    project_recordings = flz.get_entities(
+        "recording", flexilims_session=flexilims_session
+    )
+    for mouse_id in mouse_list["id"].values:
+        sessions_mouse = project_sessions[project_sessions.origin_id == mouse_id]
         # exclude any sessions which have an "exclude_reason" on flexilims
         if "exclude_reason" in sessions_mouse.columns:
             if not v1_only:
@@ -52,9 +53,14 @@ def get_sessions(
                 ]
             else:
                 sessions_mouse = sessions_mouse[
-                    ((sessions_mouse["exclude_reason"].isna())
-                    | (sessions_mouse["exclude_reason"].str.isspace()))
-                    & (sessions_mouse["closedloop_trials"]/sessions_mouse["ndepths"] > trialnum_min)
+                    (
+                        (sessions_mouse["exclude_reason"].isna())
+                        | (sessions_mouse["exclude_reason"].str.isspace())
+                    )
+                    & (
+                        sessions_mouse["closedloop_trials"] / sessions_mouse["ndepths"]
+                        > trialnum_min
+                    )
                 ]
         if len(sessions_mouse) > 0:
             session_list.append(sessions_mouse.name.values.tolist())
@@ -66,13 +72,9 @@ def get_sessions(
     keep_sessions = []
     # filter based on closedloop_only and openloop_only
     for session in session_list:
-        recs = flz.get_children(
-            parent_name=session,
-            children_datatype="recording",
-            flexilims_session=flexilims_session,
-        )
-        closed_loop = len(recs[recs["protocol"] == "SpheresPermTubeReward"]) > 0
-        open_loop = len(recs[recs["protocol"] == "SpheresPermTubeRewardPlayback"]) > 0
+        sess_id = project_sessions.loc[session].id
+        recs = project_recordings[project_recordings.origin_id == sess_id]
+        open_loop = (recs["protocol"] == "SpheresPermTubeRewardPlayback").any()
         if exclude_openloop and open_loop:
             continue
         if exclude_pure_closedloop and (not open_loop):
