@@ -8,8 +8,8 @@ flexilims_session = flz.get_flexilims_session(project_id=PROJECT)
 sessions = get_session_list.get_sessions(
     flexilims_session=flexilims_session,
     exclude_sessions=(),
-    closedloop_only=True,
-    openloop_only=False,
+    exclude_openloop=True,
+    exclude_pure_closedloop=False,
     v1_only=True,
 )
 print(f"Found {len(sessions)} sessions")
