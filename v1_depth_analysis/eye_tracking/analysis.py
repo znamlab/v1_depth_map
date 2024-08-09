@@ -307,7 +307,7 @@ def cleanup_data(gaze_data, tracking_data, filt_window=5, verbose=True):
     return gaze_data
 
 
-def get_saccades(gaze_data, threshold=100):
+def get_saccades(gaze_data, threshold=100, filter_window=5):
     """Get saccades from gaze data
 
     Args:
@@ -317,19 +317,36 @@ def get_saccades(gaze_data, threshold=100):
     Returns:
         pd.DataFrame: Saccade data
     """
-    vel = gaze_data.velocity.values
+    azi = gaze_data.azimuth.interpolate()
+    azi = azi.rolling(window=filter_window, center=True).median()
+    ele = gaze_data.elevation.interpolate()
+    ele = ele.rolling(window=filter_window, center=True).median()
+    displacement = np.sqrt(azi.diff() ** 2 + ele.diff() ** 2).interpolate()
+    vel = displacement / np.nanmedian(gaze_data.harptime.diff())
+
     is_in_saccade = vel > threshold
     # saccade starts when velocity is above threshold
-    saccade_starts = is_in_saccade[1:] & ~is_in_saccade[:-1]
-    # saccade ends when velocity is below threshold
-    saccade_ends = ~is_in_saccade[1:] & is_in_saccade[:-1]
-    saccade_starts = np.where(saccade_starts)[0].astype(int)
-    saccade_ends = np.where(saccade_ends)[0].astype(int) + 1
-    # peak velocity for each saccade
-    peak_vel = [
-        vel[start:end].max() for start, end in zip(saccade_starts, saccade_ends)
-    ]
+    saccade_starts = (
+        ~is_in_saccade.shift(1, fill_value=False).astype(bool) & is_in_saccade
+    )
+    saccade_ends = is_in_saccade.shift(1, fill_value=False) & ~is_in_saccade
+    saccade_starts = np.where(saccade_starts.values)[0]
+    saccade_ends = np.where(saccade_ends.values)[0]
+
+    nsaccades = min(len(saccade_starts), len(saccade_ends))
+    peak_vel = np.empty(nsaccades) + np.nan
+    for i in range(nsaccades):
+        peak_vel[i] = vel.values[saccade_starts[i] : saccade_ends[i]].max()
+    start_index = is_in_saccade.index[saccade_starts][:nsaccades]
+    end_index = is_in_saccade.index[saccade_ends][:nsaccades]
     saccades = pd.DataFrame(
-        {"start": saccade_starts, "end": saccade_ends, "peak_vel": peak_vel}
+        {
+            "start_index": start_index.values[:nsaccades],
+            "end_index": end_index.values[:nsaccades],
+            "peak_velocity": peak_vel,
+            "start_time": gaze_data.harptime[start_index].values,
+            "end_time": gaze_data.harptime[end_index].values,
+        },
+        index=np.arange(nsaccades),
     )
     return saccades
