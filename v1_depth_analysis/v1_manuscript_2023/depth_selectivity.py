@@ -21,6 +21,7 @@ from cottage_analysis.plotting import basic_vis_plots, plotting_utils
 from cottage_analysis.pipelines import pipeline_utils
 from v1_depth_analysis.v1_manuscript_2023 import rf
 from v1_depth_analysis.v1_manuscript_2023.roi_location import find_roi_centers
+from v1_depth_analysis.v1_manuscript_2023 import common_utils as plt_common_utils
 
 
 def plot_raster_all_depths(
@@ -113,7 +114,8 @@ def plot_raster_all_depths(
             ax.axvline((i + 1) * nbins, color="k", linewidth=0.5, linestyle="dotted")
         # Change y ticks to trial number
         ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"], labelpad=-5)
-        ax.set_yticks([1, dffs_binned.shape[1]])
+        ax.set_yticks([0, dffs_binned.shape[1]-1])
+        ax.set_yticklabels([1,dffs_binned.shape[1]])
         ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
         # Change xticks positions to the middle of current ticks and show depth at the tick position
         blank_prop = blank_length / (corridor_length + blank_length*2)
@@ -123,7 +125,7 @@ def plot_raster_all_depths(
         # ax.set_xticklabels(np.concatenate([np.repeat(0,ndepths),np.repeat(corridor_length,ndepths)]))
         xticks = np.linspace(nbins/2, nbins * (ndepths-1/2), ndepths)
         ax.set_xticks(xticks)
-        ax.set_xticklabels(depth_list)
+        ax.set_xticklabels((np.array(depth_list)*100).astype("int"))
         ax.set_xlabel("Virtual depth (cm)", fontsize=fontsize_dict["label"])
         ax.tick_params(axis="x", labelsize=fontsize_dict["tick"], rotation=0)
         sns.despine()
@@ -141,8 +143,9 @@ def plot_raster_all_depths(
             ]
         )
         # set colorbar
-        plt.colorbar(im, cax=ax2, label="\u0394F/F")
+        cbar=plt.colorbar(im, cax=ax2, label="\u0394F/F")
         ax2.tick_params(labelsize=fontsize_dict["tick"])
+        cbar.set_ticks([0, vmax])
         ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
         
         # # add a text label "Depth (cm):" to the left of the axis title
@@ -273,6 +276,7 @@ def plot_depth_tuning_curve(
     linewidth=3,
     linecolor="k",
     markersize=5,
+    markeredgecolor="k",
     closed_loop=1,
     label=None,
     ylim=None,
@@ -318,13 +322,7 @@ def plot_depth_tuning_curve(
     )[:, :, roi]
     CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
-    ax=plt.gca()
-    if linecolor == "royalblue":
-        markeredgecolor = "navy"
-    elif linecolor == ("gray" or "grey"):
-        markeredgecolor = "k"
-    else:
-        markeredgecolor = "k"       
+    ax=plt.gca()     
     ax.errorbar(
         log_param_list,
         mean_arr,
@@ -332,7 +330,7 @@ def plot_depth_tuning_curve(
         fmt=".",
         color=linecolor,
         markeredgecolor=markeredgecolor,
-        markeredgewidth=0.5,
+        markeredgewidth=0.3,
         markerfacecolor=linecolor,
         ls="none",
         fillstyle="full",
@@ -1195,7 +1193,8 @@ def plot_depth_neuron_perc_hist(
         ax.get_ylim()[1],
         marker="v",
         markersize=5,
-        color="k",
+        markerfacecolor="cornflowerblue",
+        markeredgecolor="royalblue",
     )
     plotting_utils.despine()
 
@@ -1487,7 +1486,6 @@ def plot_fov_mean_img(im, vmax=700, fov_width=572.867):
 
 
 def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df, ax, depth_tuning_kwargs, fontsize_dict, 
-                                         ylim_scale=1.05,ylim_precision=1,
                                          fov_ax=None, ops=None, stat=None, legend_loc="upper right", text_pos="upper_left"):
     for rs_thr, rs_thr_max, still_only, still_time, i_running, linecolor, label, use_col in zip(
         [0.05, None],
@@ -1507,11 +1505,26 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
         depth_tuning_running_kwargs["linecolor"] = linecolor
         depth_tuning_running_kwargs["use_col"] = use_col
         if i_running == 0:
+            mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(
+                trials_df=trials_df,
+                rs_thr=rs_thr,
+                rs_thr_max=rs_thr_max,
+                still_only=still_only,
+                still_time=still_time,
+                frame_rate=15,
+                closed_loop=1,
+                param="depth",
+            )[:, :, roi]
+            CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
+            ylim = (np.round(np.nanmin(CI_low),1), plt_common_utils.ceil(np.nanmax(CI_high),1))
+            print(f"ylim: {ylim}")
+                        
             plot_depth_tuning_curve(
                 neurons_df=neurons_df,
                 trials_df=trials_df,
                 roi=roi,
                 **depth_tuning_running_kwargs,
+                ylim = ylim, 
                 label=label,
             )
         else:
@@ -1520,14 +1533,12 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
                 trials_df=trials_df,
                 roi=roi,
                 **depth_tuning_running_kwargs,
-                ylim = (ylim[0], np.round(ylim[1]*ylim_scale,ylim_precision)),
+                ylim = ylim, 
                 label=label,
             )
-        if i_running == 0:
-            ylim = plt.ylim()
         if i != 1:
             plt.ylabel("")
-        if i % 3 != 2:
+        if (i % 3 != 2) and roi_num != 1:
             plt.xlabel("")
             ax.set_xticklabels([])
         if i_running == 0:

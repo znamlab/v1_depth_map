@@ -95,7 +95,8 @@ def decoder_accuracy(
         plt.plot(
             [1, 2],
             [this_ndepths[f"{mode}_closedloop"], this_ndepths[f"{mode}_openloop"]],
-            f"{color}{marker}-",
+            color=color,
+            marker=marker,
             alpha=0.7,
             label=f"{ndepths} depths",
             markersize=markersize,
@@ -103,7 +104,7 @@ def decoder_accuracy(
             markerfacecolor=markerfacecolor,
         )
         if mode == "accuracy":
-            plt.axhline(y=1 / ndepths, color=color, linestyle="dashed", linewidth=linewidth) 
+            plt.axhline(y=1 / ndepths, color=color, linestyle="dotted", linewidth=linewidth) 
 
         plt.plot(
             [1, 2],
@@ -111,7 +112,8 @@ def decoder_accuracy(
                 np.median(this_ndepths[f"{mode}_closedloop"]),
                 np.median(this_ndepths[f"{mode}_openloop"]),
             ],
-            f"{color}{marker}-",
+            color=color,
+            marker=marker,
             alpha=0.7,
             markersize=0,
             linewidth=linewidth * 2,
@@ -144,10 +146,11 @@ def calculate_average_confusion_matrix(decoder_results, col="", recording_types=
     conmat_mean = {}
     for recording_type in recording_types:
         if col == "":
-            col = f"conmat_{recording_type}"
+            col_new = f"conmat_{recording_type}"
         else:
             print(f"Using {col} for confusion matrix")
-        decoder_results[f"conmat_prop_{recording_type}"] = decoder_results[col].apply(
+            col_new = col
+        decoder_results[f"conmat_prop_{recording_type}"] = decoder_results[col_new].apply(
             lambda x: x / np.sum(x)
         )
         conmat_mean[recording_type] = np.mean(
@@ -162,7 +165,7 @@ def plot_confusion_matrix(
     vmax,
     fontsize_dict,
     depths=np.logspace(np.log2(5), np.log2(640), 8, base=2),
-    colorbar_on=True,
+    colorbar_on=False,
     xtick_rotation=0,
 ):
     im = ax.imshow(conmat, interpolation="nearest", cmap="magma", vmax=vmax, vmin=0)
@@ -198,7 +201,8 @@ def plot_confusion_matrix(
             ]
         )
         # set colorbar
-        plt.colorbar(im, cax=ax2, label="Accuracy")
+        cbar=plt.colorbar(im, cax=ax2, label="Accuracy")
+        cbar.set_ticks([0, vmax])
         ax2.tick_params(labelsize=fontsize_dict["tick"])
         ax2.set_ylabel("Accuracy", fontsize=fontsize_dict["legend"])
     return im
@@ -229,8 +233,7 @@ def plot_closed_open_conmat(
     ax2.set_title("Open loop", fontsize=fontsize_dict["label"])
     ax1.set_xlabel("Predicted virtual depth (cm)", fontsize=fontsize_dict["label"])
     ax1.set_ylabel("True virtual depth (cm)", fontsize=fontsize_dict["label"])
-    ax2.set_yticks([])
-    ax2.set_ylabel("")
+    ax2.set_ylabel("True virtual depth (cm)", fontsize=fontsize_dict["label"])
     ax1.tick_params(labelsize=fontsize_dict["tick"])
     ax2.tick_params(labelsize=fontsize_dict["tick"])
     bounds = ax2.get_position().bounds
@@ -285,6 +288,7 @@ def calculate_error_all_sessions(decoder_results):
 
 def plot_decoder_err_by_speeds(decoder_df, 
                                all_speed_bin_edges, 
+                               axes,
                                highest_bin=6,
                                closed_loop=1, 
                                linecolor="k", 
@@ -297,7 +301,6 @@ def plot_decoder_err_by_speeds(decoder_df,
     # find decoder_df for 5 depth session
     use_nbins=len(all_speed_bin_edges)+1
     speed_bins = all_speed_bin_edges[:use_nbins] 
-    ax = plt.gca()
     if closed_loop:
         sfx="closedloop"
     else:   
@@ -305,18 +308,42 @@ def plot_decoder_err_by_speeds(decoder_df,
     err_speed_bins = np.zeros((len(decoder_df), use_nbins))
     for i in range(use_nbins):
         err_speed_bins[:,i] = decoder_df[f"error_speed_bins_{sfx}_{i}"]
-    err_speed_bins = err_speed_bins*2 # convert log 2 to folds (so log2 = 1 is 2 folds)
+    err_speed_bins = err_speed_bins
+    
+    # plot stationary
+    mean_err = np.nanmean(err_speed_bins[:, 0])
+    CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:, 0].T)
+    axes[0].errorbar(
+        x=0,
+        y=mean_err,
+        c=linecolor,
+        yerr=np.concatenate([[mean_err - CI_low.reshape(1)], [CI_high.reshape(1) - mean_err]]),
+        marker=".",
+        alpha=alpha,
+        linewidth=linewidth,
+        markeredgewidth=linewidth,
+        markersize=markersize,
+    )
+        
+    # axes[0].fill_between(
+    #     [-0.25,0.3],
+    #     np.concatenate([CI_low,CI_low]),
+    #     np.concatenate([CI_high,CI_high]),
+    #     color=linecolor,
+    #     alpha=0.2,
+    #     edgecolor="none",
+    # )
     
     # bins that are below the highest bin (<1m/s)
-    mean_err = np.nanmean(err_speed_bins[:, :highest_bin], axis=0)
-    CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:, :highest_bin].T)
+    mean_err = np.nanmean(err_speed_bins[:, 1:highest_bin], axis=0)
+    CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:, 1:highest_bin].T)
     # bins that are within the highest bin (>1m/s)
     mean_err = np.concatenate([mean_err, [np.nanmean(err_speed_bins[highest_bin:])]])
     CI_low_highest, CI_high_highest = common_utils.get_bootstrap_ci(np.nanmean(err_speed_bins[:,highest_bin:].T, axis=1))
     CI_low = np.concatenate([CI_low, CI_low_highest])
     CI_high = np.concatenate([CI_high, mean_err[-1]-CI_low_highest + mean_err[-1]])
-    ax.plot(
-        np.linspace(0, highest_bin, highest_bin+1),
+    axes[1].plot(
+        np.linspace(1, highest_bin, highest_bin),
         mean_err.flatten(),
         f"{linecolor}-",
         marker=".",
@@ -326,8 +353,8 @@ def plot_decoder_err_by_speeds(decoder_df,
         markersize=markersize,
     )
     
-    ax.fill_between(
-        np.linspace(0, highest_bin+0.01, highest_bin+1),
+    axes[1].fill_between(
+        np.linspace(1, highest_bin, highest_bin),
         CI_low,
         CI_high,
         color=linecolor,
@@ -382,26 +409,35 @@ def plot_decoder_err_by_speeds(decoder_df,
     #     markersize=markersize,
     # )
     # add chance level error
-    ax.axhline(np.nanmean(decoder_df[f"error_chance_{sfx}"])*2, color=linecolor_chance, linestyle="dotted", linewidth=linewidth, alpha=alpha_chance) # convert log 2 to folds (so log2 = 1 is 2 folds)
+    axes[1].axhline(np.nanmean(decoder_df[f"error_chance_{sfx}"]), color=linecolor_chance, linestyle="dotted", linewidth=linewidth, alpha=alpha_chance) # convert log 2 to folds (so log2 = 1 is 2 folds)
     
-    # set xticks
+    # set axis of the stationary plot
+    axes[0].set_xlim([-0.5, 0.5])
+    ylim = axes[0].get_ylim()
+    axes[0].set_ylim([0,ylim[1]])
+    axes[0].set_xticks([0])
+    axes[0].set_xticklabels(["stationary"], rotation=60)
+    axes[0].tick_params(axis="both", labelsize=fontsize_dict["tick"])
+    axes[0].set_ylabel(r"mean of $|log_2\frac{predicted\, depth}{true \, depth}|$", fontsize=fontsize_dict["label"])
+    # set axis of the speed bins plot
     xticks = np.arange(highest_bin+1).tolist()
-    ax.set_xticks([0] + np.linspace(0.5, highest_bin-0.5, highest_bin).tolist() + [highest_bin])
+    axes[1].set_xticks(np.linspace(0.5, highest_bin-0.5, highest_bin).tolist() + [highest_bin])
 
     new_tick_labels = []
     for i, tick in enumerate(xticks):
         if i == 0:
-            new_tick_labels.append("stationary")
             new_tick_labels.append(0)
         elif i < highest_bin:
             new_tick_labels.append(np.round(all_speed_bin_edges[:highest_bin][i-1],1))
         else:
             new_tick_labels.append(f"> {all_speed_bin_edges[highest_bin-2]}")
-    ax.set_xticklabels(new_tick_labels, rotation=60)
-    plt.tick_params(axis="both", labelsize=fontsize_dict["tick"])
-    ax.set_xlabel("Running speed (m/s)", fontsize=fontsize_dict["label"])
-    ax.set_ylabel("Mean ratio of decoded depth\nto true depth", fontsize=fontsize_dict["label"])
+    axes[1].set_xticklabels(new_tick_labels, rotation=60)
+    axes[1].tick_params(axis="both", labelsize=fontsize_dict["tick"])
+    axes[1].set_xlabel("Running speed (m/s)", fontsize=fontsize_dict["label"])
+    # make y-axis invisible
     sns.despine()
+    axes[1].spines["left"].set_visible(False)
+    axes[1].set_yticks([])
     return err_speed_bins
 
 

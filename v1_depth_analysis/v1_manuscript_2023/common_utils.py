@@ -4,6 +4,7 @@ import pandas as pd
 import flexiznam as flz
 from cottage_analysis.pipelines import pipeline_utils
 import matplotlib.patches as patches
+import matplotlib.pyplot as plt
 
 
 def concatenate_all_neurons_df(
@@ -115,3 +116,23 @@ def draw_axis_scalebars(ax, scalebar_x, scalebar_y, scalebar_width, scalebar_hei
         ax.text(scalebar_x, scalebar_y+scalebar_height*0.1, scalebar_labels[0], fontsize=label_fontsize, ha='left', va='bottom')
     ax.set_xlim(xlim)
     ax.axis('off')
+    
+    
+def plot_white_rectangle(x0, y0, width, height):
+    ax=plt.gcf().add_axes([x0, y0, width, height])
+    # Define the rectangle's bottom-left corner, width, and height
+    rectangle = patches.Rectangle((0,0), 1,1, edgecolor='white', facecolor='white')
+
+    # Add the rectangle to the plot
+    ax.add_patch(rectangle)
+
+    # Set plot limits to better visualize the rectangle
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 1)
+    ax.set_axis_off()
+    ax.set_aspect('equal')
+    # fig.patch.set_facecolor('gray')
+    
+    
+def ceil(a, precision=0):
+    return np.round(a + 0.5 * 10**(-precision), precision)
