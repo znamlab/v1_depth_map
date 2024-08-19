@@ -51,17 +51,19 @@ def get_data(project, mouse, session, recording, filt_window=3, verbose=True):
 
     Returns:
         pd.DataFrame: Gaze data with behaviour info
+        pd.DataFrame: DLC results
+        flexiznam.schema.dataset.Dataset: DLC dataset
     """
     flm_sess = flz.get_flexilims_session(project_id=project)
     dlc_res, gaze_data, dlc_ds = get_gaze(
-        project, mouse, session, recording, flm_sess=flm_sess, verbose=verbose
+        project, mouse, session, recording, flm_sess=flm_sess
     )
     trials_df = get_trial_df(mouse, project, session, recording, flm_sess=flm_sess)
     gaze_data = add_behaviour(gaze_data, trials_df)
     gaze_data = cleanup_data(
         gaze_data, dlc_res, filt_window=filt_window, verbose=verbose
     )
-    return gaze_data, dlc_res
+    return gaze_data, dlc_res, dlc_ds
 
 
 def get_gaze(
@@ -292,6 +294,7 @@ def cleanup_data(gaze_data, tracking_data, filt_window=5, verbose=True):
         # opposite end
         gaze_data.loc[: filt_window // 2, f"{col}_filt"] = np.nan
         gaze_data.loc[len(gaze_data) - filt_window // 2 - 1 :, f"{col}_filt"] = np.nan
+        gaze_data.loc[~gaze_data.valid, f"{col}_filt"] = np.nan
 
     dt = np.nanmedian(np.diff(gaze_data["harptime"].values))
     fs = 1 / dt
