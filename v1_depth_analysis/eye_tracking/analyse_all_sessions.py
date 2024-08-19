@@ -47,7 +47,7 @@ for session_name in sessions:
         print(f"    recording {recording}")
         recording = recording[len(session_name) + 1 :]
         try:
-            gaze_data = get_data(PROJECT, mouse, session, recording)
+            gaze_data, _, _ = get_data(PROJECT, mouse, session, recording)
         except AttributeError as e:
             print(f"    Error: {e} for {session_name}_{recording}")
             continue
