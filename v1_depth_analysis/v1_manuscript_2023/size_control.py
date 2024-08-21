@@ -118,13 +118,20 @@ def plot_preferred_depths_sizes_scatter(neurons_df, sizes, plot_x, plot_y, plot_
         
         
         # add histogram
-        ax2 = fig.add_axes([plot_x + (i+0.3)*plot_width, plot_y + plot_height*0.7, plot_width*0.3, plot_height*0.15])
-        ratio = neurons_df[f"preferred_depth_size{size_y}"]/neurons_df[f"preferred_depth_size{size_x}"]
+        ax2 = fig.add_axes([plot_x + (i+0.1)*plot_width, plot_y + plot_height*0.7, plot_width*0.5, plot_height*0.3])
+        ratio = neurons_df[f"preferred_depth_size{size_x}"]/neurons_df[f"preferred_depth_size{size_y}"]
         ax2.hist(
-            neurons_df[f"preferred_depth_size{size_y}"]/neurons_df[f"preferred_depth_size{size_x}"],
+            ratio,
             bins=np.geomspace(np.nanmin(ratio), np.nanmax(ratio), 20),
             color="k",
             alpha=1,
+        )
+        ax2.plot(
+            np.median(ratio),
+            plt.ylim()[1]*1.05,
+            marker="v",
+            markersize=3,
+            color="k",
         )
         ax2.vlines(1, 0, 150, color="white", linestyle="dotted", linewidth=1)
         ax2.set_xscale("log")
