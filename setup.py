@@ -12,6 +12,7 @@ setup(
     install_requires=[
         "seaborn",
         "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git@dev",
+        "wayla @ git+ssh://git@github.com/znamlab/wayla.git@dev",
         "roifile",
         "plotly",
         "kaleido",
