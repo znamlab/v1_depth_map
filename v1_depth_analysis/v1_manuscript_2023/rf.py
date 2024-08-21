@@ -628,7 +628,10 @@ def calculate_rf_gradient(flexilims_session, neurons_ds, neurons_df, session_nam
     # find the gradient of col w.r.t. center_x and center_y
     for neurons, sfx in zip([select_neurons, null_neurons],
                             ["rf_sig", "rf_null"]):
-        for col in ["rf_azi", "rf_ele"]:
+        for col, colname in zip(
+            ["rf_azi", "rf_ele", "preferred_depth_closedloop"],
+            ["azi", "ele", "depth"],
+        ):
             slope_x = scipy.stats.linregress(
                 x=neurons["center_x"], y=neurons[col]
             ).slope
@@ -638,8 +641,8 @@ def calculate_rf_gradient(flexilims_session, neurons_ds, neurons_df, session_nam
             norm = np.linalg.norm(np.array([slope_x, slope_y]))
             slope_x /= norm
             slope_y /= norm
-            session_df[f"slope_x_{col[-3:]}_{sfx}"] = slope_x
-            session_df[f"slope_y_{col[-3:]}_{sfx}"] = slope_y
+            session_df[f"slope_x_{colname}_{sfx}"] = slope_x
+            session_df[f"slope_y_{colname}_{sfx}"] = slope_y
             
     # save file
     session_df.to_pickle(neurons_ds.path_full.parent/"rf_gradients.pkl")
@@ -703,4 +706,8 @@ def plot_gradient_polar(angles,
     # Create the bar plot on the polar axis
     ax.bar(np.radians(bin_centers), counts, width=(2 * np.pi) / nbins, edgecolor=edgecolor, facecolor=facecolor, alpha=alpha)
     
-    ax.tick_params(axis='both', which='major', labelsize=fontsize_dict["tick"])
+    ax.set_xticks(np.linspace(0, 2*np.pi, 4, endpoint=False))
+    ax.set_xticklabels(['M', 'A', 'L', 'P'], fontsize=fontsize_dict["label"])
+    ax.tick_params(axis='x', which='major', pad=-6)
+    ax.set_yticks(ax.get_yticks())
+    ax.tick_params(axis='y', which='major', labelsize=fontsize_dict["tick"], pad=0)
