@@ -1107,6 +1107,7 @@ def plot_psth_raster(
     results_df,
     depth_list,
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
+    vmax=2,
 ):
     psths = np.stack(results_df["psth_crossval"])[:, :-1, 10:-10]  # exclude blank
     ndepths = psths.shape[1]
@@ -1125,8 +1126,8 @@ def plot_psth_raster(
         normed_psth,
         aspect="auto",
         cmap="bwr",
-        vmin=-2,
-        vmax=2,
+        vmin=-vmax,
+        vmax=vmax,
     )
     # Plot vertical lines to separate different depths
     for i in range(ndepths):

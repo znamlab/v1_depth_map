@@ -4,6 +4,7 @@ import matplotlib.patheffects as PathEffects
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+from scipy import stats
 from scipy.stats import wilcoxon
 import itertools
 
@@ -79,6 +80,7 @@ def bar_plot_ttest(
 
 def decoder_accuracy(
     decoder_results,
+    plot_type="bar",
     markersize=5,
     colors=["b", "g"],
     markers=["o", "^"],
@@ -87,59 +89,146 @@ def decoder_accuracy(
     xlabel=["Closed loop", "Open loop"],
     ylabel="Classification accuracy",
     fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 5},
-    mode="accuracy"
+    mode="accuracy",
+    n_boots=10000,
 ):
     ndepths_list = decoder_results["ndepths"].unique()
-    for ndepths, color, marker, markerfacecolor in zip(ndepths_list, colors, markers, markerfacecolors):
-        this_ndepths = decoder_results[decoder_results["ndepths"] == ndepths]
-        plt.plot(
-            [1, 2],
-            [this_ndepths[f"{mode}_closedloop"], this_ndepths[f"{mode}_openloop"]],
-            color=color,
-            marker=marker,
-            alpha=0.7,
-            label=f"{ndepths} depths",
-            markersize=markersize,
-            linewidth=linewidth,
-            markerfacecolor=markerfacecolor,
-        )
-        if mode == "accuracy":
-            plt.axhline(y=1 / ndepths, color=color, linestyle="dotted", linewidth=linewidth) 
-
-        plt.plot(
-            [1, 2],
-            [
-                np.median(this_ndepths[f"{mode}_closedloop"]),
-                np.median(this_ndepths[f"{mode}_openloop"]),
-            ],
-            color=color,
-            marker=marker,
-            alpha=0.7,
-            markersize=0,
-            linewidth=linewidth * 2,
-            markerfacecolor=markerfacecolor,
-        )
-        handles, legend_labels = plt_common_utils.get_unique_labels(plt.gca())
-        plt.legend(handles, legend_labels, fontsize=fontsize_dict["legend"], frameon=False, loc="upper right", handlelength=3)
-        for icol, col in enumerate([f"{mode}_closedloop", f"{mode}_openloop"]):
+    if plot_type == "bar":
+        for ndepths, color, marker, markerfacecolor in zip(ndepths_list, colors, markers, markerfacecolors):
+            this_ndepths = decoder_results[decoder_results["ndepths"] == ndepths]
             plt.plot(
-                [icol + 0.8, icol + 1.2],
-                [np.median(this_ndepths[col]), np.median(this_ndepths[col])],
-                color,
-                lw=2,
+                [1, 2],
+                [this_ndepths[f"{mode}_closedloop"], this_ndepths[f"{mode}_openloop"]],
+                color=color,
+                marker=marker,
+                alpha=0.7,
+                label=f"{ndepths} depths",
+                markersize=markersize,
+                linewidth=linewidth,
+                markerfacecolor=markerfacecolor,
             )
+            if mode == "accuracy":
+                plt.axhline(y=1 / ndepths, color=color, linestyle="dotted", linewidth=linewidth) 
+
+            plt.plot(
+                [1, 2],
+                [
+                    np.median(this_ndepths[f"{mode}_closedloop"]),
+                    np.median(this_ndepths[f"{mode}_openloop"]),
+                ],
+                color=color,
+                marker=marker,
+                alpha=0.7,
+                markersize=0,
+                linewidth=linewidth * 2,
+                markerfacecolor=markerfacecolor,
+            )
+            handles, legend_labels = plt_common_utils.get_unique_labels(plt.gca())
+            plt.legend(handles, legend_labels, fontsize=fontsize_dict["legend"], frameon=False, loc="upper right", handlelength=3)
+            for icol, col in enumerate([f"{mode}_closedloop", f"{mode}_openloop"]):
+                plt.plot(
+                    [icol + 0.8, icol + 1.2],
+                    [np.median(this_ndepths[col]), np.median(this_ndepths[col])],
+                    color,
+                    lw=2,
+                )
+                
+            print(f"decoder accuracy {ndepths} depths 2-sided: {wilcoxon(this_ndepths[f'{mode}_closedloop'], this_ndepths[f'{mode}_openloop'])}")
+            print(f"decoder accuracy {ndepths} depths 1-sided greater: {wilcoxon(this_ndepths[f'{mode}_closedloop'], this_ndepths[f'{mode}_openloop'], alternative='greater',)}")
+        print(f"decoder accuracy all 2-sided: {wilcoxon(decoder_results[f'{mode}_closedloop'], decoder_results[f'{mode}_openloop'])}")
+        print(f"decoder accuracy all 1-sided greater: {wilcoxon(decoder_results[f'{mode}_closedloop'], decoder_results[f'{mode}_openloop'],alternative='greater',)}")
+        plotting_utils.despine()
+        plt.xticks([1, 2], xlabel, fontsize=fontsize_dict["label"], rotation=0, ha="center")
+        plt.yticks(fontsize=fontsize_dict["tick"])
+        plt.xlim([0.5, 2.5])
+        if mode == "accuracy":
+            plt.ylim([0, 1])
+        plt.ylabel(ylabel, fontsize=fontsize_dict["label"])
+    
+    elif plot_type == "scatter":
+        ax = plt.gca()
+        for ndepths, color, marker, label in zip([5,8], 
+                                                 colors, 
+                                                 markers, 
+                                                 ["5 depths", "8 depths"]):
+            decoder_results_ndepths = decoder_results[decoder_results["ndepths"] == ndepths]
+
+            # plot scatter of closed loop vs open loop decoding accuracy
+            ax.scatter(
+                decoder_results_ndepths["accuracy_closedloop"].values.flatten(),
+                decoder_results_ndepths["accuracy_openloop"].values.flatten(),
+                marker=marker,
+                s=markersize,
+                alpha=0.5,
+                color=color,
+                label=label,
+            )
+            ax.set_aspect("equal")
+            ax.set_xlim([0, 1])
+            ax.set_ylim([0, 1])
+            ax.plot(
+                [0, 1],
+                [0, 1],
+                color="k",
+                linestyle="dotted",
+                linewidth=linewidth,
+            )
+        ax.legend(fontsize=fontsize_dict["legend"], 
+                  loc="upper left", 
+                  frameon=False,)
+
+        # # plot fitted line and confidence interval
+        # x = decoder_results["accuracy_closedloop"].values.flatten()
+        # y = decoder_results["accuracy_openloop"].values.flatten()
+        # slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
+        # line = slope * x + intercept
+        # ax.plot(x, line, '-', color="k", linewidth=1, alpha=0.5)
+
+        # y_pred_all = []
+        # x_mock = np.linspace(np.nanmin(x), np.nanmax(x), 100)
+        # for _ in range(n_boots):
+        #     sample_index = np.random.choice(range(0, len(x)), len(x))
+
+        #     x_samples = x[sample_index]
+        #     y_samples = y[sample_index]
+
+        #     slope, intercept, r_value, p_value, std_err = stats.linregress(x_samples,y_samples)
+        #     y_pred = slope * x_mock + intercept
+        #     y_pred_all.append(y_pred)
             
-        print(f"decoder accuracy {ndepths} depths 2-sided: {wilcoxon(this_ndepths[f'{mode}_closedloop'], this_ndepths[f'{mode}_openloop'])}")
-        print(f"decoder accuracy {ndepths} depths 1-sided greater: {wilcoxon(this_ndepths[f'{mode}_closedloop'], this_ndepths[f'{mode}_openloop'], alternative='greater',)}")
-    print(f"decoder accuracy all 2-sided: {wilcoxon(decoder_results[f'{mode}_closedloop'], decoder_results[f'{mode}_openloop'])}")
-    print(f"decoder accuracy all 1-sided greater: {wilcoxon(decoder_results[f'{mode}_closedloop'], decoder_results[f'{mode}_openloop'],alternative='greater',)}")
-    plotting_utils.despine()
-    plt.xticks([1, 2], xlabel, fontsize=fontsize_dict["label"], rotation=0, ha="center")
-    plt.yticks(fontsize=fontsize_dict["tick"])
-    plt.xlim([0.5, 2.5])
-    if mode == "accuracy":
-        plt.ylim([0, 1])
-    plt.ylabel(ylabel, fontsize=fontsize_dict["label"])
+        # y_pred_all = np.array(y_pred_all)
+        # lower_CI = np.percentile(y_pred_all, 2.5, axis=0)
+        # higher_CI = np.percentile(y_pred_all, 97.5, axis=0)
+        # ax.fill_between(
+        #     x=x_mock,
+        #     y1=lower_CI,
+        #     y2=higher_CI,
+        #     color="k",
+        #     alpha=0.15,
+        #     # zorder=0.01,
+        #     edgecolor=None,
+        # )
+
+        # # plot chance level
+        # ax.plot(
+        #     [0, 1/5],
+        #     [1/5, 0],
+        #     color=colors[0],
+        #     linestyle="dotted",
+        #     linewidth=1,
+        # )
+        # ax.plot(
+        #     [0, 1/8],
+        #     [1/8, 0],
+        #     color=colors[1],
+        #     linestyle="dotted",
+        #     linewidth=1,
+        # )
+
+        ax.set_xlabel("Closed loop decoding accuracy", fontsize=fontsize_dict["label"])
+        ax.set_ylabel("Open loop decoding accuracy", fontsize=fontsize_dict["label"])
+        ax.tick_params(axis='both', which='major', labelsize=fontsize_dict["tick"])
+        sns.despine(ax=ax)
 
 
 def calculate_average_confusion_matrix(decoder_results, col="", recording_types=["closedloop", "openloop"]):

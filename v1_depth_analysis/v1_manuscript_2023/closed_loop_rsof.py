@@ -62,6 +62,7 @@ def plot_speed_tuning(
     smoothing_sd=1,
     markersize=5,
     linewidth=1,
+    markeredgecolor="w",
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -158,6 +159,8 @@ def plot_speed_tuning(
             ls="none",
             markersize=markersize,
             linewidth=linewidth,
+            markeredgewidth=0.3,
+            markeredgecolor=markeredgecolor,
         )
         if which_speed == "OF":
             ax.set_xscale("log")
@@ -202,6 +205,7 @@ def plot_RS_OF_matrix(
     vmax=None,
     xlabel="Running speed (cm/s)",
     ylabel="Optical flow speed \n(degrees/s)",
+    title="",
     plot_x=0,
     plot_y=0,
     plot_width=1,
@@ -250,6 +254,7 @@ def plot_RS_OF_matrix(
         vmin=vmin,
         vmax=vmax,
     )
+    ax.set_title(title, fontsize=fontsize_dict["title"])
     plot_x, plot_y, plot_width, plot_height = ax.get_position().x0, ax.get_position().y0, ax.get_position().width, ax.get_position().height
 
     ticks_select1, ticks_select2, bin_edges1, bin_edges2 = (
@@ -685,7 +690,9 @@ def plot_2d_hist(
     plot_height=1,
     aspect_equal=False,
     plot_diagonal=False,
+    diagonal_linewidth=1,
     diagonal_color="k",
+    contour_color="k",
     fontsize_dict={"title": 15, "label": 10, "tick": 10},
     log_scale=True,
     color="k",
@@ -703,7 +710,7 @@ def plot_2d_hist(
     sns.kdeplot(
         x=X,
         y=y,
-        color=color,
+        color=contour_color,
         log_scale=log_scale,
         linewidths=linewidth,
         cut=0,
@@ -723,7 +730,7 @@ def plot_2d_hist(
             diag,
             c=diagonal_color,
             linestyle="dotted",
-            linewidth=2,
+            linewidth=diagonal_linewidth,
         )
 
     plt.xlim([np.nanmin(X) * 0.9, np.nanmax(X) / 0.9])
@@ -731,7 +738,15 @@ def plot_2d_hist(
 
     ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"], labelpad=1)
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"], labelpad=1)
-    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
+    # from matplotlib.ticker import LogLocator
+    # from matplotlib.ticker import MultipleLocator, AutoMinorLocator
+    # ax.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
+    # ax.xaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
+    # ax.yaxis.set_minor_locator(MultipleLocator(2))
+    # ax.xaxis.set_minor_locator(MultipleLocator(2))
+    ax.minorticks_on()
+    ax.tick_params(axis="both", which='major', labelsize=fontsize_dict["tick"])
+    # ax.tick_params(axis='both', which='minor', bottom=True, labelsize=fontsize_dict["tick"])
     if aspect_equal:
         ax.set_aspect("equal")
     plotting_utils.despine()
@@ -775,6 +790,7 @@ def plot_speed_colored_by_depth(
         alpha=alpha,
         ax=ax,
         edgecolor=edgecolors,
+        linewidth=0.2,
     )
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
@@ -788,7 +804,7 @@ def plot_speed_colored_by_depth(
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
     xrange = ax.get_xlim()
     yrange = ax.get_ylim()
-    cbar = plt.colorbar(sm, shrink=0.4, ax=ax, ticks=depth_range)
+    cbar = plt.colorbar(sm, shrink=0.8, ax=ax, ticks=depth_range)
     cbar.ax.set_ylabel(
         zlabel, rotation=270, fontsize=fontsize_dict["legend"], labelpad=10
     )
@@ -801,6 +817,7 @@ def plot_speed_colored_by_depth(
     cbar_pos.y0 = ax_pos.y0
     cbar_pos.y1 = ax_pos.y0 + ax_pos.height*0.3
     cbar.ax.set_position(cbar_pos)
+    cbar.ax.minorticks_off()
 
     ax_inset = fig.add_axes(
         [
@@ -825,12 +842,13 @@ def plot_speed_colored_by_depth(
     # same x and y ticks as ax without labels
     from matplotlib.ticker import LogLocator
     ax_inset.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
-    ax_inset.yaxis.set_minor_locator(LogLocator(base=10.0, subs='auto', numticks=10))
+    ax_inset.xaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
+    ax_inset.minorticks_off()
     ax_inset.tick_params(labelbottom=False, labelleft=False)
     ax_inset.set_xlim(xrange)
     ax_inset.set_ylim(yrange)
-    ax_inset.set_xlabel("Running speed", fontsize=fontsize_dict["tick"],labelpad=-1)
-    ax_inset.set_ylabel("Optic flow speed", fontsize=fontsize_dict["tick"],labelpad=-1)
+    ax_inset.set_xlabel("Running speed", fontsize=fontsize_dict["tick"],labelpad=5)
+    ax_inset.set_ylabel("Optic flow speed", fontsize=fontsize_dict["tick"],labelpad=5)
 
 
 def plot_speed_trace(
@@ -962,7 +980,7 @@ def plot_speed_trace_closed_open_loop(
     axes = [fig.add_axes(position) for position in positions]
     for closed_loop, title in zip([1, 0], ["Closed loop", "Open loop"]):
         for param, ylabel in zip(
-            ["RS", "OF"], ["Running speed", "Optic flow speed"]
+            ["RS", "OF"], ["RS\n(cm/s)", "OF\n(degrees/s)"]
         ):
             ax = axes[i]
             ylim = plot_speed_trace(
@@ -980,11 +998,18 @@ def plot_speed_trace_closed_open_loop(
             
             # if param == "RS":
             #     ax.set_title(title, fontsize=fontsize_dict["title"])
-            ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"], length=2, pad=1)
+            ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"], length=2, pad=5)
+            if (i==0) or (i==2):
+                labelbottom=False
+            else:
+                labelbottom=True
+            if (i==2) or (i==3):
+                labelleft=False
+            else:
+                labelleft=True
+            ax.tick_params(labelbottom=labelbottom, labelleft=labelleft, left=True, bottom=True, pad=2)
             if (i==1) or (i==3):
-                ax.set_xlabel("Time" , fontsize=fontsize_dict["label"])
-            ax.tick_params(labelbottom=False, labelleft=False, left=False, bottom=False)
-            ax.axis("off")
+                ax.set_xlabel("Time (s)" , fontsize=fontsize_dict["label"])
             if closed_loop == 0:
                 ax.set_ylabel("")
             else:
@@ -995,21 +1020,21 @@ def plot_speed_trace_closed_open_loop(
     axes[1].set_ylim(ylims[3])
     axes[3].set_ylim(ylims[3])
     
-    # Add scalebar
-    positions_2 = axes[2].get_position()
-    ax_scalebar1 = plt.gcf().add_axes([positions_2.x0+positions_2.width*0.8, positions_2.y0-positions_2.height*0.1, positions_2.width, positions_2.height])
-    plt_common_utils.draw_axis_scalebars(ax_scalebar1, 0, 0, 25, 50, scalebar_labels=["25 s", "50 cm/s"], xlim=xlims[0], ylim=ylims[0], label_fontsize=fontsize_dict["legend"], linewidth=1, right=True, bottom=False)
-    positions_3 = axes[3].get_position()
-    ax_scalebar2 = plt.gcf().add_axes([positions_3.x0+positions_3.width*0.8, positions_3.y0-positions_3.height*0.3, positions_3.width, positions_3.height])
-    plt_common_utils.draw_axis_scalebars(ax_scalebar2, 0, 0, 25, 100, scalebar_labels=["25 s", "100 \u00B0/s"], xlim=xlims[0], ylim=ylims[0], label_fontsize=fontsize_dict["legend"], linewidth=1, right=True, bottom=True)
+    # # Add scalebar
+    # positions_2 = axes[2].get_position()
+    # ax_scalebar1 = plt.gcf().add_axes([positions_2.x0+positions_2.width*0.8, positions_2.y0-positions_2.height*0.1, positions_2.width, positions_2.height])
+    # plt_common_utils.draw_axis_scalebars(ax_scalebar1, 0, 0, 25, 50, scalebar_labels=["25 s", "50 cm/s"], xlim=xlims[0], ylim=ylims[0], label_fontsize=fontsize_dict["legend"], linewidth=1, right=True, bottom=False)
+    # positions_3 = axes[3].get_position()
+    # ax_scalebar2 = plt.gcf().add_axes([positions_3.x0+positions_3.width*0.8, positions_3.y0-positions_3.height*0.3, positions_3.width, positions_3.height])
+    # plt_common_utils.draw_axis_scalebars(ax_scalebar2, 0, 0, 25, 100, scalebar_labels=["25 s", "100 \u00B0/s"], xlim=xlims[0], ylim=ylims[0], label_fontsize=fontsize_dict["legend"], linewidth=1, right=True, bottom=True)
     
-    # Add ylabel
-    axes[0].text(-15, 
-                 np.sum(ylims[0])/2, 
-                 "RS", fontsize=fontsize_dict["tick"], rotation=0, ha="left", va="center",)
-    axes[1].text(-15, 
-                 1, 
-                 "OF", fontsize=fontsize_dict["tick"], rotation=0, ha="left", va="center",)
+    # # Add ylabel
+    # axes[0].text(-15, 
+    #              np.sum(ylims[0])/2, 
+    #              "RS", fontsize=fontsize_dict["tick"], rotation=0, ha="left", va="center",)
+    # axes[1].text(-15, 
+    #              1, 
+    #              "OF", fontsize=fontsize_dict["tick"], rotation=0, ha="left", va="center",)
 
 
 def plot_openloop_rs_correlation_alldepths(results, depth_list, fontsize_dict, ax1, ax2, linewidth=3, elinewidth=3, jitter=0.2, scatter_markersize=2, scatter_alpha=0.5, capsize=3, capthick=10, ylim=None):
