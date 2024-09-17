@@ -2,7 +2,7 @@
 #
 #SBATCH --job-name=rs_stats
 #SBATCH --ntasks=1
-#SBATCH --time=24:00:00
+#SBATCH --time=8:00:00
 #SBATCH --mem=16G
 #SBATCH --partition=ncpu
 #SBATCH --mail-type=END,FAIL

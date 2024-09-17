@@ -34,7 +34,7 @@ results_all = depth_selectivity.get_rs_stats_all_sessions(
     overwrite=False,
 )
 
-VERSION = 6
+VERSION = 9
 SAVE_ROOT = (
     Path(
         f"/camp/lab/znamenskiyp/home/shared/presentations/v1_manuscript_2023/ver{VERSION}"
