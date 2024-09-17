@@ -106,8 +106,8 @@ def plot_rf(
             origin="lower",
             cmap="bwr",
             extent=[0, 120, -40, 40],
-            vmin=-coef_max,
-            vmax=coef_max,
+            vmin=-np.round(coef_max,1),
+            vmax=np.round(coef_max,1),
         )
         if i != ndepths - 1:
             plt.gca().set_xticklabels([])
@@ -131,6 +131,7 @@ def plot_rf(
             cbar = plt.colorbar(mappable=im, cax=ax2)
             # cbar.set_label("Z-score", fontsize=fontsize_dict["legend"])
             cbar.ax.tick_params(labelsize=fontsize_dict["legend"], length=2, pad=1)
+            cbar.set_ticks([-np.round(coef_max,1), 0, np.round(coef_max,1)])
 
 
 def get_rf_results(project, sessions, is_closed_loop=1):
@@ -422,6 +423,7 @@ def plot_sig_rf_perc(
     plot_type="bar",
     bar_color="k",
     hist_color="k",
+    hist_edgecolor="k",
     scatter_color="k",
     scatter_size=10,
     scatter_alpha=0.3,
@@ -460,18 +462,19 @@ def plot_sig_rf_perc(
         )
         plt.ylim([0, 1])
     elif plot_type == "hist":
-        plt.hist(all_sig, bins=bins, color=hist_color)
+        n, _, _ = plt.hist(all_sig, bins=bins, color=hist_color, edgecolor=hist_edgecolor, linewidth=1)
         plt.xlabel(
             "Proportion of neurons \nwith significant RFs",
             fontsize=fontsize_dict["label"],
         )
         plt.ylabel("Number of sessions", fontsize=fontsize_dict["label"])
         plt.xlim([0, 1])
+        plt.ylim([0, (np.floor_divide(np.nanmax(n),5)+1)*5])
     # plot median proportion as a triangle along the top of the histogram
     median_prop = np.median(all_sig)
-    print("Median proportion of depth-tuned neurons:", median_prop)
+    print("Median proportion of sig RF out of depth-tuned neurons:", median_prop)
     print(
-        "Range of proportion of depth-tuned neurons:",
+        "Range of proportion of sig RF out of depth-tuned neurons:",
         np.min(all_sig),
         "to",
         np.max(all_sig),
@@ -479,10 +482,12 @@ def plot_sig_rf_perc(
     print("Number of sessions:", len(all_sig))
     plt.plot(
         median_prop,
-        plt.ylim()[1],
+        plt.ylim()[1]*0.95,
         marker="v",
-        markersize=5,
-        color="k",
+        markersize=7,
+        color=hist_color,
+        markeredgecolor=hist_edgecolor,
+        markeredgewidth=1,
     )
     plotting_utils.despine()
     plt.tick_params(labelsize=fontsize_dict["tick"])
@@ -577,7 +582,7 @@ def plot_rf_3d(neurons_df, rois, depths, savepath, fontsize_dict):
                 title="Azimuth<br>(degrees)",
                 nticks=4,
                 range=[0, 90],
-                tickvals=[0, 90],
+                tickvals=[0, 45, 90],
                 **font_params,
             ),
             zaxis=dict(
