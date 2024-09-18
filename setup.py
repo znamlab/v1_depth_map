@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="v1_depth_analysis",
+    name="v1_depth_map",
     version="v0.1",
     packages=find_packages(),
     url="https://github.com/znamlab/cottage_analysis",
