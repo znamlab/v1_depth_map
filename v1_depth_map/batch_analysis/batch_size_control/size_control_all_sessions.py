@@ -4,9 +4,9 @@ project = "hey2_3d-vision_foodres_20220101"
 pipeline_filename = "run_analysis_pipeline_size_control.sh"
 conflicts = "overwrite"
 session_list = [
-    # "PZAH10.2d_S20230822",
+    "PZAH10.2d_S20230822",
     "PZAH10.2f_S20230815",
-    # "PZAH10.2f_S20230907",
+    "PZAH10.2f_S20230907",
 ]
 
 use_slurm = 0
