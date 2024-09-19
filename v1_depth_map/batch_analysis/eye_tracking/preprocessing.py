@@ -16,7 +16,7 @@ import flexiznam as flz
 import pandas as pd
 from cottage_analysis import eye_tracking
 import v1_depth_map as vda
-from v1_depth_analysis.config import PROJECT, DLC_MODEL
+from v1_depth_map.eye_tracking.config import PROJECT, DLC_MODEL
 
 # get a list of all existing sessions
 flm_sess = flz.get_flexilims_session(project_id=PROJECT)
