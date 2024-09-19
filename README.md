@@ -8,7 +8,8 @@ Analysis code for v1 depth map project.
 3. Install this package by `pip install .`.
 
 ## Batch analysis
-run the bash script in each folder under `./v1_depth_map/batch_analysis` to conduct corresponding analysis for all sessions.
+1. Run the bash script in each folder under `./v1_depth_map/batch_analysis` to conduct corresponding analysis for all sessions.
+2. Remember to change the path in the bash script for `#SBATCH --output=` and `cd` to your local path to this repo.
 
 ## Figure plotting
-run the notebooks under `./v1_depth_map/figures` to plot the corresponding figures.
+Run the notebooks under `./v1_depth_map/figures` to plot the corresponding figures.
