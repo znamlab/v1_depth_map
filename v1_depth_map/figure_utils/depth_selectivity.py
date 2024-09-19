@@ -119,10 +119,6 @@ def plot_raster_all_depths(
         ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
         # Change xticks positions to the middle of current ticks and show depth at the tick position
         blank_prop = blank_length / (corridor_length + blank_length*2)
-        # xticks1 = np.linspace(blank_prop*nbins, blank_prop*nbins+(ndepths-1)*nbins, ndepths).astype("int")
-        # xticks2 = np.linspace(nbins-blank_prop*nbins, ndepths*nbins - blank_prop*nbins, ndepths).astype("int")
-        # ax.set_xticks(np.concatenate([xticks1,xticks2]))
-        # ax.set_xticklabels(np.concatenate([np.repeat(0,ndepths),np.repeat(corridor_length,ndepths)]))
         xticks = np.linspace(nbins/2, nbins * (ndepths-1/2), ndepths)
         ax.set_xticks(xticks)
         ax.set_xticklabels((np.array(depth_list)*100).astype("int"))
@@ -146,113 +142,6 @@ def plot_raster_all_depths(
         ax2.tick_params(labelsize=fontsize_dict["tick"])
         cbar.set_ticks([0, vmax])
         ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
-        
-        # # add a text label "Depth (cm):" to the left of the axis title
-        # for idepth, depth in enumerate(depth_list):
-        #     if idepth == 0:
-        #         ax.text(
-        #             0.07,
-        #             1.12,
-        #             f"Depth (cm): {int(depth_list[idepth] * 100)}",
-        #             horizontalalignment="right",
-        #             verticalalignment="center",
-        #             transform=ax.transAxes,
-        #             fontsize=fontsize_dict["label"],
-        #         )
-            
-        #     else:
-        #         ax.text(
-        #             0.07 + idepth * each_plot_width * 3.6,
-        #             1.12,
-        #             f"{int(depth_list[idepth] * 100)}",
-        #             horizontalalignment="right",
-        #             verticalalignment="center",
-        #             transform=ax.transAxes,
-        #             fontsize=fontsize_dict["label"],
-        #         )
-        
-        
-        # plot_x, plot_y, plot_width, plot_height = position
-        # plot_prop = 0.9
-        # each_plot_width = (plot_width - cbar_width) / len(depth_list)
-        # for idepth, depth in enumerate(depth_list):
-        #     ax = plt.gcf().add_axes(
-        #         [
-        #             plot_x + idepth * each_plot_width,
-        #             plot_y,
-        #             each_plot_width * plot_prop,
-        #             plot_height,
-        #         ]
-        #     )
-        #     im = ax.imshow(
-        #         dffs_binned[idepth],
-        #         aspect="auto",
-        #         cmap=WhRdcmap,
-        #         vmin=0,
-        #         vmax=vmax,
-        #         interpolation="nearest",
-        #         extent=[min_distance, max_distance, 0, trial_number],
-        #     )
-        #     if idepth == 0:
-        #         ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"])
-        #         ax.tick_params(
-        #             left=True,
-        #             right=False,
-        #             labelleft=True,
-        #             labelbottom=True,
-        #             bottom=True,
-        #             labelsize=fontsize_dict["tick"],
-        #         )
-        #         # add a text label "Depth (cm):" to the left of the axis title
-        #         ax.text(
-        #             0.05,
-        #             1.12,
-        #             "Depth (cm):",
-        #             horizontalalignment="right",
-        #             verticalalignment="center",
-        #             transform=ax.transAxes,
-        #             fontsize=fontsize_dict["label"],
-        #         )
-        #     else:
-        #         ax.tick_params(
-        #             left=False,
-        #             right=False,
-        #             labelleft=False,
-        #             labelbottom=True,
-        #             bottom=True,
-        #             labelsize=fontsize_dict["tick"],
-        #         )
-        #         # set length of y-ticks to 1
-        #         ax.tick_params(axis="y", length=1)
-        #     if idepth == len(depth_list) // 2:
-        #         ax.set_xlabel("Corridor position (m)", fontsize=fontsize_dict["label"])
-        #     ax.set_xticks([0, corridor_length])
-        #     plt.plot([0, 0], [0, trial_number], "k--", linewidth=0.5)
-        #     plt.plot(
-        #         [corridor_length, corridor_length],
-        #         [0, trial_number],
-        #         "k--",
-        #         linewidth=0.5,
-        #     )
-        #     plt.title(
-        #         f"{int(depth_list[idepth] * 100)}", fontsize=fontsize_dict["title"]
-        #     )
-        #     ax.invert_yaxis()
-
-        # ax2 = plt.gcf().add_axes(
-        #     [
-        #         plot_x
-        #         + (len(depth_list) - 1) * each_plot_width
-        #         + each_plot_width * plot_prop
-        #         +0.005,
-        #         plot_y,
-        #         cbar_width * 0.8,
-        #         plot_height / 3,
-        #     ]
-        # )
-        # plt.colorbar(im, cax=ax2, label="\u0394F/F")
-        # ax2.tick_params(labelsize=fontsize_dict["tick"])
-        # ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
 
     return dffs_binned, ax
 

@@ -186,54 +186,6 @@ def decoder_accuracy(
                   loc="upper left", 
                   frameon=False,)
 
-        # # plot fitted line and confidence interval
-        # x = decoder_results["accuracy_closedloop"].values.flatten()
-        # y = decoder_results["accuracy_openloop"].values.flatten()
-        # slope, intercept, r_value, p_value, std_err = stats.linregress(x,y)
-        # line = slope * x + intercept
-        # ax.plot(x, line, '-', color="k", linewidth=1, alpha=0.5)
-
-        # y_pred_all = []
-        # x_mock = np.linspace(np.nanmin(x), np.nanmax(x), 100)
-        # for _ in range(n_boots):
-        #     sample_index = np.random.choice(range(0, len(x)), len(x))
-
-        #     x_samples = x[sample_index]
-        #     y_samples = y[sample_index]
-
-        #     slope, intercept, r_value, p_value, std_err = stats.linregress(x_samples,y_samples)
-        #     y_pred = slope * x_mock + intercept
-        #     y_pred_all.append(y_pred)
-            
-        # y_pred_all = np.array(y_pred_all)
-        # lower_CI = np.percentile(y_pred_all, 2.5, axis=0)
-        # higher_CI = np.percentile(y_pred_all, 97.5, axis=0)
-        # ax.fill_between(
-        #     x=x_mock,
-        #     y1=lower_CI,
-        #     y2=higher_CI,
-        #     color="k",
-        #     alpha=0.15,
-        #     # zorder=0.01,
-        #     edgecolor=None,
-        # )
-
-        # # plot chance level
-        # ax.plot(
-        #     [0, 1/5],
-        #     [1/5, 0],
-        #     color=colors[0],
-        #     linestyle="dotted",
-        #     linewidth=1,
-        # )
-        # ax.plot(
-        #     [0, 1/8],
-        #     [1/8, 0],
-        #     color=colors[1],
-        #     linestyle="dotted",
-        #     linewidth=1,
-        # )
-
         ax.set_xlabel("Closed loop decoding accuracy", fontsize=fontsize_dict["label"])
         ax.set_ylabel("Open loop decoding accuracy", fontsize=fontsize_dict["label"])
         ax.tick_params(axis='both', which='major', labelsize=fontsize_dict["tick"])
@@ -425,15 +377,6 @@ def plot_decoder_err_by_speeds(decoder_df,
         markeredgewidth=linewidth,
         markersize=markersize,
     )
-        
-    # axes[0].fill_between(
-    #     [-0.25,0.3],
-    #     np.concatenate([CI_low,CI_low]),
-    #     np.concatenate([CI_high,CI_high]),
-    #     color=linecolor,
-    #     alpha=0.2,
-    #     edgecolor="none",
-    # )
     
     # bins that are below the highest bin (<1m/s)
     mean_err = np.nanmean(err_speed_bins[:, 1:highest_bin], axis=0)
@@ -462,53 +405,7 @@ def plot_decoder_err_by_speeds(decoder_df,
         alpha=0.2,
         edgecolor="none",
     )
-    
-    # mean_err = np.nanmean(err_speed_bins[:,:highest_bin], axis=0)
-    # CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:,:highest_bin].T)
-    
-    # ax.errorbar(
-    #     x=np.arange(1),
-    #     y=mean_err.flatten()[0],
-    #     yerr=(mean_err - CI_low)[0],
-    #     fmt=".",
-    #     color=linecolor,
-    #     ls="none",
-    #     fillstyle="none",
-    #     linewidth=linewidth,
-    #     markeredgewidth=linewidth,
-    #     markersize=markersize,
-    # )
-    
-    # ax.errorbar(
-    #     x=np.linspace(1, highest_bin-1, highest_bin-1),
-    #     y=mean_err.flatten()[1:use_nbins],
-    #     yerr=((mean_err - CI_low)[1:use_nbins],(CI_high-mean_err)[1:use_nbins]),
-    #     fmt=".",
-    #     color=linecolor,
-    #     ls="-",
-    #     fillstyle="none",
-    #     linewidth=linewidth,
-    #     markeredgewidth=linewidth,
-    #     markersize=markersize,
-    # )
-    
-    # # bins that are within the highest bin (<1m/s)
-    # mean_err = np.nanmean(err_speed_bins[highest_bin:])
-    # CI_low_highest, CI_high_highest = common_utils.get_bootstrap_ci(np.nanmean(err_speed_bins[:,highest_bin:], axis=1))
-    # CI_low_all = np.concatenate([CI_low, CI_low_highest])
-    # CI_high_all = np.concatenate([CI_high, CI_high_highest])
-    # ax.errorbar(
-    #     x=[highest_bin],
-    #     y=mean_err,
-    #     yerr=mean_err - CI_low_highest,
-    #     fmt=".",
-    #     color=linecolor,
-    #     ls="none",
-    #     fillstyle="none",
-    #     linewidth=linewidth,
-    #     markeredgewidth=linewidth,
-    #     markersize=markersize,
-    # )
+
     # add chance level error
     axes[1].axhline(np.nanmean(decoder_df[f"error_chance_{sfx}"]), color=linecolor_chance, linestyle="dotted", linewidth=linewidth, alpha=alpha_chance) # convert log 2 to folds (so log2 = 1 is 2 folds)
     
@@ -558,12 +455,7 @@ def plot_decoder_acc_by_speeds(decoder_df, all_speed_bin_edges, linecolors=["r",
         decoder_df_sub["acc_speed_bins_closedloop_cut"] = decoder_df_sub.apply(lambda x: x.acc_speed_bins_closedloop[:use_nbins], axis=1)
         acc_speed_bins = np.stack(decoder_df_sub.acc_speed_bins_closedloop_cut)
         mean_acc_speed_bins = np.nanmean(acc_speed_bins, axis=0)
-        # plt.scatter(np.repeat(0,acc_speed_bins.shape[0]), acc_speed_bins.T[0,:], c="k", alpha=0.3, s=minor_linewidth)
-        # plt.scatter(np.tile(np.linspace(1, use_nbins-1, use_nbins-1),(acc_speed_bins.shape[0],1)),
-        #             acc_speed_bins.T[1:,:], 
-        #             c="k", 
-        #             alpha=0.3,
-        #             s=minor_linewidth)
+        
         CI_low, CI_high = common_utils.get_bootstrap_ci(acc_speed_bins.T)
         ax.errorbar(
             x=np.arange(1),
