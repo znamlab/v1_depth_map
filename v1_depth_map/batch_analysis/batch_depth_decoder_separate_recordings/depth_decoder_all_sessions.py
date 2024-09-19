@@ -4,20 +4,20 @@ project = "hey2_3d-vision_foodres_20220101"
 pipeline_filename = "run_depth_decoder_pipeline_separate_recordings.sh"
 conflicts = "overwrite"
 session_list = [
-    # "PZAH8.2h_S20230224", #5 fold done
+    "PZAH8.2h_S20230224",
     "PZAH8.2h_S20230303",
-    "PZAH8.2h_S20230314", #too few trials
+    "PZAH8.2h_S20230314",
     
     "PZAH8.2i_S20230203",
-    # "PZAH8.2i_S20230209", #5 fold done
+    "PZAH8.2i_S20230209",
     "PZAH8.2i_S20230216",
 
-    "PZAH8.2f_S20230214", #one left
-    # "PZAH8.2f_S20230313", #4 fold done
+    "PZAH8.2f_S20230214",
+    "PZAH8.2f_S20230313",
  
     "PZAH10.2f_S20230615", 
-    # "PZAH10.2f_S20230822", #4-fold, done
-    # "PZAH10.2f_S20230908", #4-fold, done 
+    "PZAH10.2f_S20230822",
+    "PZAH10.2f_S20230908",
 ]
 
 use_slurm = 1
