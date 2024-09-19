@@ -1,9 +1,7 @@
-# %%
 import flexiznam as flz
 import wayla
-from v1_depth_analysis.v1_manuscript_2023 import get_session_list
+from v1_depth_map.figure_utils import get_session_list
 
-# %%
 PROJECT = "hey2_3d-vision_foodres_20220101"
 flexilims_session = flz.get_flexilims_session(project_id=PROJECT)
 sessions = get_session_list.get_sessions(
@@ -13,8 +11,8 @@ sessions = get_session_list.get_sessions(
     exclude_pure_closedloop=False,
     v1_only=True,
 )
+
 print(f"Found {len(sessions)} sessions")
-# %%
 recording_type = ("two_photon",)
 protocol_base = "SpheresPermTubeReward"
 for session_name in sessions:
@@ -35,7 +33,7 @@ for session_name in sessions:
         recordings = recordings[recordings["exclude_reason"].isna()]
 
     for recording, series in recordings.iterrows():
-        print(f"    Processing {recording}")
+        print(f"Processing {recording}")
         wayla.eye_tracking.run_all(
             flexilims_session=flexilims_session,
             dlc_model_detect="headfixed_detect_eye",
@@ -51,5 +49,3 @@ for session_name in sessions:
             run_reprojection=True,
             repro_kwargs=None,
         )
-
-    # %%
