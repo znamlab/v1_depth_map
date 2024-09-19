@@ -8,7 +8,7 @@ setup(
     license="MIT",
     author="Antonin Blot, Yiran He, Petr Znamenskiy",
     author_email="yiran.he@crick.ac.uk",
-    description="Analysis of the V1 depth dataset",
+    description="Analysis for V1 depth map project",
     install_requires=[
         "seaborn",
         "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git@dev",
