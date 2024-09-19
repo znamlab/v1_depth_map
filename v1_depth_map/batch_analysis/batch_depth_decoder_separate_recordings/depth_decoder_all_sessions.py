@@ -7,15 +7,12 @@ session_list = [
     "PZAH8.2h_S20230224",
     "PZAH8.2h_S20230303",
     "PZAH8.2h_S20230314",
-    
     "PZAH8.2i_S20230203",
     "PZAH8.2i_S20230209",
     "PZAH8.2i_S20230216",
-
     "PZAH8.2f_S20230214",
     "PZAH8.2f_S20230313",
- 
-    "PZAH10.2f_S20230615", 
+    "PZAH10.2f_S20230615",
     "PZAH10.2f_S20230822",
     "PZAH10.2f_S20230908",
 ]
@@ -50,6 +47,11 @@ def main(
 
 
 if __name__ == "__main__":
-    main(project, session_list, pipeline_filename, conflicts, 
-         use_slurm, 
-         log_fname=log_fname)
+    main(
+        project,
+        session_list,
+        pipeline_filename,
+        conflicts,
+        use_slurm,
+        log_fname=log_fname,
+    )

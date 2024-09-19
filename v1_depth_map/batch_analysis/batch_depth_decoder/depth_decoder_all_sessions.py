@@ -7,21 +7,27 @@ pipeline_filename = "run_depth_decoder_pipeline.sh"
 conflicts = "overwrite"
 flexilims_session = flz.get_flexilims_session(project)
 mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
-mouse_list = mouse_list[mouse_list.name.isin(["PZAH6.4b",
-                "PZAG3.4f",
-                "PZAH8.2h",
-                "PZAH8.2i",
-                "PZAH8.2f",
-                "PZAH10.2d",
-                "PZAH10.2f"])]
-session_list = get_session_list.get_sessions(
-        flexilims_session,
-        exclude_openloop=False,
-        exclude_pure_closedloop=False,
-        v1_only=True,
-        trialnum_min=10,
-        mouse_list=mouse_list,
+mouse_list = mouse_list[
+    mouse_list.name.isin(
+        [
+            "PZAH6.4b",
+            "PZAG3.4f",
+            "PZAH8.2h",
+            "PZAH8.2i",
+            "PZAH8.2f",
+            "PZAH10.2d",
+            "PZAH10.2f",
+        ]
     )
+]
+session_list = get_session_list.get_sessions(
+    flexilims_session,
+    exclude_openloop=False,
+    exclude_pure_closedloop=False,
+    v1_only=True,
+    trialnum_min=10,
+    mouse_list=mouse_list,
+)
 use_slurm = 1
 log_fname = "decoder"
 
@@ -52,6 +58,11 @@ def main(
 
 
 if __name__ == "__main__":
-    main(project, session_list, pipeline_filename, conflicts, 
-         use_slurm, 
-         log_fname=log_fname)
+    main(
+        project,
+        session_list,
+        pipeline_filename,
+        conflicts,
+        use_slurm,
+        log_fname=log_fname,
+    )

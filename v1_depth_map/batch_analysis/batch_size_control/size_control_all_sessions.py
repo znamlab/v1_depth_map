@@ -39,6 +39,11 @@ def main(
 
 
 if __name__ == "__main__":
-    main(project, session_list, pipeline_filename, conflicts, 
-         use_slurm, 
-         log_fname=log_fname)
+    main(
+        project,
+        session_list,
+        pipeline_filename,
+        conflicts,
+        use_slurm,
+        log_fname=log_fname,
+    )

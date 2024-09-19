@@ -106,8 +106,8 @@ def plot_rf(
             origin="lower",
             cmap="bwr",
             extent=[0, 120, -40, 40],
-            vmin=-np.round(coef_max,1),
-            vmax=np.round(coef_max,1),
+            vmin=-np.round(coef_max, 1),
+            vmax=np.round(coef_max, 1),
         )
         if i != ndepths - 1:
             plt.gca().set_xticklabels([])
@@ -117,21 +117,21 @@ def plot_rf(
             ax.set_xlabel(xlabel, fontsize=fontsize_dict["label"])
         ax.tick_params(axis="both", labelsize=fontsize_dict["tick"], length=1.5)
         ax.set_xticks([0, 60, 120])
-        
-        if i == ndepths-1:
+
+        if i == ndepths - 1:
             ax_pos = ax.get_position()
             ax2 = plt.gcf().add_axes(
                 [
-                    ax_pos.x1 + ax_pos.width*0.05,
+                    ax_pos.x1 + ax_pos.width * 0.05,
                     ax_pos.y0,
                     0.005,
-                    ax_pos.height/2,
+                    ax_pos.height / 2,
                 ]
             )
             cbar = plt.colorbar(mappable=im, cax=ax2)
             # cbar.set_label("Z-score", fontsize=fontsize_dict["legend"])
             cbar.ax.tick_params(labelsize=fontsize_dict["legend"], length=2, pad=1)
-            cbar.set_ticks([-np.round(coef_max,1), 0, np.round(coef_max,1)])
+            cbar.set_ticks([-np.round(coef_max, 1), 0, np.round(coef_max, 1)])
 
 
 def get_rf_results(project, sessions, is_closed_loop=1):
@@ -462,14 +462,16 @@ def plot_sig_rf_perc(
         )
         plt.ylim([0, 1])
     elif plot_type == "hist":
-        n, _, _ = plt.hist(all_sig, bins=bins, color=hist_color, edgecolor=hist_edgecolor, linewidth=1)
+        n, _, _ = plt.hist(
+            all_sig, bins=bins, color=hist_color, edgecolor=hist_edgecolor, linewidth=1
+        )
         plt.xlabel(
             "Proportion of neurons \nwith significant RFs",
             fontsize=fontsize_dict["label"],
         )
         plt.ylabel("Number of sessions", fontsize=fontsize_dict["label"])
         plt.xlim([0, 1])
-        plt.ylim([0, (np.floor_divide(np.nanmax(n),5)+1)*5])
+        plt.ylim([0, (np.floor_divide(np.nanmax(n), 5) + 1) * 5])
     # plot median proportion as a triangle along the top of the histogram
     median_prop = np.median(all_sig)
     print("Median proportion of sig RF out of depth-tuned neurons:", median_prop)
@@ -482,7 +484,7 @@ def plot_sig_rf_perc(
     print("Number of sessions:", len(all_sig))
     plt.plot(
         median_prop,
-        plt.ylim()[1]*0.95,
+        plt.ylim()[1] * 0.95,
         marker="v",
         markersize=7,
         color=hist_color,
@@ -604,7 +606,13 @@ def plot_rf_3d(neurons_df, rois, depths, savepath, fontsize_dict):
     fig.write_image(savepath)
 
 
-def calculate_rf_gradient(flexilims_session, neurons_ds, neurons_df, session_name, n_std=6,):
+def calculate_rf_gradient(
+    flexilims_session,
+    neurons_ds,
+    neurons_df,
+    session_name,
+    n_std=6,
+):
     # load iscell
     suite2p_ds = flz.get_datasets(
         flexilims_session=flexilims_session,
@@ -631,8 +639,7 @@ def calculate_rf_gradient(flexilims_session, neurons_ds, neurons_df, session_nam
     select_neurons = neurons_df[(sig == 1) & (neurons_df["iscell"] == 1)]
     null_neurons = neurons_df[(sig == 0) & (neurons_df["iscell"] == 1)]
     # find the gradient of col w.r.t. center_x and center_y
-    for neurons, sfx in zip([select_neurons, null_neurons],
-                            ["rf_sig", "rf_null"]):
+    for neurons, sfx in zip([select_neurons, null_neurons], ["rf_sig", "rf_null"]):
         for col, colname in zip(
             ["rf_azi", "rf_ele", "preferred_depth_closedloop"],
             ["azi", "ele", "depth"],
@@ -648,19 +655,20 @@ def calculate_rf_gradient(flexilims_session, neurons_ds, neurons_df, session_nam
             slope_y /= norm
             session_df[f"slope_x_{colname}_{sfx}"] = slope_x
             session_df[f"slope_y_{colname}_{sfx}"] = slope_y
-            
+
     # save file
-    session_df.to_pickle(neurons_ds.path_full.parent/"rf_gradients.pkl")
+    session_df.to_pickle(neurons_ds.path_full.parent / "rf_gradients.pkl")
     return session_df
 
 
-def calculate_rf_gradient_all_sessions(flexilims_session,
-                                       session_list,
-                                       neurons_df_all_aligned,
-                                       filename='rf_gradients.pkl',
-                                       conflicts='skip',
-                                       verbose=False,
-                                       ):
+def calculate_rf_gradient_all_sessions(
+    flexilims_session,
+    session_list,
+    neurons_df_all_aligned,
+    filename="rf_gradients.pkl",
+    conflicts="skip",
+    verbose=False,
+):
     for isess, session in enumerate(session_list):
         neurons_ds = pipeline_utils.create_neurons_ds(
             session_name=session,
@@ -668,51 +676,63 @@ def calculate_rf_gradient_all_sessions(flexilims_session,
             project=None,
             conflicts="skip",
         )
-        if os.path.exists(neurons_ds.path_full.parent / filename) and (conflicts=="skip"):
+        if os.path.exists(neurons_ds.path_full.parent / filename) and (
+            conflicts == "skip"
+        ):
             # print(f"File {filename} already exists. Skipping calculation for session {session}")
             session_df = pd.read_pickle(neurons_ds.path_full.parent / filename)
         else:
-            neurons_df = neurons_df_all_aligned[neurons_df_all_aligned.session==session]
-            session_df = calculate_rf_gradient(flexilims_session=flexilims_session,
-                                                  neurons_ds=neurons_ds, 
-                                                  neurons_df=neurons_df, 
-                                                  session_name=session, 
-                                                  n_std=6,)
+            neurons_df = neurons_df_all_aligned[
+                neurons_df_all_aligned.session == session
+            ]
+            session_df = calculate_rf_gradient(
+                flexilims_session=flexilims_session,
+                neurons_ds=neurons_ds,
+                neurons_df=neurons_df,
+                session_name=session,
+                n_std=6,
+            )
         if isess == 0:
             session_df_all = session_df
         else:
-            session_df_all = pd.concat(
-                [session_df_all, session_df], ignore_index=True
-            )
+            session_df_all = pd.concat([session_df_all, session_df], ignore_index=True)
         if verbose:
             print(f"Finished concat rf gradient from session {session}")
-        
+
     return session_df_all
 
 
-def plot_gradient_polar(angles, 
-                        nbins=36, 
-                        plot_x=0, 
-                        plot_y=0, 
-                        plot_width=0.2,
-                        plot_height=0.2,
-                        edgecolor='k',
-                        facecolor='k',
-                        alpha=1,
-                        fontsize_dict={"title": 15, "label": 10, "tick": 5}
-                        ):
+def plot_gradient_polar(
+    angles,
+    nbins=36,
+    plot_x=0,
+    plot_y=0,
+    plot_width=0.2,
+    plot_height=0.2,
+    edgecolor="k",
+    facecolor="k",
+    alpha=1,
+    fontsize_dict={"title": 15, "label": 10, "tick": 5},
+):
     ax = plt.gcf().add_axes([plot_x, plot_y, plot_width, plot_height], polar=True)
     # Create a histogram
-    counts, bins = np.histogram(angles, bins=np.linspace(0,360,nbins+1))
+    counts, bins = np.histogram(angles, bins=np.linspace(0, 360, nbins + 1))
 
     # Convert bins to centers
     bin_centers = 0.5 * (bins[:-1] + bins[1:])
 
     # Create the bar plot on the polar axis
-    ax.bar(np.radians(bin_centers), counts, width=(2 * np.pi) / nbins, edgecolor=edgecolor, facecolor=facecolor, alpha=alpha)
-    
-    ax.set_xticks(np.linspace(0, 2*np.pi, 4, endpoint=False))
-    ax.set_xticklabels(['M', 'A', 'L', 'P'], fontsize=fontsize_dict["label"])
-    ax.tick_params(axis='x', which='major', pad=-6)
+    ax.bar(
+        np.radians(bin_centers),
+        counts,
+        width=(2 * np.pi) / nbins,
+        edgecolor=edgecolor,
+        facecolor=facecolor,
+        alpha=alpha,
+    )
+
+    ax.set_xticks(np.linspace(0, 2 * np.pi, 4, endpoint=False))
+    ax.set_xticklabels(["M", "A", "L", "P"], fontsize=fontsize_dict["label"])
+    ax.tick_params(axis="x", which="major", pad=-6)
     ax.set_yticks(ax.get_yticks())
-    ax.tick_params(axis='y', which='major', labelsize=fontsize_dict["tick"], pad=0)
+    ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"], pad=0)

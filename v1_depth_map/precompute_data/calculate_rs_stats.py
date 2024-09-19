@@ -2,18 +2,25 @@ import flexiznam as flz
 from v1_depth_analysis.v1_manuscript_2023 import depth_selectivity, get_session_list
 from pathlib import Path
 import warnings
+
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 project = "hey2_3d-vision_foodres_20220101"
 flexilims_session = flz.get_flexilims_session(project)
 mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
-mouse_list = mouse_list[mouse_list.name.isin(["PZAH6.4b",
-                "PZAG3.4f",
-                "PZAH8.2h",
-                "PZAH8.2i",
-                "PZAH8.2f",
-                "PZAH10.2d",
-                "PZAH10.2f"])]
+mouse_list = mouse_list[
+    mouse_list.name.isin(
+        [
+            "PZAH6.4b",
+            "PZAG3.4f",
+            "PZAH8.2h",
+            "PZAH8.2i",
+            "PZAH8.2f",
+            "PZAH10.2d",
+            "PZAH10.2f",
+        ]
+    )
+]
 
 session_list = get_session_list.get_sessions(
     flexilims_session,

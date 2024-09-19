@@ -10,7 +10,6 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-
 def concatenate_all_neurons_df(
     flexilims_session,
     session_list,
@@ -79,7 +78,7 @@ def create_nested_nan_list(levels):
 
 
 def dict2df(dict, df, cols, index):
-    for (key, item) in dict.items():
+    for key, item in dict.items():
         if key in cols:
             if isinstance(item, float):
                 df[key].iloc[index] = item
@@ -88,7 +87,7 @@ def dict2df(dict, df, cols, index):
                 df[key].iloc[index] = item
             elif isinstance(item, np.ndarray):
                 df[key] = create_nested_nan_list(item.ndim)
-                df[key].iloc[index]= item.tolist()
+                df[key].iloc[index] = item.tolist()
     return df
 
 
@@ -105,26 +104,76 @@ def get_unique_labels(ax):
     return unique.values(), unique.keys()
 
 
-def draw_axis_scalebars(ax, scalebar_x, scalebar_y, scalebar_width, scalebar_height, scalebar_labels, xlim=None, ylim=None, label_fontsize=5, linewidth=1, right=True, bottom=True):
-    rect = patches.Rectangle((scalebar_x, scalebar_y), scalebar_width, scalebar_height, linewidth=linewidth, edgecolor='none', facecolor='none')
+def draw_axis_scalebars(
+    ax,
+    scalebar_x,
+    scalebar_y,
+    scalebar_width,
+    scalebar_height,
+    scalebar_labels,
+    xlim=None,
+    ylim=None,
+    label_fontsize=5,
+    linewidth=1,
+    right=True,
+    bottom=True,
+):
+    rect = patches.Rectangle(
+        (scalebar_x, scalebar_y),
+        scalebar_width,
+        scalebar_height,
+        linewidth=linewidth,
+        edgecolor="none",
+        facecolor="none",
+    )
     ax.add_patch(rect)
     if right:
-        right_edge = patches.FancyBboxPatch((scalebar_x+scalebar_width, scalebar_y), 0, scalebar_height, boxstyle="square,pad=0", linewidth=linewidth, edgecolor='black', facecolor='none')
+        right_edge = patches.FancyBboxPatch(
+            (scalebar_x + scalebar_width, scalebar_y),
+            0,
+            scalebar_height,
+            boxstyle="square,pad=0",
+            linewidth=linewidth,
+            edgecolor="black",
+            facecolor="none",
+        )
         ax.add_patch(right_edge)
-        ax.text(scalebar_x + scalebar_width*1.2, scalebar_y + scalebar_height/2, scalebar_labels[1], fontsize=label_fontsize, ha='left', va='center')
+        ax.text(
+            scalebar_x + scalebar_width * 1.2,
+            scalebar_y + scalebar_height / 2,
+            scalebar_labels[1],
+            fontsize=label_fontsize,
+            ha="left",
+            va="center",
+        )
     ax.set_ylim(ylim)
     if bottom:
-        bottom_edge = patches.FancyBboxPatch((scalebar_x, scalebar_y), scalebar_width, 0, boxstyle="square,pad=0", linewidth=linewidth, edgecolor='black', facecolor='none')
+        bottom_edge = patches.FancyBboxPatch(
+            (scalebar_x, scalebar_y),
+            scalebar_width,
+            0,
+            boxstyle="square,pad=0",
+            linewidth=linewidth,
+            edgecolor="black",
+            facecolor="none",
+        )
         ax.add_patch(bottom_edge)
-        ax.text(scalebar_x, scalebar_y+scalebar_height*0.1, scalebar_labels[0], fontsize=label_fontsize, ha='left', va='bottom')
+        ax.text(
+            scalebar_x,
+            scalebar_y + scalebar_height * 0.1,
+            scalebar_labels[0],
+            fontsize=label_fontsize,
+            ha="left",
+            va="bottom",
+        )
     ax.set_xlim(xlim)
-    ax.axis('off')
-    
-    
+    ax.axis("off")
+
+
 def plot_white_rectangle(x0, y0, width, height):
-    ax=plt.gcf().add_axes([x0, y0, width, height])
+    ax = plt.gcf().add_axes([x0, y0, width, height])
     # Define the rectangle's bottom-left corner, width, and height
-    rectangle = patches.Rectangle((0,0), 1,1, edgecolor='white', facecolor='white')
+    rectangle = patches.Rectangle((0, 0), 1, 1, edgecolor="white", facecolor="white")
 
     # Add the rectangle to the plot
     ax.add_patch(rectangle)
@@ -133,14 +182,24 @@ def plot_white_rectangle(x0, y0, width, height):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.set_axis_off()
-    ax.set_aspect('equal')
+    ax.set_aspect("equal")
     # fig.patch.set_facecolor('gray')
-    
-    
-def ceil(a, precision=0):
-    return np.round(a + 0.5 * 10**(-precision), precision)
 
-def hierarchical_bootstrap_stats(data, n_boots, xcol, resample_cols, ycol=None, correlation=False, difference=False, ratio=False):
+
+def ceil(a, precision=0):
+    return np.round(a + 0.5 * 10 ** (-precision), precision)
+
+
+def hierarchical_bootstrap_stats(
+    data,
+    n_boots,
+    xcol,
+    resample_cols,
+    ycol=None,
+    correlation=False,
+    difference=False,
+    ratio=False,
+):
     np.random.seed(0)
     if "mouse" not in data.columns:
         data["mouse"] = data["session"].str.split("_").str[0]
@@ -165,20 +224,31 @@ def hierarchical_bootstrap_stats(data, n_boots, xcol, resample_cols, ycol=None, 
         else:
             for icol, (x, y) in enumerate(zip(xcol, ycol)):
                 if correlation:
-                    distribution[i, icol] = stats.spearmanr(data.loc[sample][x], data.loc[sample][y])[0]
+                    distribution[i, icol] = stats.spearmanr(
+                        data.loc[sample][x], data.loc[sample][y]
+                    )[0]
                 if difference:
-                    distribution[i, icol]= np.median(data.loc[sample][x] - data.loc[sample][y])
+                    distribution[i, icol] = np.median(
+                        data.loc[sample][x] - data.loc[sample][y]
+                    )
                 if ratio:
-                    distribution[i, icol]= np.median(data.loc[sample][x] / data.loc[sample][y])
+                    distribution[i, icol] = np.median(
+                        data.loc[sample][x] / data.loc[sample][y]
+                    )
     plt.figure()
     for icol, x in enumerate(xcol):
-        plt.subplot(2, len(xcol)//2+1, icol+1)
-        plt.hist(distribution[:,icol], bins=31)
-        plt.axvline(np.percentile(distribution[:,icol], 2.5), color="r", linestyle="--")
-        plt.axvline(np.percentile(distribution[:,icol], 97.5), color="r", linestyle="--")
+        plt.subplot(2, len(xcol) // 2 + 1, icol + 1)
+        plt.hist(distribution[:, icol], bins=31)
+        plt.axvline(
+            np.percentile(distribution[:, icol], 2.5), color="r", linestyle="--"
+        )
+        plt.axvline(
+            np.percentile(distribution[:, icol], 97.5), color="r", linestyle="--"
+        )
     return r, distribution
+
 
 def calculate_pval_from_bootstrap(distribution, value):
     distribution = np.array(distribution)
-    q_min = np.min([np.mean(distribution>value), np.mean(distribution<value)])
-    return q_min*2
+    q_min = np.min([np.mean(distribution > value), np.mean(distribution < value)])
+    return q_min * 2

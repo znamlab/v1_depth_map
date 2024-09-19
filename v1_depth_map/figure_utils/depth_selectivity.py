@@ -101,7 +101,7 @@ def plot_raster_all_depths(
         each_plot_width = (plot_width - cbar_width) / len(depth_list)
         ax = plt.gcf().add_axes([plot_x, plot_y, plot_width, plot_height])
         im = ax.imshow(
-            np.swapaxes(dffs_binned, 0, 1).reshape(-1, nbins*len(depth_list)),
+            np.swapaxes(dffs_binned, 0, 1).reshape(-1, nbins * len(depth_list)),
             aspect="auto",
             cmap=WhRdcmap,
             vmin=0,
@@ -110,25 +110,25 @@ def plot_raster_all_depths(
         )
         # Plot vertical lines to separate different depths
         ndepths = len(depth_list)
-        for i in range(ndepths-1):
+        for i in range(ndepths - 1):
             ax.axvline((i + 1) * nbins, color="k", linewidth=0.5, linestyle="dotted")
         # Change y ticks to trial number
         ax.set_ylabel("Trial number", fontsize=fontsize_dict["label"], labelpad=-5)
-        ax.set_yticks([-0.5, dffs_binned.shape[1]-0.5])
-        ax.set_yticklabels([1,dffs_binned.shape[1]])
+        ax.set_yticks([-0.5, dffs_binned.shape[1] - 0.5])
+        ax.set_yticklabels([1, dffs_binned.shape[1]])
         ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
         # Change xticks positions to the middle of current ticks and show depth at the tick position
-        blank_prop = blank_length / (corridor_length + blank_length*2)
-        xticks = np.linspace(nbins/2, nbins * (ndepths-1/2), ndepths)
+        blank_prop = blank_length / (corridor_length + blank_length * 2)
+        xticks = np.linspace(nbins / 2, nbins * (ndepths - 1 / 2), ndepths)
         ax.set_xticks(xticks)
-        ax.set_xticklabels((np.array(depth_list)*100).astype("int"))
+        ax.set_xticklabels((np.array(depth_list) * 100).astype("int"))
         ax.set_xlabel("Virtual depth (cm)", fontsize=fontsize_dict["label"])
         ax.tick_params(axis="x", labelsize=fontsize_dict["tick"], rotation=0)
-        
+
         # # for aligning with the scalebar
         # ax.vlines(blank_prop*nbins, 0, dffs_binned.shape[1], color="k", linestyle="--", linewidth=0.5)
         # ax.vlines(nbins-blank_prop*nbins, 0, dffs_binned.shape[1], color="k", linestyle="--", linewidth=0.5)
-        
+
         ax2 = plt.gcf().add_axes(
             [
                 plot_x + plot_width + 0.01,
@@ -138,7 +138,7 @@ def plot_raster_all_depths(
             ]
         )
         # set colorbar
-        cbar=plt.colorbar(im, cax=ax2, label="\u0394F/F")
+        cbar = plt.colorbar(im, cax=ax2, label="\u0394F/F")
         ax2.tick_params(labelsize=fontsize_dict["tick"])
         cbar.set_ticks([0, vmax])
         ax2.set_ylabel("\u0394F/F", fontsize=fontsize_dict["legend"])
@@ -210,7 +210,7 @@ def plot_depth_tuning_curve(
     )[:, :, roi]
     CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
     mean_arr = np.nanmean(mean_dff_arr, axis=1)
-    ax=plt.gca()     
+    ax = plt.gca()
     ax.errorbar(
         log_param_list,
         mean_arr,
@@ -250,20 +250,35 @@ def plot_depth_tuning_curve(
                 gaussian_arr = fit_gaussian_blob.gaussian_1d(
                     np.log(x), a, x0, log_sigma, b, min_sigma
                 )
-                plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth, label=label)
+                plt.plot(
+                    np.log(x),
+                    gaussian_arr,
+                    color=linecolor,
+                    linewidth=linewidth,
+                    label=label,
+                )
         else:
             [a, x0, log_sigma, b] = neurons_df.loc[roi, use_col]
             gaussian_arr = fit_gaussian_blob.gaussian_1d(
                 np.log(x), a, x0, log_sigma, b, min_sigma
             )
-            plt.plot(np.log(x), gaussian_arr, color=linecolor, linewidth=linewidth, label=label)
+            plt.plot(
+                np.log(x),
+                gaussian_arr,
+                color=linecolor,
+                linewidth=linewidth,
+                label=label,
+            )
     if ylim is None:
-        ylim = [plt.gca().get_ylim()[0], plt_common_utils.ceil(np.max(CI_high),1)]
+        ylim = [plt.gca().get_ylim()[0], plt_common_utils.ceil(np.max(CI_high), 1)]
         plt.ylim(ylim)
-        plt.yticks([0, plt_common_utils.ceil(np.max(CI_high),1)], fontsize=fontsize_dict["tick"])
+        plt.yticks(
+            [0, plt_common_utils.ceil(np.max(CI_high), 1)],
+            fontsize=fontsize_dict["tick"],
+        )
     else:
-        plt.ylim([ylim[0],ylim[1]])
-        plt.yticks([np.round(ylim[0],1), ylim[1]], fontsize=fontsize_dict["tick"])
+        plt.ylim([ylim[0], ylim[1]])
+        plt.yticks([np.round(ylim[0], 1), ylim[1]], fontsize=fontsize_dict["tick"])
 
     if param == "depth":
         plt.xticks(
@@ -287,7 +302,7 @@ def plot_depth_tuning_curve(
 
 def get_PSTH(
     roi,
-    psth=[], 
+    psth=[],
     depth_list=[],
     is_closed_loop=1,
     trials_df=None,
@@ -311,7 +326,7 @@ def get_PSTH(
         start=min_distance, stop=max_distance, num=nbins + 1, endpoint=True
     )
     bin_centers = (bins[1:] + bins[:-1]) / 2
-    if len(psth)==0:
+    if len(psth) == 0:
         # choose the trials with closed or open loop to visualize
         trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
 
@@ -322,12 +337,12 @@ def get_PSTH(
         # bin dff according to distance travelled for each trial
         all_means = np.zeros((len(depth_list) + 1, nbins))
         all_ci = np.zeros((2, len(depth_list) + 1, nbins))
-        
+
         all_trial_numbers = []
         for idepth, depth in enumerate(depth_list):
             all_trial_numbers.append(len(grouped.get_group(depth)))
         trial_number = np.min(all_trial_numbers)
-        
+
         for idepth, depth in enumerate(depth_list):
             all_dff = []
             for itrial in np.arange(trial_number):
@@ -335,15 +350,23 @@ def get_PSTH(
                 if use_col == "dff":
                     dff = np.concatenate(
                         (
-                            grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial][:, roi],
-                            grouped.get_group(depth)[f"{use_col}_stim"].values[itrial][:, roi],
-                            grouped.get_group(depth)[f"{use_col}_blank"].values[itrial][:, roi],
+                            grouped.get_group(depth)[f"{use_col}_blank_pre"].values[
+                                itrial
+                            ][:, roi],
+                            grouped.get_group(depth)[f"{use_col}_stim"].values[itrial][
+                                :, roi
+                            ],
+                            grouped.get_group(depth)[f"{use_col}_blank"].values[itrial][
+                                :, roi
+                            ],
                         )
                     )
                 else:
                     dff = np.concatenate(
                         (
-                            grouped.get_group(depth)[f"{use_col}_blank_pre"].values[itrial],
+                            grouped.get_group(depth)[f"{use_col}_blank_pre"].values[
+                                itrial
+                            ],
                             grouped.get_group(depth)[f"{use_col}_stim"].values[itrial],
                             grouped.get_group(depth)[f"{use_col}_blank"].values[itrial],
                         )
@@ -379,18 +402,22 @@ def get_PSTH(
                 all_dff.append(dff)
             all_means[idepth, :] = np.nanmean(all_dff, axis=0)
             if compute_ci:
-                all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
-                    np.array(all_dff).T, sig_level=1 - ci_range
+                all_ci[0, idepth, :], all_ci[1, idepth, :] = (
+                    common_utils.get_bootstrap_ci(
+                        np.array(all_dff).T, sig_level=1 - ci_range
+                    )
                 )
     else:
         all_dff = psth
         all_means = np.nanmean(all_dff, axis=0)
         for idepth, depth in enumerate(depth_list):
             if compute_ci:
-                all_ci[0, idepth, :], all_ci[1, idepth, :] = common_utils.get_bootstrap_ci(
-                    np.array(all_dff[:,idepth,:]).T, sig_level=1 - ci_range
+                all_ci[0, idepth, :], all_ci[1, idepth, :] = (
+                    common_utils.get_bootstrap_ci(
+                        np.array(all_dff[:, idepth, :]).T, sig_level=1 - ci_range
+                    )
                 )
-        
+
     return all_means, all_ci, bin_centers
 
 
@@ -444,7 +471,7 @@ def plot_PSTH(
     legend_loc="lower right",
     legend_bbox_to_anchor=(1.4, -0.6),
     show_ci=True,
-    ylim=(None,None),
+    ylim=(None, None),
 ):
     """PSTH of a neuron for each depth and blank period.
 
@@ -460,7 +487,7 @@ def plot_PSTH(
     min_distance = -blank_length
     if trials_df is not None:
         depth_list = find_depth_neurons.find_depth_list(trials_df)
-    
+
     all_means, all_ci, bin_centers = get_PSTH(
         trials_df=trials_df,
         psth=psth,
@@ -479,7 +506,7 @@ def plot_PSTH(
     )
 
     if use_col == "RS":
-        all_means = all_means * 100 # convert m/s to cm/s
+        all_means = all_means * 100  # convert m/s to cm/s
     for idepth, depth in enumerate(depth_list):
         linecolor = basic_vis_plots.get_depth_color(
             depth, depth_list, cmap=cm.cool.reversed()
@@ -511,17 +538,17 @@ def plot_PSTH(
     plt.yticks(fontsize=fontsize_dict["tick"])
     if (ylim[0] is None) and (ylim[1] is None):
         ylim = plt.gca().get_ylim()
-        ylim = [ylim[0], plt_common_utils.ceil(ylim[1],1)]
+        ylim = [ylim[0], plt_common_utils.ceil(ylim[1], 1)]
     elif ylim[0] is not None:
         if ylim[1] is None:
-            ylim = (ylim[0], plt_common_utils.ceil(plt.gca().get_ylim()[1],1))
+            ylim = (ylim[0], plt_common_utils.ceil(plt.gca().get_ylim()[1], 1))
             plt.ylim(ylim)
         else:
-            ylim=ylim
-        plt.ylim(ylim) 
+            ylim = ylim
+        plt.ylim(ylim)
     elif (ylim[1] is not None) and (ylim[0] is None):
         ylim = (plt.gca().get_ylim()[0], ylim[1])
-        plt.ylim(ylim) 
+        plt.ylim(ylim)
     plt.yticks([ylim[0], ylim[1]], fontsize=fontsize_dict["tick"])
     plt.plot([0, 0], ylim, "k--", linewidth=0.5, label="_nolegend_")
     plt.plot(
@@ -562,7 +589,7 @@ def get_psth_crossval_all_sessions(
     blank_length=0,
     overwrite=False,
 ):
-    '''Calculate the PSTH for all sessions in session_list.
+    """Calculate the PSTH for all sessions in session_list.
     Also calculate running speed PSTH; the correlation between actual and virtual running speeds for openloop sessions.
 
     Args:
@@ -582,7 +609,7 @@ def get_psth_crossval_all_sessions(
 
     Returns:
         pd.DataFrame: concatenated neurons_df dataframe
-    '''
+    """
     results_all = []
     for isess, session_name in enumerate(session_list):
         print(f"{isess}/{len(session_list)}: calculating PSTH for {session_name}")
@@ -648,7 +675,7 @@ def get_psth_crossval_all_sessions(
             )[:, 0]
             neurons_df["iscell"] = iscell
             neurons_df["psth_crossval"] = [[np.nan]] * len(neurons_df)
-            
+
             # Calculate dff psth crossval
             # Get the responses for this session that are not included for calculating the cross-validated preferred depth
             choose_trials_resp = list(
@@ -689,29 +716,35 @@ def get_psth_crossval_all_sessions(
     return results_all
 
 
-def calculate_openloop_rs_correlation(imaging_df_openloop, trials_df, separate_depths=False):
+def calculate_openloop_rs_correlation(
+    imaging_df_openloop, trials_df, separate_depths=False
+):
     if not separate_depths:
         rs_actual = imaging_df_openloop["RS"][
-            (imaging_df_openloop["RS"].notnull()) 
+            (imaging_df_openloop["RS"].notnull())
             & (imaging_df_openloop["RS_eye"].notnull())
-            ]
+        ]
         rs_eye = imaging_df_openloop["RS_eye"][
-            (imaging_df_openloop["RS"].notnull()) 
+            (imaging_df_openloop["RS"].notnull())
             & (imaging_df_openloop["RS_eye"].notnull())
-            ]
-        r_all,p_all = pearsonr(rs_actual, rs_eye)
+        ]
+        r_all, p_all = pearsonr(rs_actual, rs_eye)
     else:
         trials_df_openloop = trials_df[trials_df.closed_loop == 0]
         depth_list = find_depth_neurons.find_depth_list(trials_df)
         r_all = []
         p_all = []
         for depth in depth_list:
-            rs_actual = np.hstack(trials_df_openloop[trials_df_openloop.depth == depth]["RS_stim"])
-            rs_eye = np.hstack(trials_df_openloop[trials_df_openloop.depth == depth]["RS_eye_stim"])
-            nan_vals = (np.isnan(rs_actual) | np.isnan(rs_eye))
+            rs_actual = np.hstack(
+                trials_df_openloop[trials_df_openloop.depth == depth]["RS_stim"]
+            )
+            rs_eye = np.hstack(
+                trials_df_openloop[trials_df_openloop.depth == depth]["RS_eye_stim"]
+            )
+            nan_vals = np.isnan(rs_actual) | np.isnan(rs_eye)
             rs_actual = rs_actual[~nan_vals]
             rs_eye = rs_eye[~nan_vals]
-            r,p = pearsonr(rs_actual, rs_eye)
+            r, p = pearsonr(rs_actual, rs_eye)
             r_all.append(r)
             p_all.append(p)
     return r_all, p_all
@@ -729,7 +762,7 @@ def get_rs_stats_all_sessions(
     blank_length=3,
     overwrite=False,
 ):
-    '''Calculate the PSTH for all sessions in session_list.
+    """Calculate the PSTH for all sessions in session_list.
     Also calculate running speed PSTH; the correlation between actual and virtual running speeds for openloop sessions.
 
     Args:
@@ -749,48 +782,50 @@ def get_rs_stats_all_sessions(
 
     Returns:
         pd.DataFrame: concatenated neurons_df dataframe
-    '''
+    """
     results_all = pd.DataFrame(
-        columns=[[
-            "session",
-            "rs_psth_stim_closedloop",
-            "rs_psth_closedloop",
-            "rs_mean_trials_closedloop",
-            "rs_mean_closedloop",
-            "rs_psth_stim_openloop",
-            "rs_psth_openloop",
-            "rs_mean_trials_openloop",
-            "rs_mean_openloop",
-            "rs_correlation_rval_openloop",
-            "rs_correlation_pval_openloop",
-            "rs_correlation_rval_openloop_alldepths",
-            "rs_correlation_pval_openloop_alldepths",
-                ]],
-        index=np.arange(len(session_list))
+        columns=[
+            [
+                "session",
+                "rs_psth_stim_closedloop",
+                "rs_psth_closedloop",
+                "rs_mean_trials_closedloop",
+                "rs_mean_closedloop",
+                "rs_psth_stim_openloop",
+                "rs_psth_openloop",
+                "rs_mean_trials_openloop",
+                "rs_mean_openloop",
+                "rs_correlation_rval_openloop",
+                "rs_correlation_pval_openloop",
+                "rs_correlation_rval_openloop_alldepths",
+                "rs_correlation_pval_openloop_alldepths",
+            ]
+        ],
+        index=np.arange(len(session_list)),
     )
     (
-        results_all["rs_psth_stim_closedloop"], 
-        results_all["rs_psth_closedloop"], 
-        results_all["rs_mean_trials_closedloop"], 
+        results_all["rs_psth_stim_closedloop"],
+        results_all["rs_psth_closedloop"],
+        results_all["rs_mean_trials_closedloop"],
         results_all["rs_mean_closedloop"],
-        results_all["rs_psth_stim_openloop"], 
-        results_all["rs_psth_openloop"], 
-        results_all["rs_mean_trials_openloop"], 
+        results_all["rs_psth_stim_openloop"],
+        results_all["rs_psth_openloop"],
+        results_all["rs_mean_trials_openloop"],
         results_all["rs_mean_openloop"],
         results_all["rs_correlation_rval_openloop_alldepths"],
-        results_all["rs_correlation_pval_openloop_alldepths"],  
-        ) = ( 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all), 
-             [[np.nan]]*len(results_all)
-             )
+        results_all["rs_correlation_pval_openloop_alldepths"],
+    ) = (
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+        [[np.nan]] * len(results_all),
+    )
     for isess, session_name in enumerate(session_list):
         print(f"{isess}/{len(session_list)}: calculating RS stats for {session_name}")
         neurons_ds = pipeline_utils.create_neurons_ds(
@@ -823,16 +858,18 @@ def get_rs_stats_all_sessions(
             photodiode_protocol=photodiode_protocol,
             return_volumes=True,
         )
-        trials_df_original=trials_df.copy()
+        trials_df_original = trials_df.copy()
         for closed_loop in trials_df_original.closed_loop.unique():
-            trials_df = trials_df_original[trials_df_original.closed_loop == closed_loop]
+            trials_df = trials_df_original[
+                trials_df_original.closed_loop == closed_loop
+            ]
             if closed_loop:
-                sfx="closedloop"
+                sfx = "closedloop"
             else:
-                sfx="openloop"
+                sfx = "openloop"
             results_all.at[isess, "session"] = session_name
-            
-            # Calculate the running speed psth 
+
+            # Calculate the running speed psth
             print("Calculating running speed PSTH")
             # just for stim period
             rs_psth_stim, _, _ = get_PSTH(
@@ -850,8 +887,10 @@ def get_rs_stats_all_sessions(
                 frame_rate=fs,
                 compute_ci=False,
             )
-            results_all.at[isess, f"rs_psth_stim_{sfx}"] = np.expand_dims(rs_psth_stim,0)
-            
+            results_all.at[isess, f"rs_psth_stim_{sfx}"] = np.expand_dims(
+                rs_psth_stim, 0
+            )
+
             # stim + some blank period
             rs_psth, _, _ = get_PSTH(
                 trials_df=trials_df,
@@ -868,8 +907,8 @@ def get_rs_stats_all_sessions(
                 frame_rate=fs,
                 compute_ci=False,
             )
-            results_all.at[isess, f"rs_psth_{sfx}"] = np.expand_dims(rs_psth,0)
-                    
+            results_all.at[isess, f"rs_psth_{sfx}"] = np.expand_dims(rs_psth, 0)
+
             mean_rs = find_depth_neurons.average_dff_for_all_trials(
                 trials_df=trials_df,
                 use_col="RS_stim",
@@ -882,11 +921,13 @@ def get_rs_stats_all_sessions(
                 closed_loop=closed_loop,
                 param="depth",
             )
-            results_all.at[isess, f"rs_mean_trials_{sfx}"] = np.expand_dims(mean_rs,0)
-            results_all.at[isess, f"rs_mean_{sfx}"] = np.expand_dims(np.expand_dims(np.mean(mean_rs, axis=1),0),0)
-        
+            results_all.at[isess, f"rs_mean_trials_{sfx}"] = np.expand_dims(mean_rs, 0)
+            results_all.at[isess, f"rs_mean_{sfx}"] = np.expand_dims(
+                np.expand_dims(np.mean(mean_rs, axis=1), 0), 0
+            )
+
         # Calculate openloop rs and rs_eye correlation
-        if (len(trials_df_original.closed_loop.unique()) == 2):
+        if len(trials_df_original.closed_loop.unique()) == 2:
             print("Calculating openloop RS correlation")
             _, imaging_df_openloop = spheres.regenerate_frames_all_recordings(
                 session_name=session_name,
@@ -901,20 +942,31 @@ def get_rs_stats_all_sessions(
                 resolution=5,
                 regenerate_frames=False,
             )
-            r, p = calculate_openloop_rs_correlation(imaging_df_openloop, trials_df_original, separate_depths=False)
+            r, p = calculate_openloop_rs_correlation(
+                imaging_df_openloop, trials_df_original, separate_depths=False
+            )
             results_all.at[isess, "rs_correlation_rval_openloop"] = r
             results_all.at[isess, "rs_correlation_pval_openloop"] = p
-            results_all.loc[isess,"rs_correlation_rval_openloop"] = results_all.loc[isess,"rs_correlation_rval_openloop"].apply(lambda x: f'{x:.15e}')
-            results_all.loc[isess,"rs_correlation_pval_openloop"] = results_all.loc[isess,"rs_correlation_pval_openloop"].apply(lambda x: f'{x:.15e}')
-            r_all, p_all = calculate_openloop_rs_correlation(imaging_df_openloop, trials_df_original, separate_depths=True)
-            results_all.at[isess, "rs_correlation_rval_openloop_alldepths"] = np.expand_dims(np.expand_dims(r_all,0),0)
-            results_all.at[isess, "rs_correlation_pval_openloop_alldepths"] = np.expand_dims(np.expand_dims(p_all,0),0)
-            
+            results_all.loc[isess, "rs_correlation_rval_openloop"] = results_all.loc[
+                isess, "rs_correlation_rval_openloop"
+            ].apply(lambda x: f"{x:.15e}")
+            results_all.loc[isess, "rs_correlation_pval_openloop"] = results_all.loc[
+                isess, "rs_correlation_pval_openloop"
+            ].apply(lambda x: f"{x:.15e}")
+            r_all, p_all = calculate_openloop_rs_correlation(
+                imaging_df_openloop, trials_df_original, separate_depths=True
+            )
+            results_all.at[isess, "rs_correlation_rval_openloop_alldepths"] = (
+                np.expand_dims(np.expand_dims(r_all, 0), 0)
+            )
+            results_all.at[isess, "rs_correlation_pval_openloop_alldepths"] = (
+                np.expand_dims(np.expand_dims(p_all, 0), 0)
+            )
+
         # append results_df
         results_all.iloc[isess] = results_all.iloc[isess].apply(np.squeeze)
         results_all.iloc[isess].to_pickle(save_path)
-    
-    
+
     return results_all
 
 
@@ -991,8 +1043,8 @@ def plot_preferred_depth_hist(
         fontsize=fontsize_dict["tick"],
     )
 
-    plt.ylim([0,np.round(np.max(n),2)])
-    plt.yticks([0, np.round(np.max(n),2)], fontsize=fontsize_dict["tick"])
+    plt.ylim([0, np.round(np.max(n), 2)])
+    plt.yticks([0, np.round(np.max(n), 2)], fontsize=fontsize_dict["tick"])
     plotting_utils.despine()
 
 
@@ -1035,18 +1087,18 @@ def plot_psth_raster(
     ax.set_yticks([1, len(results_df)])
     ax.tick_params(axis="y", labelsize=fontsize_dict["tick"])
     ax.set_xlim([0, ndepths * nbins])
-    
+
     # # for aligning with the scalebar
     # ax.vlines(1/4*60-10, -10, 9000, color="k", linestyle="--", linewidth=0.5)
     # ax.vlines(60-1/4*60-10, -10, 9000, color="k", linestyle="--", linewidth=0.5)
-    
+
     ax_pos = ax.get_position()
     ax2 = plt.gcf().add_axes(
         [
-            ax_pos.x1 + ax_pos.width*0.05,
+            ax_pos.x1 + ax_pos.width * 0.05,
             ax_pos.y0,
             0.01,
-            ax_pos.height/2,
+            ax_pos.height / 2,
         ]
     )
     cbar = plt.colorbar(mappable=im, cax=ax2)
@@ -1072,7 +1124,9 @@ def plot_depth_neuron_perc_hist(
     ax.set_xlim([0, xlim[1]])
     if ylim is not None:
         ax.set_ylim(ylim)
-    ax.set_xlabel("Proportion of \ndepth-tuned neurons", fontsize=fontsize_dict["label"])
+    ax.set_xlabel(
+        "Proportion of \ndepth-tuned neurons", fontsize=fontsize_dict["label"]
+    )
     ax.set_ylabel("Number of sessions", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
     # plot median proportion as a triangle along the top of the histogram
@@ -1087,7 +1141,7 @@ def plot_depth_neuron_perc_hist(
     print("Number of sessions:", len(session_prop))
     ax.plot(
         median_prop,
-        ax.get_ylim()[1]*0.95,
+        ax.get_ylim()[1] * 0.95,
         marker="v",
         markersize=5,
         markerfacecolor="cornflowerblue",
@@ -1344,9 +1398,9 @@ def plot_example_fov(
     if col == "preferred_depth_closedloop":
         cbar.set_ticklabels((np.geomspace(0.02, 20, 3) * 100).astype("int"))
     elif col == "rf_azi":
-        cbar.set_ticklabels(np.round(np.linspace(azi_min, azi_max, 3),1))
+        cbar.set_ticklabels(np.round(np.linspace(azi_min, azi_max, 3), 1))
     elif col == "rf_ele":
-        cbar.set_ticklabels(np.round(np.linspace(ele_min, ele_max, 3),1))
+        cbar.set_ticklabels(np.round(np.linspace(ele_min, ele_max, 3), 1))
     cbar.ax.tick_params(labelsize=fontsize_dict["legend"])
     cbar_pos = np.array(plt.gca().get_position().bounds)
     cbar_pos[0] = cbar_pos[0] + cbar_pos[2] + 0.01
@@ -1357,7 +1411,10 @@ def plot_example_fov(
     # Add scalebar
     scalebar_length_px = im.shape[0] / fov_width * 100  # Scale bar length in pixels
     rect = plt.Rectangle(
-        (35, im.shape[0] * 0.93), scalebar_length_px, scalebar_length_px*0.05, color="white"
+        (35, im.shape[0] * 0.93),
+        scalebar_length_px,
+        scalebar_length_px * 0.05,
+        color="white",
     )
     plt.gca().invert_xaxis()
     plt.gca().add_patch(rect)
@@ -1383,20 +1440,45 @@ def plot_fov_mean_img(im, vmax=700, fov_width=572.867):
     plt.gca().add_patch(rect)
 
 
-def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df, ax, depth_tuning_kwargs, fontsize_dict, 
-                                         fov_ax=None, ops=None, stat=None, legend_loc="upper right", text_pos="upper_left"):
+def plot_running_stationary_depth_tuning(
+    roi,
+    roi_num,
+    i,
+    neurons_df,
+    trials_df,
+    ax,
+    depth_tuning_kwargs,
+    fontsize_dict,
+    fov_ax=None,
+    ops=None,
+    stat=None,
+    legend_loc="upper right",
+    text_pos="upper_left",
+):
     ylims = []
-    for rs_thr, rs_thr_max, still_only, still_time, i_running, linecolor, label, use_col in zip(
+    for (
+        rs_thr,
+        rs_thr_max,
+        still_only,
+        still_time,
+        i_running,
+        linecolor,
+        label,
+        use_col,
+    ) in zip(
         [0.05, None],
         [None, 0.05],
-        [0,1],
+        [0, 1],
         [0, 1],
         [0, 1],
         ["royalblue", "gray"],
         ["Running", "Stationary"],
-        ["depth_tuning_popt_closedloop_running", "depth_tuning_popt_closedloop_notrunning"]
-    ):    
-        #calculate ylim
+        [
+            "depth_tuning_popt_closedloop_running",
+            "depth_tuning_popt_closedloop_notrunning",
+        ],
+    ):
+        # calculate ylim
         mean_dff_arr = find_depth_neurons.average_dff_for_all_trials(
             trials_df=trials_df,
             rs_thr=rs_thr,
@@ -1410,18 +1492,33 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
         CI_low, CI_high = common_utils.get_bootstrap_ci(mean_dff_arr)
         ylim = (np.nanmin(CI_low), np.nanmax(CI_high))
         ylims.append(ylim)
-    
-    ylim = (min([i[0] for i in ylims]), plt_common_utils.ceil(max([i[1] for i in ylims]),1))
+
+    ylim = (
+        min([i[0] for i in ylims]),
+        plt_common_utils.ceil(max([i[1] for i in ylims]), 1),
+    )
     # plot
-    for rs_thr, rs_thr_max, still_only, still_time, i_running, linecolor, label, use_col in zip(
+    for (
+        rs_thr,
+        rs_thr_max,
+        still_only,
+        still_time,
+        i_running,
+        linecolor,
+        label,
+        use_col,
+    ) in zip(
         [0.05, None],
         [None, 0.05],
-        [0,1],
+        [0, 1],
         [0, 1],
         [0, 1],
         ["royalblue", "gray"],
         ["Running", "Stationary"],
-        ["depth_tuning_popt_closedloop_running", "depth_tuning_popt_closedloop_notrunning"]
+        [
+            "depth_tuning_popt_closedloop_running",
+            "depth_tuning_popt_closedloop_notrunning",
+        ],
     ):
         depth_tuning_running_kwargs = depth_tuning_kwargs.copy()
         depth_tuning_running_kwargs["rs_thr"] = rs_thr
@@ -1429,13 +1526,13 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
         depth_tuning_running_kwargs["still_only"] = still_only
         depth_tuning_running_kwargs["still_time"] = still_time
         depth_tuning_running_kwargs["linecolor"] = linecolor
-        depth_tuning_running_kwargs["use_col"] = use_col            
+        depth_tuning_running_kwargs["use_col"] = use_col
         plot_depth_tuning_curve(
             neurons_df=neurons_df,
             trials_df=trials_df,
             roi=roi,
             **depth_tuning_running_kwargs,
-            ylim = ylim, 
+            ylim=ylim,
             label=label,
         )
 
@@ -1458,7 +1555,10 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
             if fov_ax:
                 fov_ax.annotate(
                     f"{roi_num}",
-                    (ops["meanImg"].shape[0] - stat[roi]["med"][1], stat[roi]["med"][0]),
+                    (
+                        ops["meanImg"].shape[0] - stat[roi]["med"][1],
+                        stat[roi]["med"][0],
+                    ),
                     xytext=(5, 5),
                     textcoords="offset points",
                     color="w",
@@ -1466,24 +1566,50 @@ def plot_running_stationary_depth_tuning(roi, roi_num, i, neurons_df, trials_df,
                     arrowprops=dict(facecolor="w", edgecolor="w", arrowstyle="->"),
                 )
     if i == 0:
-        plt.legend(loc=legend_loc, fontsize=fontsize_dict["legend"], framealpha=1, borderpad=0, frameon=False, handlelength=0.5) 
-        
-        
-def plot_mean_running_speed_alldepths(results, depth_list, fontsize_dict, param="RS", ylim=None, of_threshold=0.01, linewidth=3, elinewidth=3, jitter=0.2, scatter_markersize=2, scatter_alpha=0.5, capsize=3, capthick=10):
-    ax=plt.gca()
-    if param=="RS":
-        rs_means = np.vstack([j for i in results.rs_mean_closedloop.values for j in i])*100
-    elif param=="OF":
-        rs_means = np.degrees(np.vstack([j for i in results.rs_mean_closedloop.values for j in i])/depth_list.reshape(1,-1))
-        rs_means[rs_means<of_threshold] = of_threshold
+        plt.legend(
+            loc=legend_loc,
+            fontsize=fontsize_dict["legend"],
+            framealpha=1,
+            borderpad=0,
+            frameon=False,
+            handlelength=0.5,
+        )
+
+
+def plot_mean_running_speed_alldepths(
+    results,
+    depth_list,
+    fontsize_dict,
+    param="RS",
+    ylim=None,
+    of_threshold=0.01,
+    linewidth=3,
+    elinewidth=3,
+    jitter=0.2,
+    scatter_markersize=2,
+    scatter_alpha=0.5,
+    capsize=3,
+    capthick=10,
+):
+    ax = plt.gca()
+    if param == "RS":
+        rs_means = (
+            np.vstack([j for i in results.rs_mean_closedloop.values for j in i]) * 100
+        )
+    elif param == "OF":
+        rs_means = np.degrees(
+            np.vstack([j for i in results.rs_mean_closedloop.values for j in i])
+            / depth_list.reshape(1, -1)
+        )
+        rs_means[rs_means < of_threshold] = of_threshold
     CI_low, CI_high = common_utils.get_bootstrap_ci(rs_means.T, sig_level=0.05)
     for idepth in range(len(depth_list)):
         color = basic_vis_plots.get_depth_color(
             depth_list[idepth], depth_list, cmap=cm.cool.reversed()
         )
         sns.stripplot(
-            x=np.ones(rs_means.shape[0])*idepth,
-            y=rs_means[:,idepth],
+            x=np.ones(rs_means.shape[0]) * idepth,
+            y=rs_means[:, idepth],
             jitter=jitter,
             edgecolor="white",
             color=color,
@@ -1492,30 +1618,39 @@ def plot_mean_running_speed_alldepths(results, depth_list, fontsize_dict, param=
         )
         plt.plot(
             [idepth - 0.4, idepth + 0.4],
-            [np.mean(rs_means[:,idepth]), np.mean(rs_means[:,idepth])],
+            [np.mean(rs_means[:, idepth]), np.mean(rs_means[:, idepth])],
             linewidth=linewidth,
             color=color,
         )
         plt.errorbar(
             x=idepth,
-            y=np.mean(rs_means[:,idepth]),
-            yerr = np.array([np.mean(rs_means[:,idepth])-CI_low[idepth], CI_high[idepth]-np.mean(rs_means[:,idepth])]).reshape(2,1),
+            y=np.mean(rs_means[:, idepth]),
+            yerr=np.array(
+                [
+                    np.mean(rs_means[:, idepth]) - CI_low[idepth],
+                    CI_high[idepth] - np.mean(rs_means[:, idepth]),
+                ]
+            ).reshape(2, 1),
             capsize=capsize,
             elinewidth=elinewidth,
             ecolor=color,
             capthick=capthick,
         )
-    ax.set_xticklabels(np.round((depth_list*100)).astype("int"), fontsize=fontsize_dict["label"])
+    ax.set_xticklabels(
+        np.round((depth_list * 100)).astype("int"), fontsize=fontsize_dict["label"]
+    )
     if param == "RS":
         ax.set_ylabel("Average running\nspeed (cm/s)", fontsize=fontsize_dict["label"])
         ax.set_ylim(0, ax.get_ylim()[1])
     elif param == "OF":
-        ax.set_ylabel("Average optic flow\nspeed (degrees/s)", fontsize=fontsize_dict["label"])
+        ax.set_ylabel(
+            "Average optic flow\nspeed (degrees/s)", fontsize=fontsize_dict["label"]
+        )
         ax.set_yscale("log")
     ax.set_xlabel("Depth (cm)", fontsize=fontsize_dict["label"])
     ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
     if ylim is not None:
         ax.set_ylim(ylim)
         if param == "RS":
-            ax.set_yticks(np.linspace(ylim[0], ylim[1],4))
+            ax.set_yticks(np.linspace(ylim[0], ylim[1], 4))
     sns.despine(ax=ax)

@@ -132,7 +132,7 @@ def plot_speed_tuning(
                 bins = np.geomspace(
                     start=of_min,
                     stop=of_max,
-                    num=nbins+1,
+                    num=nbins + 1,
                     endpoint=True,
                 )
         bin_centers[idepth] = (bins[:-1] + bins[1:]) / 2
@@ -198,15 +198,17 @@ def plot_speed_tuning(
     if which_speed == "RS":
         ax.set_xticks(np.linspace(speed_min, speed_max, 4) * 100)
     elif which_speed == "OF":
-        ax.set_xticks(np.geomspace(1e-2, 1e4,3))
+        ax.set_xticks(np.geomspace(1e-2, 1e4, 3))
     if ylim is None:
-        ax.set_ylim([np.min([np.nanmin(ci[:,:,0]),0]), np.round(np.nanmax(ci[:,:,1]),1)])
-        ax.set_yticks([0, np.round(np.nanmax(ci[:,:,1]),1)])
-        ax.set_yticklabels([0, np.round(np.nanmax(ci[:,:,1]),1)])
+        ax.set_ylim(
+            [np.min([np.nanmin(ci[:, :, 0]), 0]), np.round(np.nanmax(ci[:, :, 1]), 1)]
+        )
+        ax.set_yticks([0, np.round(np.nanmax(ci[:, :, 1]), 1)])
+        ax.set_yticklabels([0, np.round(np.nanmax(ci[:, :, 1]), 1)])
     else:
         ax.set_ylim(ylim)
-        ax.set_yticks([0,ylim[1]])
-        ax.set_yticklabels([0,ylim[1]])
+        ax.set_yticks([0, ylim[1]])
+        ax.set_yticklabels([0, ylim[1]])
     sns.despine(ax=ax, offset=3, trim=True)
 
 
@@ -267,7 +269,7 @@ def plot_RS_OF_matrix(
     if vmin is None:
         vmin = np.nanmax([0, np.percentile(bin_means[1:, 1:].flatten(), 1)])
     if vmax is None:
-        vmax = np.round(np.nanmax(bin_means[1:, 1:].flatten()),1)
+        vmax = np.round(np.nanmax(bin_means[1:, 1:].flatten()), 1)
     ax = fig.add_axes([plot_x, plot_y, plot_width, plot_height])
     im = ax.imshow(
         bin_means[1:, 1:].T,
@@ -278,7 +280,12 @@ def plot_RS_OF_matrix(
         vmax=vmax,
     )
     ax.set_title(title, fontsize=fontsize_dict["title"])
-    plot_x, plot_y, plot_width, plot_height = ax.get_position().x0, ax.get_position().y0, ax.get_position().width, ax.get_position().height
+    plot_x, plot_y, plot_width, plot_height = (
+        ax.get_position().x0,
+        ax.get_position().y0,
+        ax.get_position().width,
+        ax.get_position().height,
+    )
 
     ticks_select1, ticks_select2, bin_edges1, bin_edges2 = (
         basic_vis_plots.get_RS_OF_heatmap_axis_ticks(
@@ -369,9 +376,9 @@ def plot_RS_OF_matrix(
         )
     if cbar_width is not None:
         ax2 = fig.add_axes(
-            [plot_x + plot_width * 1.1, plot_y, plot_width*0.05, plot_height / 2]
+            [plot_x + plot_width * 1.1, plot_y, plot_width * 0.05, plot_height / 2]
         )
-        cbar=fig.colorbar(im, cax=ax2, label="\u0394F/F")
+        cbar = fig.colorbar(im, cax=ax2, label="\u0394F/F")
         ax2.tick_params(labelsize=fontsize_dict["legend"], length=2, pad=2)
         ax2.set_ylabel(
             "\u0394F/F", rotation=270, fontsize=fontsize_dict["legend"], labelpad=4
@@ -581,7 +588,7 @@ def plot_r2_comparison(
                         [ci[i][1], ci[i][1]],
                         color=sns.color_palette("Set1")[i],
                         alpha=0.7,
-                        edgecolor="none",   
+                        edgecolor="none",
                     )
         if plot:
             sns.despine(offset=5, ax=plt.gca())
@@ -593,10 +600,17 @@ def plot_r2_comparison(
             )
             ax.set_ylim([0, 1])
             ax.tick_params(axis="y", which="major", labelsize=fontsize_dict["tick"])
-            print(f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(props[0],props[1])}")
-            print(f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(props[0],props[2])}")
-            print(f"{labels[1]} vs {labels[2]}: {scipy.stats.wilcoxon(props[1],props[2])}")
+            print(
+                f"{labels[0]} vs {labels[1]}: {scipy.stats.wilcoxon(props[0],props[1])}"
+            )
+            print(
+                f"{labels[0]} vs {labels[2]}: {scipy.stats.wilcoxon(props[0],props[2])}"
+            )
+            print(
+                f"{labels[1]} vs {labels[2]}: {scipy.stats.wilcoxon(props[1],props[2])}"
+            )
         return props
+
 
 def plot_r2_cdfs(
     neurons_df,
@@ -784,7 +798,7 @@ def plot_2d_hist(
     # ax.yaxis.set_minor_locator(MultipleLocator(2))
     # ax.xaxis.set_minor_locator(MultipleLocator(2))
     ax.minorticks_on()
-    ax.tick_params(axis="both", which='major', labelsize=fontsize_dict["tick"])
+    ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
     # ax.tick_params(axis='both', which='minor', bottom=True, labelsize=fontsize_dict["tick"])
     if aspect_equal:
         ax.set_aspect("equal")
@@ -854,16 +868,16 @@ def plot_speed_colored_by_depth(
     ax_pos = ax.get_position()
     cbar_pos = cbar.ax.get_position()
     cbar_pos.y0 = ax_pos.y0
-    cbar_pos.y1 = ax_pos.y0 + ax_pos.height*0.3
+    cbar_pos.y1 = ax_pos.y0 + ax_pos.height * 0.3
     cbar.ax.set_position(cbar_pos)
     cbar.ax.minorticks_off()
 
     ax_inset = fig.add_axes(
         [
-            ax_pos.x0 + ax_pos.width*1.2,
+            ax_pos.x0 + ax_pos.width * 1.2,
             ax_pos.y0 + ax_pos.height * 0.5,
-            ax_pos.width*0.5,
-            ax_pos.height*0.5,
+            ax_pos.width * 0.5,
+            ax_pos.height * 0.5,
         ]
     )
     for depth in depths:
@@ -880,28 +894,29 @@ def plot_speed_colored_by_depth(
     ax_inset.set_yscale("log")
     # same x and y ticks as ax without labels
     from matplotlib.ticker import LogLocator
+
     ax_inset.yaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
     ax_inset.xaxis.set_major_locator(LogLocator(base=10.0, numticks=10))
     ax_inset.minorticks_off()
     ax_inset.tick_params(labelbottom=False, labelleft=False)
     ax_inset.set_xlim(xrange)
     ax_inset.set_ylim(yrange)
-    ax_inset.set_xlabel("Running speed", fontsize=fontsize_dict["tick"],labelpad=5)
-    ax_inset.set_ylabel("Optic flow speed", fontsize=fontsize_dict["tick"],labelpad=5)
+    ax_inset.set_xlabel("Running speed", fontsize=fontsize_dict["tick"], labelpad=5)
+    ax_inset.set_ylabel("Optic flow speed", fontsize=fontsize_dict["tick"], labelpad=5)
 
 
 def plot_speed_trace(
     trials_df,
-    trial_list, 
-    param, 
-    fs, 
-    ax, 
-    ylabel, 
+    trial_list,
+    param,
+    fs,
+    ax,
+    ylabel,
     plot=True,
     ylim=None,
-    linecolor="k", 
-    linewidth=1, 
-    fontsize_dict={"title": 15, "label": 10, "ticks": 10}
+    linecolor="k",
+    linewidth=1,
+    fontsize_dict={"title": 15, "label": 10, "ticks": 10},
 ):
     if param == "RS":
         trials_df[f"{param}_merged"] = trials_df.apply(
@@ -1010,7 +1025,7 @@ def plot_speed_trace(
         # remove upper and right frame of the plot
         ax.spines["top"].set_visible(False)
         ax.spines["right"].set_visible(False)
-    
+
         ylim = ax.get_ylim()
     return ylim
 
@@ -1033,14 +1048,12 @@ def plot_speed_trace_closed_open_loop(
     )
     fs = suite2p_datasets[0].extra_attributes["fs"]
 
-    fig=plt.gcf()
-    xlims=[]
-    ylims=[]
+    fig = plt.gcf()
+    xlims = []
+    ylims = []
     axes = [fig.add_axes(position) for position in positions]
     for closed_loop, title in zip([1, 0], ["Closed loop", "Open loop"]):
-        for param, ylabel in zip(
-            ["RS", "OF"], ["RS\n(cm/s)", "OF\n(degrees/s)"]
-        ):
+        for param, ylabel in zip(["RS", "OF"], ["RS\n(cm/s)", "OF\n(degrees/s)"]):
             ax = axes[0]
             ylim = plot_speed_trace(
                 trials_df=trials_df[trials_df.closed_loop == closed_loop],
@@ -1054,16 +1067,14 @@ def plot_speed_trace_closed_open_loop(
                 plot=False,
             )
             ylims.append(ylim)
-            
+
     i = 0
     for closed_loop, title in zip([1, 0], ["Closed loop", "Open loop"]):
-        for param, ylabel in zip(
-            ["RS", "OF"], ["RS\n(cm/s)", "OF\n(degrees/s)"]
-        ):  
+        for param, ylabel in zip(["RS", "OF"], ["RS\n(cm/s)", "OF\n(degrees/s)"]):
             if param == "RS":
                 lim_set = 0
             else:
-                lim_set = 1    
+                lim_set = 1
             ax = axes[i]
             _ = plot_speed_trace(
                 trials_df=trials_df[trials_df.closed_loop == closed_loop],
@@ -1075,35 +1086,49 @@ def plot_speed_trace_closed_open_loop(
                 linecolor="k",
                 linewidth=linewidth,
                 plot=True,
-                ylim=(np.max([ylims[lim_set][0], ylims[lim_set+2][0]]),
-                      np.max([ylims[lim_set][1], ylims[lim_set+2][1]])),
+                ylim=(
+                    np.max([ylims[lim_set][0], ylims[lim_set + 2][0]]),
+                    np.max([ylims[lim_set][1], ylims[lim_set + 2][1]]),
+                ),
             )
             xlims.append(ax.get_xlim())
-            
+
             # if param == "RS":
             #     ax.set_title(title, fontsize=fontsize_dict["title"])
-            ax.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"], length=2, pad=5)
-            if (i==0) or (i==2):
-                labelbottom=False
+            ax.tick_params(
+                axis="both",
+                which="major",
+                labelsize=fontsize_dict["tick"],
+                length=2,
+                pad=5,
+            )
+            if (i == 0) or (i == 2):
+                labelbottom = False
             else:
-                labelbottom=True
-            if (i==2) or (i==3):
-                labelleft=False
+                labelbottom = True
+            if (i == 2) or (i == 3):
+                labelleft = False
             else:
-                labelleft=True
-            ax.tick_params(labelbottom=labelbottom, labelleft=labelleft, left=True, bottom=True, pad=2)
-            if (i==1) or (i==3):
-                ax.set_xlabel("Time (s)" , fontsize=fontsize_dict["label"])
+                labelleft = True
+            ax.tick_params(
+                labelbottom=labelbottom,
+                labelleft=labelleft,
+                left=True,
+                bottom=True,
+                pad=2,
+            )
+            if (i == 1) or (i == 3):
+                ax.set_xlabel("Time (s)", fontsize=fontsize_dict["label"])
             if closed_loop == 0:
                 ax.set_ylabel("")
             else:
-                ax.set_ylabel(ylabel,fontsize=fontsize_dict["label"], labelpad=0)
+                ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"], labelpad=0)
             i += 1
     # axes[0].set_ylim(ylims[2])
     # axes[2].set_ylim(ylims[2])
     # axes[1].set_ylim(ylims[3])
     # axes[3].set_ylim(ylims[3])
-    
+
     # # Add scalebar
     # positions_2 = axes[2].get_position()
     # ax_scalebar1 = plt.gcf().add_axes([positions_2.x0+positions_2.width*0.8, positions_2.y0-positions_2.height*0.1, positions_2.width, positions_2.height])
@@ -1111,21 +1136,37 @@ def plot_speed_trace_closed_open_loop(
     # positions_3 = axes[3].get_position()
     # ax_scalebar2 = plt.gcf().add_axes([positions_3.x0+positions_3.width*0.8, positions_3.y0-positions_3.height*0.3, positions_3.width, positions_3.height])
     # plt_common_utils.draw_axis_scalebars(ax_scalebar2, 0, 0, 25, 100, scalebar_labels=["25 s", "100 \u00B0/s"], xlim=xlims[0], ylim=ylims[0], label_fontsize=fontsize_dict["legend"], linewidth=1, right=True, bottom=True)
-    
+
     # # Add ylabel
-    # axes[0].text(-15, 
-    #              np.sum(ylims[0])/2, 
+    # axes[0].text(-15,
+    #              np.sum(ylims[0])/2,
     #              "RS", fontsize=fontsize_dict["tick"], rotation=0, ha="left", va="center",)
-    # axes[1].text(-15, 
-    #              1, 
+    # axes[1].text(-15,
+    #              1,
     #              "OF", fontsize=fontsize_dict["tick"], rotation=0, ha="left", va="center",)
 
 
-def plot_openloop_rs_correlation_alldepths(results, depth_list, fontsize_dict, ax1, ax2, linewidth=3, elinewidth=3, jitter=0.2, scatter_markersize=2, scatter_alpha=0.5, capsize=3, capthick=10, ylim=None):
+def plot_openloop_rs_correlation_alldepths(
+    results,
+    depth_list,
+    fontsize_dict,
+    ax1,
+    ax2,
+    linewidth=3,
+    elinewidth=3,
+    jitter=0.2,
+    scatter_markersize=2,
+    scatter_alpha=0.5,
+    capsize=3,
+    capthick=10,
+    ylim=None,
+):
     results = results[results["rs_correlation_rval_openloop"].notnull().values]
     r_all = results["rs_correlation_rval_openloop"].values.astype(float)
-    r_alldepths = np.vstack([j for i in results["rs_correlation_rval_openloop_alldepths"].values for j in i])
-    
+    r_alldepths = np.vstack(
+        [j for i in results["rs_correlation_rval_openloop_alldepths"].values for j in i]
+    )
+
     CI_low_all, CI_high_all = common_utils.get_bootstrap_ci(r_all.T, sig_level=0.05)
     CI_low, CI_high = common_utils.get_bootstrap_ci(r_alldepths.T, sig_level=0.05)
     sns.stripplot(
@@ -1133,34 +1174,36 @@ def plot_openloop_rs_correlation_alldepths(results, depth_list, fontsize_dict, a
         y=r_all.flatten(),
         jitter=jitter,
         edgecolor="white",
-        color='k',
+        color="k",
         alpha=scatter_alpha,
         ax=ax1,
         size=scatter_markersize,
     )
     ax1.plot(
-        [- 0.4, + 0.4],
+        [-0.4, +0.4],
         [np.mean(r_all), np.mean(r_all)],
         linewidth=linewidth,
-        color='k',
+        color="k",
     )
     ax1.errorbar(
         x=0,
         y=np.mean(r_all),
-        yerr = np.array([np.mean(r_all)-CI_low_all, CI_high_all-np.mean(r_all)]).reshape(2,1),
+        yerr=np.array(
+            [np.mean(r_all) - CI_low_all, CI_high_all - np.mean(r_all)]
+        ).reshape(2, 1),
         capsize=capsize,
         elinewidth=elinewidth,
-        ecolor='k',
+        ecolor="k",
         capthick=capthick,
     )
-        
+
     for idepth in range(len(depth_list)):
         color = basic_vis_plots.get_depth_color(
             depth_list[idepth], depth_list, cmap=cm.cool.reversed()
         )
         sns.stripplot(
-            x=np.ones(r_alldepths.shape[0])*idepth,
-            y=r_alldepths[:,idepth],
+            x=np.ones(r_alldepths.shape[0]) * idepth,
+            y=r_alldepths[:, idepth],
             jitter=jitter,
             edgecolor="white",
             color=color,
@@ -1169,33 +1212,43 @@ def plot_openloop_rs_correlation_alldepths(results, depth_list, fontsize_dict, a
             size=scatter_markersize,
         )
         ax2.plot(
-            [idepth - 0.05*len(depth_list), idepth + 0.05*len(depth_list)],
-            [np.mean(r_alldepths[:,idepth]), np.mean(r_alldepths[:,idepth])],
+            [idepth - 0.05 * len(depth_list), idepth + 0.05 * len(depth_list)],
+            [np.mean(r_alldepths[:, idepth]), np.mean(r_alldepths[:, idepth])],
             linewidth=linewidth,
             color=color,
         )
         ax2.errorbar(
             x=idepth,
-            y=np.mean(r_alldepths[:,idepth]),
-            yerr = np.array([np.mean(   r_alldepths[:,idepth])-CI_low[idepth], CI_high[idepth]-np.mean(r_alldepths[:,idepth])]).reshape(2,1),
+            y=np.mean(r_alldepths[:, idepth]),
+            yerr=np.array(
+                [
+                    np.mean(r_alldepths[:, idepth]) - CI_low[idepth],
+                    CI_high[idepth] - np.mean(r_alldepths[:, idepth]),
+                ]
+            ).reshape(2, 1),
             capsize=capsize,
             elinewidth=elinewidth,
             ecolor=color,
             capthick=capthick,
         )
     ax2.get_yaxis().set_visible(False)
-    ax2.set_xticklabels(np.round((depth_list*100)).astype("int"), fontsize=fontsize_dict["label"])
+    ax2.set_xticklabels(
+        np.round((depth_list * 100)).astype("int"), fontsize=fontsize_dict["label"]
+    )
     if ylim is None:
         ax1.set_ylim(-0.1, 1)
         ax2.set_ylim(-0.1, 1)
     else:
         ax1.set_ylim(ylim)
         ax2.set_ylim(ylim)
-    ax1.set_xlim([-1,1])
+    ax1.set_xlim([-1, 1])
     ax2.set_xlabel("Depth (cm)", fontsize=fontsize_dict["label"])
     ax2.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
     sns.despine(ax=ax2, left=True)
     ax1.set_xticklabels(["All"], fontsize=fontsize_dict["label"])
-    ax1.set_ylabel("Correlation between actual\nand virtual running speed", fontsize=fontsize_dict["label"])
+    ax1.set_ylabel(
+        "Correlation between actual\nand virtual running speed",
+        fontsize=fontsize_dict["label"],
+    )
     ax1.tick_params(axis="both", which="major", labelsize=fontsize_dict["tick"])
     sns.despine(ax=ax1)
