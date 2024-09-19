@@ -11,4 +11,5 @@ logs
 depth_analysis_2p/
 v1_depth_map/sfn/
 v1_depth_map/ucl_neuro_symp_2923/
+notes.py
 
