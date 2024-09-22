@@ -83,7 +83,7 @@ def dict2df(dict, df, cols, index):
             if isinstance(item, float):
                 df[key].iloc[index] = item
             elif isinstance(item, list):
-                df[key] = create_nested_nan_list(np.array(item).ndim)
+                df[key] = create_nested_nan_list(1)
                 df[key].iloc[index] = item
             elif isinstance(item, np.ndarray):
                 df[key] = create_nested_nan_list(item.ndim)
