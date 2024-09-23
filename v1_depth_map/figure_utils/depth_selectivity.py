@@ -1413,7 +1413,7 @@ def plot_example_fov(
     # Add scalebar
     scalebar_length_px = im.shape[0] / fov_width * 100  # Scale bar length in pixels
     rect = plt.Rectangle(
-        (35, im.shape[0] * 0.93),
+        (800, im.shape[0] * 0.95),
         scalebar_length_px,
         scalebar_length_px * 0.05,
         color="white",
