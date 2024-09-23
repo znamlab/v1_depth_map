@@ -1,5 +1,5 @@
 import flexiznam as flz
-from v1_depth_analysis.v1_manuscript_2023 import depth_selectivity, get_session_list
+from v1_depth_map.figure_utils import depth_selectivity, get_session_list
 from pathlib import Path
 import warnings
 
