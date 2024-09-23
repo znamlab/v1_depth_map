@@ -187,9 +187,9 @@ def plot_white_rectangle(x0, y0, width, height):
 
 
 def ceil(a, base=1, precision=0):
-    fold = a//(base * (10 ** (-precision)))
-    extra = int((a%(base * (10 ** (-precision)))) > 0)
-    ceiled_num = (fold+extra)*(base * (10 ** (-precision)))
+    fold = a // (base * (10 ** (-precision)))
+    extra = int((a % (base * (10 ** (-precision)))) > 0)
+    ceiled_num = (fold + extra) * (base * (10 ** (-precision)))
     return ceiled_num
 
 

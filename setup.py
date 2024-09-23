@@ -27,6 +27,7 @@ setup(
         "jupyter",
         "notebook",
         "ipykernel",
+        "black",
         "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git",
         "wayla @ git+ssh://git@github.com/znamlab/wayla.git@dev",
         "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git",

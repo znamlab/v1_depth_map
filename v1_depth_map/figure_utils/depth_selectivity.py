@@ -272,10 +272,18 @@ def plot_depth_tuning_curve(
                 label=label,
             )
     if ylim is None:
-        ylim = [plt.gca().get_ylim()[0], plt_common_utils.ceil(np.max(CI_high), ylim_precision_base, ylim_precision)]
+        ylim = [
+            plt.gca().get_ylim()[0],
+            plt_common_utils.ceil(np.max(CI_high), ylim_precision_base, ylim_precision),
+        ]
         plt.ylim(ylim)
         plt.yticks(
-            [0, plt_common_utils.ceil(np.max(CI_high), ylim_precision_base, ylim_precision)],
+            [
+                0,
+                plt_common_utils.ceil(
+                    np.max(CI_high), ylim_precision_base, ylim_precision
+                ),
+            ],
             fontsize=fontsize_dict["tick"],
         )
     else:

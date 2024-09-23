@@ -436,7 +436,7 @@ def plot_decoder_err_by_speeds(
     # bins that are within the highest bin (>1m/s)
     mean_err = np.concatenate([mean_err, [np.nanmean(err_speed_bins[highest_bin:])]])
     CI_low_highest, CI_high_highest = common_utils.get_bootstrap_ci(
-        np.nanmean(err_speed_bins[:, highest_bin:].T, axis = 0)
+        np.nanmean(err_speed_bins[:, highest_bin:].T, axis=0)
     )
     CI_low = np.concatenate([CI_low, CI_low_highest])
     CI_high = np.concatenate([CI_high, mean_err[-1] - CI_low_highest + mean_err[-1]])
@@ -467,7 +467,7 @@ def plot_decoder_err_by_speeds(
         linestyle="dotted",
         linewidth=linewidth,
         alpha=alpha_chance,
-    ) 
+    )
 
     # set axis of the stationary plot
     axes[0].set_xlim([-0.5, 0.5])
@@ -481,10 +481,10 @@ def plot_decoder_err_by_speeds(
         fontsize=fontsize_dict["label"],
     )
     # set axis of the speed bins plot
-    axes[1].set_xticks(
-        speed_bins[:(highest_bin+1)]
+    axes[1].set_xticks(speed_bins[: (highest_bin + 1)])
+    new_tick_labels = (
+        np.round(speed_bins[: (highest_bin + 1)] * 100).astype("int").tolist()
     )
-    new_tick_labels = np.round(speed_bins[:(highest_bin+1)]*100).astype('int').tolist()
     new_tick_labels[-1] = f"> {np.round(speed_bins[highest_bin-1]*100).astype('int')}"
     axes[1].set_xticklabels(new_tick_labels, rotation=60)
     axes[1].set_xlim([0, speed_bins[highest_bin]])
