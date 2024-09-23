@@ -40,9 +40,11 @@ def calculate_speed_tuning(speed_arr, dff_arr, bins, smoothing_sd=1, ci_range=0.
     for ibin in range(len(bin_means)):
         idx = (speed_arr > bins[ibin]) & (speed_arr < bins[ibin + 1])
         if np.sum(idx) > 0:
-            ci[ibin, 0], ci[ibin, 1] = common_utils.get_bootstrap_ci(
+            ci_low, ci_high = common_utils.get_bootstrap_ci(
                 dff_arr[idx], n_bootstraps=1000, sig_level=1 - ci_range
             )
+            ci[ibin, 0] = ci_low[0]
+            ci[ibin, 1] = ci_high[0]
     smoothed_tuning = plotting_utils.get_tuning_function(
         bin_means, bin_counts, smoothing_sd=smoothing_sd
     )
