@@ -404,6 +404,7 @@ def plot_decoder_err_by_speeds(
     # find decoder_df for 5 depth session
     use_nbins = len(all_speed_bin_edges) + 1
     speed_bins = all_speed_bin_edges[:use_nbins]
+    bin_centers = (speed_bins[1:] + speed_bins[:-1]) / 2
     if closed_loop:
         sfx = "closedloop"
     else:
@@ -440,7 +441,7 @@ def plot_decoder_err_by_speeds(
     CI_low = np.concatenate([CI_low, CI_low_highest])
     CI_high = np.concatenate([CI_high, mean_err[-1] - CI_low_highest + mean_err[-1]])
     axes[1].plot(
-        np.linspace(1, highest_bin, highest_bin),
+        bin_centers[:highest_bin],
         mean_err.flatten(),
         f"{linecolor}-",
         marker=".",
@@ -451,7 +452,7 @@ def plot_decoder_err_by_speeds(
     )
 
     axes[1].fill_between(
-        np.linspace(1, highest_bin, highest_bin),
+        bin_centers[:highest_bin],
         CI_low,
         CI_high,
         color=linecolor,
@@ -466,7 +467,7 @@ def plot_decoder_err_by_speeds(
         linestyle="dotted",
         linewidth=linewidth,
         alpha=alpha_chance,
-    )  # convert log 2 to folds (so log2 = 1 is 2 folds)
+    ) 
 
     # set axis of the stationary plot
     axes[0].set_xlim([-0.5, 0.5])
@@ -480,29 +481,18 @@ def plot_decoder_err_by_speeds(
         fontsize=fontsize_dict["label"],
     )
     # set axis of the speed bins plot
-    xticks = np.arange(highest_bin + 1).tolist()
     axes[1].set_xticks(
-        np.linspace(0.5, highest_bin - 0.5, highest_bin).tolist() + [highest_bin]
+        speed_bins[:(highest_bin+1)]
     )
-    new_tick_labels = []
-    for i, tick in enumerate(xticks):
-        if i == 0:
-            new_tick_labels.append(0)
-        elif i < highest_bin:
-            new_tick_labels.append(
-                np.round(all_speed_bin_edges[:highest_bin][i - 1] * 100).astype("int")
-            )
-        else:
-            new_tick_labels.append(
-                f"> {np.round(all_speed_bin_edges[highest_bin-2]*100).astype('int')}"
-            )
+    new_tick_labels = np.round(speed_bins[:(highest_bin+1)]*100).astype('int').tolist()
+    new_tick_labels[-1] = f"> {np.round(speed_bins[highest_bin-1]*100).astype('int')}"
     axes[1].set_xticklabels(new_tick_labels, rotation=60)
+    axes[1].set_xlim([0, speed_bins[highest_bin]])
+    axes[1].set_ylim([0, ylim[1]])
     axes[1].tick_params(axis="both", labelsize=fontsize_dict["tick"])
     axes[1].set_xlabel("Running speed (cm/s)", fontsize=fontsize_dict["label"])
-    axes[1].set_ylim([0, ylim[1]])
     # make y-axis invisible
     sns.despine(ax=axes[0])
-    # sns.despine(ax=axes[1])
     axes[1].spines["left"].set_visible(False)
     axes[1].spines["right"].set_visible(False)
     axes[1].spines["top"].set_visible(False)
