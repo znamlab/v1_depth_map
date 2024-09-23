@@ -186,8 +186,11 @@ def plot_white_rectangle(x0, y0, width, height):
     # fig.patch.set_facecolor('gray')
 
 
-def ceil(a, precision=0):
-    return np.round(a + 0.5 * 10 ** (-precision), precision)
+def ceil(a, base=1, precision=0):
+    fold = a//(base * (10 ** (-precision)))
+    extra = int((a%(base * (10 ** (-precision)))) > 0)
+    ceiled_num = (fold+extra)*(base * (10 ** (-precision)))
+    return ceiled_num
 
 
 def hierarchical_bootstrap_stats(
