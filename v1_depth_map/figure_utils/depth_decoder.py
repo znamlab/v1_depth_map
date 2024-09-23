@@ -481,6 +481,7 @@ def plot_decoder_err_by_speeds(
         fontsize=fontsize_dict["label"],
     )
     # set axis of the speed bins plot
+    xticks = speed_bins[: (highest_bin + 1)]
     axes[1].set_xticks(speed_bins[: (highest_bin + 1)])
     new_tick_labels = (
         np.round(speed_bins[: (highest_bin + 1)] * 100).astype("int").tolist()
