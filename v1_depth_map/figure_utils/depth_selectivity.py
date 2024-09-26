@@ -560,7 +560,12 @@ def plot_PSTH(
         ylim = (plt.gca().get_ylim()[0], ylim[1])
         plt.ylim(ylim)
     plt.yticks([ylim[0], ylim[1]], fontsize=fontsize_dict["tick"])
-    plt.plot([0, 0], ylim, "k--", linewidth=0.5, label="_nolegend_")
+    plt.plot([0, 0], 
+             ylim, 
+             "k", 
+             linestyle="dotted", 
+             linewidth=0.5, 
+             label="_nolegend_")
     plt.plot(
         [corridor_length, corridor_length],
         ylim,
