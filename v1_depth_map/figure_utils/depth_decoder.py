@@ -287,7 +287,7 @@ def plot_confusion_matrix(
         cbar = plt.colorbar(im, cax=ax2, label="Accuracy")
         cbar.set_ticks([0, vmax])
         ax2.tick_params(labelsize=fontsize_dict["tick"])
-        ax2.set_ylabel("Accuracy", fontsize=fontsize_dict["legend"])
+        ax2.set_ylabel("Porportion of frames", fontsize=fontsize_dict["legend"])
     return im
 
 
@@ -434,12 +434,12 @@ def plot_decoder_err_by_speeds(
     mean_err = np.nanmean(err_speed_bins[:, 1:highest_bin], axis=0)
     CI_low, CI_high = common_utils.get_bootstrap_ci(err_speed_bins[:, 1:highest_bin].T)
     # bins that are within the highest bin (>1m/s)
-    mean_err = np.concatenate([mean_err, [np.nanmean(err_speed_bins[highest_bin:])]])
+    mean_err = np.concatenate([mean_err, [np.nanmean(np.nanmean(err_speed_bins[:, highest_bin:].T, axis=0))]]) # be careful with this array as it has a lot of nans
     CI_low_highest, CI_high_highest = common_utils.get_bootstrap_ci(
         np.nanmean(err_speed_bins[:, highest_bin:].T, axis=0)
     )
     CI_low = np.concatenate([CI_low, CI_low_highest])
-    CI_high = np.concatenate([CI_high, mean_err[-1] - CI_low_highest + mean_err[-1]])
+    CI_high = np.concatenate([CI_high, CI_high_highest])
     axes[1].plot(
         bin_centers[:highest_bin],
         mean_err.flatten(),
