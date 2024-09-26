@@ -117,7 +117,10 @@ def determine_roi_locations(neurons_df, flexilims_session, session, suite2p_ds):
     stat = np.load(suite2p_ds.path_full / "plane0" / "stat.npy", allow_pickle=True)
     ops = np.load(suite2p_ds.path_full / "plane0" / "ops.npy", allow_pickle=True).item()
     si_metadata = utils.get_si_metadata(flexilims_session, session)
-    neurons_df["z_position"] = si_metadata["FrameData"]["SI.hMotors.samplePosition"][2]
+    if "FrameData" in si_metadata.keys():
+        neurons_df["z_position"] = si_metadata["FrameData"]["SI.hMotors.samplePosition"][2]
+    else:
+        neurons_df["z_position"] = si_metadata["SI.hMotors.samplePosition"][2]
     find_roi_centers(neurons_df, stat)
     fov = load_overview_roi(flexilims_session, session)
     if fov is not None:

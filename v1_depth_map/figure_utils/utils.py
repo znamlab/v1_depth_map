@@ -2,6 +2,7 @@ import flexiznam as flz
 import yaml
 from flexilims.offline import download_database
 from tifffile import TiffFile
+import numpy as np
 
 
 def download_full_flexilims_database(flexilims_session, target_file=None):
@@ -37,5 +38,18 @@ def get_si_metadata(flexilims_session, session):
         filter={"dataset_type": "scanimage"},
     ).iloc[0]
     data_root = flz.get_data_root("raw", flexilims_session=flexilims_session)
-    tif_path = data_root / recording["path"] / sorted(dataset["tif_files"])[0]
-    return TiffFile(tif_path).scanimage_metadata
+    if (data_root / recording["path"] / sorted(dataset["tif_files"])[0]).exists():
+        tif_path = data_root / recording["path"] / sorted(dataset["tif_files"])[0]
+        metadata = TiffFile(tif_path).scanimage_metadata
+    else:
+        suite2p_ds = flz.get_datasets(
+            flexilims_session=flexilims_session,
+            origin_name=recording.name,
+            dataset_type="suite2p_traces",
+            filter_datasets={"anatomical_only": 3},
+            allow_multiple=False,
+            return_dataseries=False,
+        )
+        metadata_path = suite2p_ds.path_full / "si_metadata.npy"
+        metadata = np.load(metadata_path, allow_pickle=True).item()
+    return metadata
