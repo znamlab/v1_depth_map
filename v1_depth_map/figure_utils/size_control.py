@@ -167,10 +167,6 @@ def plot_preferred_depths_sizes_scatter(
         ax2.set_ylabel("Number of neurons", fontsize=fontsize_dict["tick"])
         sns.despine()
         print(
-            f"pearsonr {pearsonr(neurons_df[f'preferred_depth_size{size_x}'], neurons_df[f'preferred_depth_size{size_y}'])},\
-            spearmarnr {spearmanr(neurons_df[f'preferred_depth_size{size_x}'], neurons_df[f'preferred_depth_size{size_y}'])},\
-                spearmanr log {spearmanr(np.log(neurons_df[f'preferred_depth_size{size_x}']), np.log(neurons_df[f'preferred_depth_size{size_y}']))},\
-              median {np.median(ratio.values)},\
-              mean {np.mean(ratio.values)},\
-              stats {scipy.stats.wilcoxon(neurons_df[f'preferred_depth_size{size_x}'], neurons_df[f'preferred_depth_size{size_y}'])}"
+            f"spearmarnr {spearmanr(neurons_df[f'preferred_depth_size{size_x}'], neurons_df[f'preferred_depth_size{size_y}'])},\
+              median {np.median(ratio.values)}"
         )
