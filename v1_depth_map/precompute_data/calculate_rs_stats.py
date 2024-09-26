@@ -38,15 +38,10 @@ results_all = depth_selectivity.get_rs_stats_all_sessions(
     still_time=1,
     corridor_length=6,
     blank_length=3,
-    overwrite=False,
+    overwrite=True,
 )
 
-VERSION = 9
-SAVE_ROOT = (
-    Path(
-        f"/camp/lab/znamenskiyp/home/shared/presentations/v1_manuscript_2023/ver{VERSION}"
-    )
-    / "supp"
-)
+VERSION = 10
+SAVE_ROOT = flz.get_data_root("processed", flexilims_session=flexilims_session) / "v1_manuscript_2023"/f"ver{VERSION}"/"supp"
 SAVE_ROOT.mkdir(parents=True, exist_ok=True)
 results_all.to_pickle(SAVE_ROOT / "results_all_rs_supp.pickle")

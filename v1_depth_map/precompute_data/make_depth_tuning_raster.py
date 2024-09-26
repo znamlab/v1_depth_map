@@ -50,14 +50,9 @@ results_all = depth_selectivity.get_psth_crossval_all_sessions(
         "depth_tuning_test_spearmanr_pval_closedloop",
     ],
     blank_length=3,
-    overwrite=False,
+    overwrite=True,
 )
-VERSION = 9
-SAVE_ROOT = (
-    Path(
-        f"/camp/lab/znamenskiyp/home/shared/presentations/v1_manuscript_2023/ver{VERSION}"
-    )
-    / "fig1"
-)
+VERSION = 10
+SAVE_ROOT = flz.get_data_root("processed", flexilims_session=flexilims_session) / "v1_manuscript_2023"/f"ver{VERSION}"/"fig1"
 SAVE_ROOT.mkdir(parents=True, exist_ok=True)
 results_all.to_pickle(SAVE_ROOT / "results_all_psth.pickle")
