@@ -14,6 +14,6 @@ ml purge
 ml Anaconda3/2020.07
 source activate base
 
-conda activate 2p_analysis_cottage2
+conda activate v1_depth_map
 cd "/camp/lab/znamenskiyp/home/users/hey2/codes/3d-vision-analysis-2p/v1_depth_map/batch_analysis/batch_depth_decoder/"
 python depth_decoder_all_sessions.py
