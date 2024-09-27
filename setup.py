@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="v1_depth_map",
-    version="v1.0",
+    version="v2.0",
     packages=find_packages(),
-    url="https://github.com/znamlab/cottage_analysis",
+    url="https://github.com/znamlab/v1_depth_map",
     license="MIT",
     author="Antonin Blot, Yiran He, Petr Znamenskiy",
     author_email="yiran.he@crick.ac.uk",
@@ -28,9 +28,9 @@ setup(
         "notebook",
         "ipykernel",
         "black",
-        "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git",
         "wayla @ git+ssh://git@github.com/znamlab/wayla.git@dev",
-        "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git",
-        "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git",
+        "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git@v0.4",
+        "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git@v0.9",
+        "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git@v2.0",
     ],
 )
