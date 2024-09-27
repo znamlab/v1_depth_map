@@ -28,7 +28,7 @@ setup(
         "notebook",
         "ipykernel",
         "black",
-        "wayla @ git+ssh://git@github.com/znamlab/wayla.git@dev",
+        "wayla @ git+ssh://git@github.com/znamlab/wayla.git",
         "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git@v0.4",
         "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git@v0.9",
         "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git@v2.0",
