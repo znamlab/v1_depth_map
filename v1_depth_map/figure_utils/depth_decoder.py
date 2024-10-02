@@ -5,7 +5,7 @@ import matplotlib.patheffects as PathEffects
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
-from scipy.stats import wilcoxon
+from scipy.stats import wilcoxon, ttest_rel
 import itertools
 
 from cottage_analysis.analysis import common_utils
