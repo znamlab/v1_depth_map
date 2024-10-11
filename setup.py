@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="v1_depth_map",
-    version="v2.0.1",
+    version="v2.0.2",
     packages=find_packages(),
     url="https://github.com/znamlab/v1_depth_map",
     license="MIT",
