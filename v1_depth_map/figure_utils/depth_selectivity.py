@@ -1,3 +1,5 @@
+## DELETE THIS FILE
+
 import numpy as np
 import pandas as pd
 import matplotlib
@@ -324,18 +326,25 @@ def get_PSTH(
     max_distance=6,  # m
     min_distance=0,
     nbins=20,
+    bins=[],  # if bins are provided, nbins is ignored
     frame_rate=15,
     compute_ci=True,
 ):
     # confidence interval z calculation
     ci_range = 0.95
 
-    if len(depth_list) > 0:
-        all_ci = np.zeros((2, len(depth_list) + 1, nbins))
-    bins = np.linspace(
-        start=min_distance, stop=max_distance, num=nbins + 1, endpoint=True
-    )
-    bin_centers = (bins[1:] + bins[:-1]) / 2
+    if len(bins) == 0:
+        if len(depth_list) > 0:
+            all_ci = np.zeros((2, len(depth_list) + 1, nbins))
+        bins = np.linspace(
+            start=min_distance, stop=max_distance, num=nbins + 1, endpoint=True
+        )
+        bin_centers = (bins[1:] + bins[:-1]) / 2
+    else:
+        nbins = len(bins) - 1
+        if len(depth_list) > 0:
+            all_ci = np.zeros((2, len(depth_list) + 1, len(bins)-1))
+        bin_centers = (bins[1:] + bins[:-1]) / 2
     if len(psth) == 0:
         # choose the trials with closed or open loop to visualize
         trials_df = trials_df[trials_df.closed_loop == is_closed_loop]
@@ -470,6 +479,7 @@ def plot_PSTH(
     corridor_length=6,
     blank_length=0,
     nbins=20,
+    bins=[],  # if bins are provided, nbins is ignored
     rs_thr_min=None,
     rs_thr_max=None,
     still_only=False,
@@ -512,14 +522,19 @@ def plot_PSTH(
         min_distance=min_distance,
         max_distance=max_distance,
         nbins=nbins,
+        bins=bins,
         frame_rate=frame_rate,
     )
 
     if use_col == "RS":
         all_means = all_means * 100  # convert m/s to cm/s
     for idepth, depth in enumerate(depth_list):
-        linecolor = basic_vis_plots.get_depth_color(
-            depth, depth_list, cmap=cm.cool.reversed()
+        linecolor = plotting_utils.get_color(
+            depth_list[idepth], 
+            value_min=np.min(depth_list),
+            value_max=np.max(depth_list),
+            log=True,
+            cmap=cm.cool.reversed()
         )
         plt.plot(
             bin_centers,
@@ -804,6 +819,7 @@ def get_rs_stats_all_sessions(
                 "session",
                 "rs_psth_stim_closedloop",
                 "rs_psth_closedloop",
+                "rs_psth_for_of_closedloop",
                 "rs_mean_trials_closedloop",
                 "rs_mean_closedloop",
                 "rs_psth_stim_openloop",
@@ -821,6 +837,7 @@ def get_rs_stats_all_sessions(
     (
         results_all["rs_psth_stim_closedloop"],
         results_all["rs_psth_closedloop"],
+        results_all["rs_psth_for_of_closedloop"],
         results_all["rs_mean_trials_closedloop"],
         results_all["rs_mean_closedloop"],
         results_all["rs_psth_stim_openloop"],
@@ -830,6 +847,7 @@ def get_rs_stats_all_sessions(
         results_all["rs_correlation_rval_openloop_alldepths"],
         results_all["rs_correlation_pval_openloop_alldepths"],
     ) = (
+        [[np.nan]] * len(results_all),
         [[np.nan]] * len(results_all),
         [[np.nan]] * len(results_all),
         [[np.nan]] * len(results_all),
@@ -979,7 +997,7 @@ def get_rs_stats_all_sessions(
             )
 
         # append results_df
-        results_all.iloc[isess] = results_all.iloc[isess].apply(np.squeeze)
+        # results_all.iloc[isess] = results_all.iloc[isess].apply(np.squeeze)
         results_all.iloc[isess].to_pickle(save_path)
 
     return results_all
@@ -1619,8 +1637,12 @@ def plot_mean_running_speed_alldepths(
         rs_means[rs_means < of_threshold] = of_threshold
     CI_low, CI_high = common_utils.get_bootstrap_ci(rs_means.T, sig_level=0.05)
     for idepth in range(len(depth_list)):
-        color = basic_vis_plots.get_depth_color(
-            depth_list[idepth], depth_list, cmap=cm.cool.reversed()
+        color = plotting_utils.get_color(
+            depth_list[idepth], 
+            value_min=np.min(depth_list),
+            value_max=np.max(depth_list),
+            log=True,
+            cmap=cm.cool.reversed()
         )
         sns.stripplot(
             x=np.ones(rs_means.shape[0]) * idepth,
