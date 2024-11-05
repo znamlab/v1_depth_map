@@ -1,7 +1,9 @@
 import flexiznam as flz
+from cottage_analysis.summary_analysis import get_session_list, rs_stats
 from v1_depth_map.figure_utils import depth_selectivity, get_session_list
 from pathlib import Path
 import warnings
+import numpy as np
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -28,7 +30,7 @@ session_list = get_session_list.get_sessions(
     exclude_pure_closedloop=False,
     mouse_list=mouse_list,
 )
-results_all = depth_selectivity.get_rs_stats_all_sessions(
+results_all = rs_stats.get_rs_stats_all_sessions(
     flexilims_session,
     session_list,
     nbins=60,
