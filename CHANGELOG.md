@@ -1,4 +1,9 @@
 # Change log
+
+## v2.0.3
+### Major changes
+- Add additional analysis to the `additional_analysis` folder.
+
 ## v2.0.2
 ### Major changes
 - Refactored all figure plotting functions by moving core plotting functions to cottage_analysis.
