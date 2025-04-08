@@ -42,6 +42,7 @@ def process_imaging_df(imaging_df, trial_duration=2):
 
     Args:
         imaging_df (pd.DataFrame): Imaging dataframe.
+        trial_duration (float, optional): Duration of a trial in seconds. Defaults to 2.
 
     Returns:
         pd.DataFrame: Imaging dataframe with treadmill information.
