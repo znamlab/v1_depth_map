@@ -12,11 +12,11 @@ from twop_preprocess.calcium import extract_session
 
 project = "colasa_3d-vision_revisions"
 conflicts = "overwrite"
-use_slurm=False
+use_slurm = False
 run_split = True
 run_suite2p = False
 run_dff = True
-delete_previous_run= False
+delete_previous_run = False
 replace_is_cells = False
 
 sessions = {
@@ -90,7 +90,7 @@ for session_name in sessions:
     # delete None values
     ops = {k: v for k, v in ops.items() if v is not None}
     if not any([run_suite2p, run_dff, run_split]):
-        print('Nothing to do with extraction')
+        print("Nothing to do with extraction")
     else:
         extract_session(
             project,
@@ -104,7 +104,6 @@ for session_name in sessions:
             slurm_folder=slurm_folder,
             scripts_name=f"extract_{session_name}",
             delete_previous_run=delete_previous_run,
-            
         )
     if replace_is_cells:
         raise NotImplementedError()

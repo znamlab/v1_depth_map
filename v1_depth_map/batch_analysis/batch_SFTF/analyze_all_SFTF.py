@@ -35,8 +35,8 @@ session_list = [
     # "PZAH10.2f_S20230912",
     # "PZAH10.2f_S20230914",
     # "PZAH10.2f_S20230924",
-    
 ]
+
 
 def main(
     project,

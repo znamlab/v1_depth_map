@@ -17,4 +17,4 @@ source activate base
 conda activate v1_depth_map
 
 cd "/camp/home/hey2/home/codes/3d-vision-analysis-2p/v1_depth_map/precompute_data/"
-python make_depth_tuning_raster.py 
+python make_depth_tuning_raster.py

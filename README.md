@@ -8,7 +8,7 @@ Analysis code for v1 depth map project.
 3. Install this package by `pip install .`.
 
 ## Setting up for offline uses of database
-1. Follow installation instructures for https://github.com/znamlab/flexiznam.git. 
+1. Follow installation instructures for https://github.com/znamlab/flexiznam.git.
 2. Set up config for the `flexiznam` package by `flexiznam config`. The config file should be found at `~/.flexiznam/config.yml`.
 3. Make sure that the path under project_paths points to the path you have downloaded the data. e.g.:
 ```
@@ -25,7 +25,7 @@ offline_yaml: offline_database.json
 
 ## Figure plotting
 1. Run the notebooks under `./v1_depth_map/figures` to plot the corresponding figures.
-2. When first running the figure notebooks, change `reload` to `True` to reload data. 
+2. When first running the figure notebooks, change `reload` to `True` to reload data.
 
 ## Batch analysis
 1. Run the bash script in each folder under `./v1_depth_map/batch_analysis` to conduct corresponding analysis for all sessions.
