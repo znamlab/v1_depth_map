@@ -81,7 +81,7 @@ for session_name in sessions:
         "tau": 0.7,
         "ast_neuropil": False,
         "delete_bin": False,
-        "move_bin": True,
+        "move_bin": False,
         "roidetect": True,
         "flow_threshold": flow_threshold,
         "cellprob_threshold": cellprob_threshold,
