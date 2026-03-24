@@ -1,3 +1,7 @@
+"""
+Helper functions to plot RSOF integration figures.
+"""
+
 import numpy as np
 import matplotlib.pyplot as plt
 from cottage_analysis.plotting import rsof_plots, depth_selectivity_plots
@@ -145,19 +149,19 @@ def plot_expected_depth_vs_treadmill(
 
     # Data is natively in cm (RS: cm/s, OF: rad/s => RS/OF: cm)
     expected_depth = (
-        df["preferred_RS_closedloop_crossval_g2d"]
-        / df["preferred_OF_closedloop_crossval_g2d"]
+        df["preferred_RS_closedloop_crossval_g2d_treadmill"]
+        / df["preferred_OF_closedloop_crossval_g2d_treadmill"]
     )
-    treadmill_depth = df["preferred_depth_closedloop_crossval_treadmill"]
+    treadmill_depth = df["preferred_depth_closedloop_crossval"]
 
     ax.plot(np.log([2, 1000]), np.log([2, 1000]), "--", color="grey")
     sc = ax.scatter(np.log(expected_depth), np.log(treadmill_depth), **kwargs)
     ax.set_aspect("equal")
     ax.set_ylabel(
-        "Preferred depth\nwith treadmill (cm)", fontsize=fontsize_dict["label"]
+        "Preferred depth\nin closed loop (cm)", fontsize=fontsize_dict["label"]
     )
     ax.set_xlabel(
-        "Ratio of preferred RS and OF\nin closed-loop (cm)",
+        "Ratio of preferred RS and OF\nwith treadmill (cm)",
         fontsize=fontsize_dict["label"],
     )
     # Place ticks at the presented depth values
