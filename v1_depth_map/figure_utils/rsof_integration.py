@@ -143,10 +143,10 @@ def plot_expected_depth_vs_treadmill(
     ax, df, fontsize_dict, ticks=(5, 10, 20, 40, 80, 160, 320, 640), **kwargs
 ):
     """
-    Plots the expected closed-loop depth (from preferred RS and OF ratio)
-    vs preferred depth with treadmill.
+    Plots the expected treadmill depth (from preferred RS and OF ratio)
+    vs preferred depth in closed loop.
     """
-
+    ticks = np.asarray(ticks)
     # Data is natively in cm (RS: cm/s, OF: rad/s => RS/OF: cm)
     expected_depth = (
         df["preferred_RS_closedloop_crossval_g2d_treadmill"]
@@ -154,7 +154,12 @@ def plot_expected_depth_vs_treadmill(
     )
     treadmill_depth = df["preferred_depth_closedloop_crossval"]
 
-    ax.plot(np.log([2, 1000]), np.log([2, 1000]), "--", color="grey")
+    ax.plot(
+        np.log([ticks.min(), ticks.max()]),
+        np.log([ticks.min(), ticks.max()]),
+        "--",
+        color="grey",
+    )
     sc = ax.scatter(np.log(expected_depth), np.log(treadmill_depth), **kwargs)
     ax.set_aspect("equal")
     ax.set_ylabel(
