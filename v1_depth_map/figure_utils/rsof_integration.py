@@ -4,6 +4,8 @@ Helper functions to plot RSOF integration figures.
 
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.transforms as transforms
+from matplotlib.patches import Ellipse, Rectangle
 from cottage_analysis.plotting import rsof_plots, depth_selectivity_plots
 
 
@@ -306,3 +308,143 @@ def plot_gaussian_theta_distribution(
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
 
     return ax
+
+
+def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True):
+    """
+    Add oriented, gradient-filled ellipses to a polar plot to visualize tuning markers and eccentricity scales.
+
+    Args:
+        ax (matplotlib.axes.PolarAxes): The polar axes to which the ellipses will be added.
+        plot_angle (bool, optional): Whether to plot the orientation ellipses around the
+            perimeter. Default is True.
+        plot_ecc (bool, optional): Whether to plot the eccentricity legend ellipses along a
+            radial axis. Default is True.
+        frame (bool, optional): Whether to draw a white rectangle with a thin black border
+            around each ellipse. Default is True.
+    """
+    fig = ax.get_figure()
+
+    # PLOT ANGLE ELLIPSES
+    # Fixed frame size (same for every angle ellipse), in axes-fraction units
+    size = 0.1  # Roughly the size of the label text
+
+    if plot_angle:
+        ecc = 0.95
+        ratio = np.sqrt(1 - ecc**2)
+
+        r_pos = 1.22  # Just outside the r=1 limit
+        for angle, theta_pos in zip([-45, 0, 45, 90, 135], [45, 90, -45, 0, 135]):
+            angle = 0  # vertical orientation
+            theta_pos = np.radians(theta_pos)
+            # Blended transform: position in data (polar) coords, shape in axes-fraction units
+            trans = ax.get_xaxis_transform()
+            # Optional frame — drawn BEFORE gradient layers so it sits behind the ellipse
+            if frame:
+                point_to_pixel = transforms.Affine2D().scale(fig.dpi / 72.0)
+                anchor = transforms.ScaledTranslation(
+                    theta_pos, r_pos, ax.get_xaxis_transform()
+                )
+                frame_trans = point_to_pixel + anchor
+                frame_half_pts = 10  # same as eccentricity frames → consistent look
+                rect = Rectangle(
+                    xy=(-frame_half_pts, -frame_half_pts),
+                    width=frame_half_pts * 1.8,
+                    height=frame_half_pts * 2,
+                    facecolor="white",
+                    edgecolor="black",
+                    linewidth=0.5,
+                    transform=frame_trans,
+                    clip_on=False,
+                )
+                ax.add_patch(rect)
+            # Draw concentric ellipses for a "gradient" effect
+            n_layers = 15
+            for i in range(n_layers):
+                alpha = (i + 1) / n_layers
+                scale = 1 - (i / n_layers) * 0.8
+                el = Ellipse(
+                    xy=(theta_pos, r_pos),
+                    width=size * scale * ratio,
+                    height=size * scale,
+                    angle=angle,
+                    facecolor="red",
+                    alpha=alpha * 0.3,
+                    edgecolor="none",
+                    transform=trans,
+                    clip_on=False,
+                )
+                ax.add_patch(el)
+            # Core ellipse for sharpness
+            core_el = Ellipse(
+                xy=(theta_pos, r_pos),
+                width=size * 0.2 * ratio,
+                height=size * 0.2,
+                angle=angle,
+                facecolor="red",
+                alpha=0.5,
+                edgecolor="none",
+                transform=trans,
+                clip_on=False,
+            )
+            ax.add_patch(core_el)
+    if plot_ecc:
+        # PLOT CIRCULARITY ELLIPSES
+        eccs_leg = [0.2, 0.4, 0.6, 0.8]
+        r_leg = [0.3, 0.46, 0.65, 0.82]
+        theta_val = [-1.8, -1.35, -1.2, -1.1]
+        size_pts = 10
+        angle_leg = 45
+        # Fixed square frame of side 2*frame_half_pts points (same for all eccentricities).
+        # size_pts=10 is enough to enclose even the most eccentric ellipse (ecc=0.8)
+        # rotated at 45°: its bounding half-size is only ~7 pts.
+        frame_half_pts = size_pts
+        for ecc, r_pos, theta in zip(eccs_leg, r_leg, theta_val):
+            ratio = np.sqrt(1 - ecc**2)
+            data_to_pixel = transforms.ScaledTranslation(theta, r_pos, ax.transData)
+            point_to_pixel = transforms.Affine2D().scale(fig.dpi / 72.0)
+            trans = point_to_pixel + data_to_pixel
+            size_ = size_pts / ratio
+            # Optional frame — drawn BEFORE gradient layers so it sits behind the ellipse
+            if frame:
+                rect = Rectangle(
+                    xy=(-frame_half_pts, -frame_half_pts),
+                    width=frame_half_pts * 1.8,
+                    height=frame_half_pts * 2,
+                    facecolor="white",
+                    edgecolor="black",
+                    linewidth=0.5,
+                    transform=trans,
+                    clip_on=False,
+                )
+                ax.add_patch(rect)
+            # Draw concentric ellipses
+            n_layers = 15
+            for i in range(n_layers):
+                alpha = (i + 1) / n_layers
+                scale = 1 - (i / n_layers) * 0.8
+                el = Ellipse(
+                    xy=(0, 0),
+                    width=size_ * scale * ratio,
+                    height=size_ * scale,
+                    angle=angle_leg,
+                    facecolor="red",
+                    alpha=alpha * 0.25,
+                    edgecolor="none",
+                    transform=trans,
+                    clip_on=False,
+                )
+                ax.add_patch(el)
+            # Core
+            core_el = Ellipse(
+                xy=(0, 0),
+                width=size_ * 0.2 * ratio,
+                height=size_ * 0.2,
+                angle=angle_leg,
+                facecolor="red",
+                alpha=0.6,
+                edgecolor="none",
+                transform=trans,
+                clip_on=False,
+            )
+            ax.add_patch(core_el)
