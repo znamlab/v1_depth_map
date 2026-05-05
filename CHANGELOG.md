@@ -1,5 +1,11 @@
 # Change log
 
+## v2.0.4
+### Major changes
+- Enhanced treadmill depth comparison visualization with statistical overlays (Pearson/Spearman) and regression fits.
+- Added scaling support for polar schematic overlays in `rsof_integration.py`.
+- Refined treadmill analysis notebook with publication-quality figure exports and standardized styling.
+
 ## v2.0.3
 ### Major changes
 - Add additional analysis to the `additional_analysis` folder.

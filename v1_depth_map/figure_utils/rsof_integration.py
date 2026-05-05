@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
 from matplotlib.patches import Ellipse, Rectangle
+from scipy import stats
 from cottage_analysis.plotting import rsof_plots, depth_selectivity_plots
 
 
@@ -142,7 +143,15 @@ def plot_example_neuron_rsof(
 
 
 def plot_expected_depth_vs_treadmill(
-    ax, df, fontsize_dict, ticks=(5, 10, 20, 40, 80, 160, 320, 640), **kwargs
+    ax,
+    df,
+    fontsize_dict,
+    ticks=[0.01, 0.1, 1, 10, 100],
+    plot_stats=True,
+    plot_fit=True,
+    plot_unity=False,
+    stat_type="pearson",
+    **kwargs,
 ):
     """
     Plots the expected treadmill depth (from preferred RS and OF ratio)
@@ -156,13 +165,58 @@ def plot_expected_depth_vs_treadmill(
     )
     treadmill_depth = df["preferred_depth_closedloop_crossval"]
 
-    ax.plot(
-        np.log([ticks.min(), ticks.max()]),
-        np.log([ticks.min(), ticks.max()]),
-        "--",
-        color="grey",
-    )
-    sc = ax.scatter(np.log(expected_depth), np.log(treadmill_depth), **kwargs)
+    x = np.log(expected_depth)
+    y = np.log(treadmill_depth)
+
+    sc = ax.scatter(x, y, **kwargs)
+
+    if plot_stats:
+        # Remove NaNs if any
+        mask = ~np.isnan(x) & ~np.isnan(y)
+
+        if stat_type == "pearson":
+            slope, intercept, r_value, p_value, std_err = stats.linregress(
+                x[mask], y[mask]
+            )
+            r_str = f"$r^2$ = {r_value**2:.2f}"
+            p_val_to_format = p_value
+        elif stat_type == "spearman":
+            r_val, p_val = stats.spearmanr(x[mask], y[mask])
+            r_str = f"Spearman $r$ = {r_val:.2f}"
+            p_val_to_format = p_val
+            # Still need slope for the fit line if requested
+            if plot_fit:
+                slope, intercept, _, _, _ = stats.linregress(x[mask], y[mask])
+
+        if p_val_to_format < 0.001:
+            exponent = int(np.floor(np.log10(p_val_to_format)))
+            coeff = p_val_to_format / 10**exponent
+            p_str = f"$p = {coeff:.1f} \\times 10^{{{exponent}}}$"
+        else:
+            p_str = f"$p = {p_val_to_format:.3f}$"
+
+        stats_text = f"{r_str}\n{p_str}"
+
+        # Place text on the plot
+        ax.text(
+            0.05,
+            0.95,
+            stats_text,
+            transform=ax.transAxes,
+            verticalalignment="top",
+            fontsize=fontsize_dict.get("legend", 12),
+        )
+
+        # Plot the trendline
+        if plot_fit:
+            # Use a wide range to ensure it covers the plot area
+            x_range = np.array([-10, 10])
+            ax.plot(x_range, intercept + slope * x_range, color="grey", linestyle="--")
+
+    if plot_unity:
+        x_range = np.array([-10, 10])
+        ax.plot(x_range, x_range, color="grey", linestyle=":", zorder=-1)
+
     ax.set_aspect("equal")
     ax.set_ylabel(
         "Preferred depth\nin closed loop (cm)", fontsize=fontsize_dict["label"]
@@ -200,7 +254,7 @@ def plot_treadmill_vs_closedloop_comparison(
         "of_bin_num": 11,
         "log_base": 10,
     },
-    **kwargs
+    **kwargs,
 ):
     """
     Plots side-by-side matrices for Closed-loop and Treadmill.
@@ -310,7 +364,7 @@ def plot_gaussian_theta_distribution(
     return ax
 
 
-def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True):
+def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale=1.0):
     """
     Add oriented, gradient-filled ellipses to a polar plot to visualize tuning markers and eccentricity scales.
 
@@ -322,12 +376,14 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True):
             radial axis. Default is True.
         frame (bool, optional): Whether to draw a white rectangle with a thin black border
             around each ellipse. Default is True.
+        scale (float, optional): Scaling factor for the size of the ellipses and frames.
+            Default is 1.0.
     """
     fig = ax.get_figure()
 
     # PLOT ANGLE ELLIPSES
     # Fixed frame size (same for every angle ellipse), in axes-fraction units
-    size = 0.1  # Roughly the size of the label text
+    size = 0.1 * scale  # Roughly the size of the label text
 
     if plot_angle:
         ecc = 0.95
@@ -346,7 +402,9 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True):
                     theta_pos, r_pos, ax.get_xaxis_transform()
                 )
                 frame_trans = point_to_pixel + anchor
-                frame_half_pts = 10  # same as eccentricity frames → consistent look
+                frame_half_pts = (
+                    10 * scale
+                )  # same as eccentricity frames → consistent look
                 rect = Rectangle(
                     xy=(-frame_half_pts, -frame_half_pts),
                     width=frame_half_pts * 1.8,
@@ -362,11 +420,11 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True):
             n_layers = 15
             for i in range(n_layers):
                 alpha = (i + 1) / n_layers
-                scale = 1 - (i / n_layers) * 0.8
+                scale_el = 1 - (i / n_layers) * 0.8
                 el = Ellipse(
                     xy=(theta_pos, r_pos),
-                    width=size * scale * ratio,
-                    height=size * scale,
+                    width=size * scale_el * ratio,
+                    height=size * scale_el,
                     angle=angle,
                     facecolor="red",
                     alpha=alpha * 0.3,
@@ -393,7 +451,7 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True):
         eccs_leg = [0.2, 0.4, 0.6, 0.8]
         r_leg = [0.3, 0.46, 0.65, 0.82]
         theta_val = [-1.8, -1.35, -1.2, -1.1]
-        size_pts = 10
+        size_pts = 10 * scale
         angle_leg = 45
         # Fixed square frame of side 2*frame_half_pts points (same for all eccentricities).
         # size_pts=10 is enough to enclose even the most eccentric ellipse (ecc=0.8)
@@ -422,11 +480,11 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True):
             n_layers = 15
             for i in range(n_layers):
                 alpha = (i + 1) / n_layers
-                scale = 1 - (i / n_layers) * 0.8
+                scale_el = 1 - (i / n_layers) * 0.8
                 el = Ellipse(
                     xy=(0, 0),
-                    width=size_ * scale * ratio,
-                    height=size_ * scale,
+                    width=size_ * scale_el * ratio,
+                    height=size_ * scale_el,
                     angle=angle_leg,
                     facecolor="red",
                     alpha=alpha * 0.25,
