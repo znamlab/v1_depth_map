@@ -1,6 +1,6 @@
 [build-system]
 requires = ["setuptools>=64", "setuptools-scm>=8"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "v1_depth_map"
@@ -43,9 +43,7 @@ dependencies = [
 where = ["."]
 
 [tool.setuptools_scm]
-# Write version to a _version.py file so it's importable at runtime
-write_to = "v1_depth_map/_version.py"
-# Use git tags as-is (strips the leading 'v' automatically)
-tag_scheme = "only-version"
+# Write version to _version.py so it's importable at runtime
+version_file = "v1_depth_map/_version.py"
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
