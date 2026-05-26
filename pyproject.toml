@@ -16,7 +16,7 @@ urls = { Homepage = "https://github.com/znamlab/v1_depth_map" }
 requires-python = ">=3.8"
 dependencies = [
     "numpy",
-    "pandas",
+    "pandas<3",
     "pathlib",
     "seaborn",
     "matplotlib",
@@ -28,9 +28,9 @@ dependencies = [
     "defopt",
     "roifile",
     "wayla @ git+ssh://git@github.com/znamlab/wayla.git",
-    "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git@v0.4",
-    "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git@v0.9",
-    "cottage_analysis @ git+ssh://git@github.com/znamlab/cottage_analysis.git@v2.0",
+    "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git",
+    "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git",
+    "cottage_analysis",
 ]
 
 [project.optional-dependencies]
