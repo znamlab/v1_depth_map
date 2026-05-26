@@ -364,7 +364,9 @@ def plot_gaussian_theta_distribution(
     return ax
 
 
-def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale=1.0):
+def add_ellipse_schematics(
+    ax, plot_angle=True, plot_ecc=True, frame=True, scale=1.0, rasterized=False
+):
     """
     Add oriented, gradient-filled ellipses to a polar plot to visualize tuning markers and eccentricity scales.
 
@@ -378,6 +380,8 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale
             around each ellipse. Default is True.
         scale (float, optional): Scaling factor for the size of the ellipses and frames.
             Default is 1.0.
+        rasterized (bool, optional): Whether to rasterize the ellipses and frames.
+            Default is False.
     """
     fig = ax.get_figure()
 
@@ -414,6 +418,7 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale
                     linewidth=0.5,
                     transform=frame_trans,
                     clip_on=False,
+                    rasterized=rasterized,
                 )
                 ax.add_patch(rect)
             # Draw concentric ellipses for a "gradient" effect
@@ -431,6 +436,7 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale
                     edgecolor="none",
                     transform=trans,
                     clip_on=False,
+                    rasterized=rasterized,
                 )
                 ax.add_patch(el)
             # Core ellipse for sharpness
@@ -444,6 +450,7 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale
                 edgecolor="none",
                 transform=trans,
                 clip_on=False,
+                rasterized=rasterized,
             )
             ax.add_patch(core_el)
     if plot_ecc:
@@ -474,6 +481,7 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale
                     linewidth=0.5,
                     transform=trans,
                     clip_on=False,
+                    rasterized=rasterized,
                 )
                 ax.add_patch(rect)
             # Draw concentric ellipses
@@ -491,6 +499,7 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale
                     edgecolor="none",
                     transform=trans,
                     clip_on=False,
+                    rasterized=rasterized,
                 )
                 ax.add_patch(el)
             # Core
@@ -504,5 +513,6 @@ def add_ellipse_schematics(ax, plot_angle=True, plot_ecc=True, frame=True, scale
                 edgecolor="none",
                 transform=trans,
                 clip_on=False,
+                rasterized=rasterized,
             )
             ax.add_patch(core_el)
