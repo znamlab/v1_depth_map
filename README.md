@@ -2,10 +2,10 @@
 Analysis code for v1 depth map project.
 
 ## Installation
-1. Create an empty environment `conda create --name <env_name>`
-2. Activate the environment by `conda activate <env_name>`.
+1. Create an empty environment `conda create --name v1_depth_map "python==3.12"`
+2. Activate the environment by `conda activate v1_depth_map`.
 3. Install pip `conda install pip`.
-3. Install this package by `pip install .`.
+3. Install this package by `pip install .` (add `[figures]` for plotting). 
 
 ## Setting up for offline uses of database
 1. Follow installation instructures for https://github.com/znamlab/flexiznam.git.
