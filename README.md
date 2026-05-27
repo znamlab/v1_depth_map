@@ -34,3 +34,25 @@ offline_yaml: offline_database.json
 
 ## Precompute data
 1. To precompute data for plotting figures, run the corresponding bash script.
+
+## Re-downloading and Syncing Data / Database (for Lab Members)
+
+If the database has been updated or you need to download/sync the figures and revisions dataset to a new local directory (e.g., an external drive like `/Volumes/BlackPasspo/v1_depth_map`), follow these steps:
+
+### 1. Re-download and Merging the Database Snapshots
+To update the offline registry (`offline_database.json`), you must be connected to the Crick VPN/network. Run:
+```bash
+python v1_depth_map/precompute_data/download_database.py
+```
+This script connects to live `flexilims` server, downloads up-to-date snapshots for both the figures project (`hey2_3d-vision_foodres_20220101`) and the revisions project (`colasa_3d-vision_revisions`), merges them, and saves the file to `<v1_depth_map_processed_root>/offline_database.json`.
+
+### 2. Syncing Figures and Revisions Data
+To sync or update the target raw and processed dataset directories (excluding massive raw video sequences and raw TIFF files to save time and space), use the automated sync utility:
+```bash
+python v1_depth_map/revisions/copy_v1_figures_data.py /path/to/destination --skip-existing
+```
+* **Arguments**:
+  * `dest` (positional): The target directory where `raw` and `processed` data folders will be created (e.g., `/Volumes/BlackPasspo/v1_depth_map`).
+  * `--skip-existing`: Skip copying files that already exist in the target directory to resume or accelerate a sync run.
+  * `--dry-run`: Display all source-to-destination paths that would be copied without making any modifications.
+
