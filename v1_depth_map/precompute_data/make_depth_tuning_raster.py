@@ -1,6 +1,7 @@
 import flexiznam as flz
-from v1_depth_map.figure_utils import depth_selectivity, get_session_list
-from pathlib import Path
+from v1_depth_map.figure_utils import depth_selectivity
+from cottage_analysis.summary_analysis import get_session_list
+from v1_depth_map.paths import get_precompute_root
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -52,12 +53,6 @@ results_all = depth_selectivity.get_psth_crossval_all_sessions(
     blank_length=3,
     overwrite=True,
 )
-VERSION = 10
-SAVE_ROOT = (
-    flz.get_data_root("processed", flexilims_session=flexilims_session)
-    / "v1_manuscript_2023"
-    / f"ver{VERSION}"
-    / "fig1"
-)
+SAVE_ROOT = get_precompute_root(flexilims_session, fig_subdir="fig1")
 SAVE_ROOT.mkdir(parents=True, exist_ok=True)
 results_all.to_pickle(SAVE_ROOT / "results_all_psth.pickle")
