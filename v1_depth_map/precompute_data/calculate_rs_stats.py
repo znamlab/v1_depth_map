@@ -1,9 +1,7 @@
 import flexiznam as flz
 from cottage_analysis.summary_analysis import get_session_list, rs_stats
-from v1_depth_map.figure_utils import depth_selectivity, get_session_list
-from pathlib import Path
+from v1_depth_map.paths import get_precompute_root
 import warnings
-import numpy as np
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
@@ -43,12 +41,6 @@ results_all = rs_stats.get_rs_stats_all_sessions(
     overwrite=True,
 )
 
-VERSION = 10
-SAVE_ROOT = (
-    flz.get_data_root("processed", flexilims_session=flexilims_session)
-    / "v1_manuscript_2023"
-    / f"ver{VERSION}"
-    / "supp"
-)
+SAVE_ROOT = get_precompute_root(flexilims_session, fig_subdir="supp")
 SAVE_ROOT.mkdir(parents=True, exist_ok=True)
 results_all.to_pickle(SAVE_ROOT / "results_all_rs_supp.pickle")
