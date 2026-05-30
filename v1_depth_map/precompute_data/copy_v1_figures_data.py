@@ -69,9 +69,14 @@ def copy_processed_session(flm_sess, session_name, dest_processed_dir):
     # 1. simulated responses
     for p in src_neurons_path.parent.glob("*.parquet"):
         paths_to_copy.add(p)
+
+    # 1b. per-session decoder results (read by depth_decoder_stats.concatenate_all_decoder_results)
+    decoder_pickle = src_neurons_path.parent / "decoder_results.pickle"
+    if decoder_pickle.exists():
+        paths_to_copy.add(decoder_pickle)
             
     # 2. suite2p stat/iscell/ops/dff — copy from the anatomical_only:3 ROI set
-    # The notebook loads stat/iscell via filter_datasets={"anatomical_only": 3} (no
+    # The notebook loads stat/iscell via filter_datasets={"anatomical_only": 3, "ast_neuropil":False} (no
     # ast_neuropil constraint), so we must match that here.
     # First try: figures project filter (anatomical_only:3), any ast_neuropil value.
     # Second try: revisions project filter (annotated:True), any ast_neuropil value.
@@ -232,8 +237,24 @@ def copy_raw_session(flm_sess, session_name, dest_raw_dir, protocols):
         datasets = flz.get_children(parent_id=rec.id, flexilims_session=flm_sess, children_datatype="dataset")
         for _, ds in datasets.iterrows():
             dataset_obj = flz.Dataset.from_flexilims(id=ds.id, flexilims_session=flm_sess)
-            if hasattr(dataset_obj, "path_full") and dataset_obj.path_full.exists():
-                paths_to_copy.add(dataset_obj.path_full)
+            if hasattr(dataset_obj, "path_full"):
+                # When running in --offline mode, dataset_obj.path_full resolves to local BlackPasspo path.
+                # Since the folder doesn't exist locally yet, we must check existence on the mounted server volumes first.
+                path_exists = False
+                if hasattr(dataset_obj, "path") and dataset_obj.path:
+                    for s_root in [
+                        Path("/Volumes/proj-znamenp-3dvision/raw"),
+                        Path("/Volumes/lab-znamenskiyp/home/shared/projects"),
+                        Path("/Volumes/lab-znamenskiyp/data/instruments/raw_data/projects"),
+                    ]:
+                        if (s_root / dataset_obj.path).exists():
+                            path_exists = True
+                            break
+                if not path_exists:
+                    path_exists = dataset_obj.path_full.exists()
+                    
+                if path_exists:
+                    paths_to_copy.add(dataset_obj.path_full)
                 
     return paths_to_copy
 
@@ -275,6 +296,7 @@ def main():
     parser.add_argument("--src-project", type=str, default="hey2_3d-vision_foodres_20220101", help="Flexilims project name.")
     parser.add_argument("--skip-existing", action="store_true", help="Skip existing files.")
     parser.add_argument("--dry-run", action="store_true", help="Print the paths that would be copied without copying.")
+    parser.add_argument("--offline", action="store_true", help="Run in offline mode using the local offline database JSON.")
     args = parser.parse_args()
 
     dest = Path(args.dest)
@@ -293,7 +315,7 @@ def main():
             dest_rev_raw.mkdir(parents=True, exist_ok=True)
 
     print("Connecting to flexilims for figures project...")
-    flm_sess = flz.get_flexilims_session(project_id=args.src_project, offline_mode=False)
+    flm_sess = flz.get_flexilims_session(project_id=args.src_project, offline_mode=args.offline)
     
     # Retrieve DB paths (which may be redirected to local BlackPasspo)
     processed_root_flz = flz.get_data_root("processed", flexilims_session=flm_sess)
@@ -330,39 +352,44 @@ def main():
     )
     print(f"Found {len(notebook_sessions)} sessions used in notebooks.")
     
+    from tqdm import tqdm
     print("Discovering figures project session datasets...")
-    for sess_name in notebook_sessions:
+    for sess_name in tqdm(notebook_sessions, desc="Discovering figures", unit="session"):
+        try:
+            # A. Processed copy
+            processed_paths, s2p_suffix = copy_processed_session(flm_sess, sess_name, dest_processed)
+            if processed_paths:
+                for p in processed_paths:
+                    src_p, target, _ = resolve_src_and_target(
+                        p, processed_root_flz, raw_root_flz, 
+                        processed_root, raw_root, dest_processed, dest_raw
+                    )
+                    if src_p:
+                        all_paths_to_copy.append((src_p, target, "file"))
 
-        # A. Processed copy
-        processed_paths, s2p_suffix = copy_processed_session(flm_sess, sess_name, dest_processed)
-        if processed_paths:
-            for p in processed_paths:
+            # B. Raw metadata & video copy
+            raw_paths = copy_raw_session(flm_sess, sess_name, dest_raw, ["SpheresPermTubeReward", "SizeControl"])
+            for p in raw_paths:
                 src_p, target, _ = resolve_src_and_target(
                     p, processed_root_flz, raw_root_flz, 
                     processed_root, raw_root, dest_processed, dest_raw
                 )
-                if src_p:
+                if not src_p:
+                    print(f"WARNING: Path {p} is outside raw and processed roots. Skipping.")
+                    continue
+
+                if src_p.is_file():
+                    # Avoid copying heavy videos unless it's the exact eye tracking calibration session
+                    if "video_file" in src_p.name or src_p.suffix in [".mp4", ".avi", ".tif"]:
+                        if sess_name != "PZAG3.4f_S20220421": 
+                            continue
                     all_paths_to_copy.append((src_p, target, "file"))
-
-        # B. Raw metadata & video copy
-        raw_paths = copy_raw_session(flm_sess, sess_name, dest_raw, ["SpheresPermTubeReward", "SizeControl"])
-        for p in raw_paths:
-            src_p, target, _ = resolve_src_and_target(
-                p, processed_root_flz, raw_root_flz, 
-                processed_root, raw_root, dest_processed, dest_raw
-            )
-            if not src_p:
-                print(f"WARNING: Path {p} is outside raw and processed roots. Skipping.")
+                elif src_p.is_dir():
+                    all_paths_to_copy.append((src_p, target, ("custom_dir", s2p_suffix)))
+        except Exception as e:
+            if "Project must match" in str(e):
                 continue
-
-            if src_p.is_file():
-                # Avoid copying heavy videos unless it's the exact eye tracking calibration session
-                if "video_file" in src_p.name or src_p.suffix in [".mp4", ".avi", ".tif"]:
-                    if sess_name != "PZAG3.4f_S20220421": 
-                        continue
-                all_paths_to_copy.append((src_p, target, "file"))
-            elif src_p.is_dir():
-                all_paths_to_copy.append((src_p, target, ("custom_dir", s2p_suffix)))
+            raise
 
     # Revisions project discovery
     print("Connecting to flexilims for revisions project...")
@@ -370,10 +397,10 @@ def main():
         from v1_depth_map.revisions.revision_sessions import sessions as rev_sessions
     except ImportError:
         import sys
-        sys.path.append(str(Path(__file__).parent))
+        sys.path.append(str(Path(__file__).resolve().parent.parent.parent))
         from v1_depth_map.revisions.revision_sessions import sessions as rev_sessions
 
-    flm_rev = flz.get_flexilims_session(project_id="colasa_3d-vision_revisions", offline_mode=False)
+    flm_rev = flz.get_flexilims_session(project_id="colasa_3d-vision_revisions", offline_mode=args.offline)
     processed_root_rev_flz = flz.get_data_root("processed", flexilims_session=flm_rev)
     raw_root_rev_flz = flz.get_data_root("raw", flexilims_session=flm_rev)
     
@@ -381,35 +408,40 @@ def main():
     raw_root_rev = Path("/Volumes/lab-znamenskiyp/data/instruments/raw_data/projects")
 
     print("Discovering revisions project session datasets...")
-    for sess_name, protocol in rev_sessions.items():
-        # A. Processed copy
-        processed_paths, s2p_suffix = copy_processed_session(flm_rev, sess_name, dest_rev_processed)
-        if processed_paths:
-            for p in processed_paths:
+    for sess_name, protocol in tqdm(rev_sessions.items(), desc="Discovering revisions", unit="session"):
+        try:
+            # A. Processed copy
+            processed_paths, s2p_suffix = copy_processed_session(flm_rev, sess_name, dest_rev_processed)
+            if processed_paths:
+                for p in processed_paths:
+                    src_p, target, _ = resolve_src_and_target(
+                        p, processed_root_rev_flz, raw_root_rev_flz, 
+                        processed_root_rev, raw_root_rev, dest_rev_processed, dest_rev_raw
+                    )
+                    if src_p:
+                        all_paths_to_copy.append((src_p, target, "file"))
+
+            # B. Raw metadata copy (no videos/tiffs needed for revision notebooks)
+            raw_paths = copy_raw_session(flm_rev, sess_name, dest_rev_raw, ["SpheresTubeMotor", "SpheresPermTubeReward"])
+            for p in raw_paths:
                 src_p, target, _ = resolve_src_and_target(
                     p, processed_root_rev_flz, raw_root_rev_flz, 
                     processed_root_rev, raw_root_rev, dest_rev_processed, dest_rev_raw
                 )
-                if src_p:
-                    all_paths_to_copy.append((src_p, target, "file"))
-
-        # B. Raw metadata copy (no videos/tiffs needed for revision notebooks)
-        raw_paths = copy_raw_session(flm_rev, sess_name, dest_rev_raw, ["SpheresTubeMotor", "SpheresPermTubeReward"])
-        for p in raw_paths:
-            src_p, target, _ = resolve_src_and_target(
-                p, processed_root_rev_flz, raw_root_rev_flz, 
-                processed_root_rev, raw_root_rev, dest_rev_processed, dest_rev_raw
-            )
-            if not src_p:
-                print(f"WARNING: Path {p} is outside raw and processed roots. Skipping.")
-                continue
-
-            if src_p.is_file():
-                if "video_file" in src_p.name or src_p.suffix in [".mp4", ".avi", ".tif"]:
+                if not src_p:
+                    print(f"WARNING: Path {p} is outside raw and processed roots. Skipping.")
                     continue
-                all_paths_to_copy.append((src_p, target, "file"))
-            elif src_p.is_dir():
-                all_paths_to_copy.append((src_p, target, ("custom_dir", s2p_suffix)))
+
+                if src_p.is_file():
+                    if "video_file" in src_p.name or src_p.suffix in [".mp4", ".avi", ".tif"]:
+                        continue
+                    all_paths_to_copy.append((src_p, target, "file"))
+                elif src_p.is_dir():
+                    all_paths_to_copy.append((src_p, target, ("custom_dir", s2p_suffix)))
+        except Exception as e:
+            if "Project must match" in str(e):
+                continue
+            raise
 
     print(f"Total paths discovered: {len(all_paths_to_copy)}")
 
@@ -423,25 +455,24 @@ def main():
 
     # Copy files
     print(f"Syncing files to {dest}...")
-    for src, target, mode in sorted(all_paths_to_copy):
+    from tqdm import tqdm
+    pbar = tqdm(sorted(all_paths_to_copy), desc="Syncing files", unit="item")
+    for src, target, mode in pbar:
+        pbar.set_description(f"Syncing {src.name}")
         if not src.exists():
-            print(f"WARNING: Source {src} does not exist. Skipping.")
+            pbar.write(f"WARNING: Source {src} does not exist. Skipping.")
             continue
 
         if mode == "file":
             target.parent.mkdir(parents=True, exist_ok=True)
             if args.skip_existing and target.exists():
-                print(f"Skipping file {src.name} (exists)")
                 continue
             robust_copy2(src, target)
-            print(f"Copied file {src.name}")
 
         elif mode == "dir":
             if args.skip_existing and target.exists():
-                print(f"Skipping dir {src.name} (exists)")
                 continue
             robust_copytree(src, target)
-            print(f"Copied directory {src.name}")
 
         elif isinstance(mode, tuple) and mode[0] == "custom_dir":
             s2p_suffix = mode[1]
@@ -472,6 +503,7 @@ def main():
                     "face_camera_timestamps.csv", "butt_camera_timestamps.csv",
                 }
 
+            prefix = f"{sess_name}_{src.name}_"
             copied_count = 0
             if src.exists():
                 for p_file in src.iterdir():
@@ -479,10 +511,15 @@ def main():
                         fname = p_file.name
                         if fname.startswith("._"):
                             continue
+                        # Strip recording prefix if present (common in older protocol-2 mice)
+                        clean_fname = fname
+                        if sess_name and fname.startswith(prefix):
+                            clean_fname = fname[len(prefix):]
+
                         is_allowed = (
-                            fname in allowed_filenames
-                            or fname.startswith("NewParams_")
-                            or fname.startswith("ParamLog_")
+                            clean_fname in allowed_filenames
+                            or clean_fname.startswith("NewParams_")
+                            or clean_fname.startswith("ParamLog_")
                         )
                         if is_allowed:
                             target_file = target / fname
@@ -505,8 +542,7 @@ def main():
                     if args.skip_existing and target_sub.exists():
                         continue
                     robust_copytree(src_sub, target_sub, ignore=suite2p_traces_ignore)
-            print(f"Synced metadata and traces for {src.name} ({copied_count} files)")
-
+            
     print("Data sync successfully completed!")
 
 if __name__ == "__main__":
