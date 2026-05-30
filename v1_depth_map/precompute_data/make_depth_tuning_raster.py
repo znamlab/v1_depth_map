@@ -1,7 +1,7 @@
 import flexiznam as flz
-from v1_depth_map.figure_utils import depth_selectivity
+from cottage_analysis.summary_analysis import depth_responses
 from cottage_analysis.summary_analysis import get_session_list
-from v1_depth_map.paths import get_precompute_root
+from v1_depth_map.paths import get_figures_roots
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -31,7 +31,7 @@ session_list = get_session_list.get_sessions(
     trialnum_min=10,
     mouse_list=mouse_list,
 )
-results_all = depth_selectivity.get_psth_crossval_all_sessions(
+results_all = depth_responses.get_psth_crossval_all_sessions(
     flexilims_session,
     session_list,
     nbins=60,
@@ -53,6 +53,6 @@ results_all = depth_selectivity.get_psth_crossval_all_sessions(
     blank_length=3,
     overwrite=True,
 )
-SAVE_ROOT = get_precompute_root(flexilims_session, fig_subdir="fig1")
+_, SAVE_ROOT = get_figures_roots(flexilims_session, fig_subdir="fig1")
 SAVE_ROOT.mkdir(parents=True, exist_ok=True)
 results_all.to_pickle(SAVE_ROOT / "results_all_psth.pickle")
