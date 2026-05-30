@@ -46,7 +46,7 @@ def get_si_metadata(flexilims_session, session):
             flexilims_session=flexilims_session,
             origin_name=recording.name,
             dataset_type="suite2p_traces",
-            filter_datasets={"anatomical_only": 3},
+            filter_datasets={"anatomical_only": 3, "ast_neuropil":False},
             allow_multiple=False,
             return_dataseries=False,
         )
