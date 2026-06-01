@@ -36,7 +36,7 @@ def suite2p_traces_ignore(dirpath, filenames):
     ignore_list = []
     for fname in filenames:
         if fname.endswith(".npy"):
-            if fname not in ["dff.npy", "dff_ast.npy", "iscell.npy", "ops.npy", "stat.npy", "spks.npy"]:
+            if fname not in ["dff.npy", "dff_ast.npy", "iscell.npy", "ops.npy", "stat.npy", "spks.npy", "si_metadata.npy"]:
                 ignore_list.append(fname)
         elif fname.endswith(".tif") or fname.endswith(".mp4") or fname.startswith("._"):
             ignore_list.append(fname)
@@ -143,6 +143,10 @@ def copy_processed_session(flm_sess, session_name, dest_processed_dir):
                     fpath = plane_dir / fname
                     if fpath.exists():
                         paths_to_copy.add(fpath)
+        # Also copy si_metadata.npy if it exists in the root
+        meta_path = src_suite2p_path / "si_metadata.npy"
+        if meta_path.exists():
+            paths_to_copy.add(meta_path)
                         
     # 3. suite2p_traces with ast_neuropil:False at recording level
     # Some sessions have suite2p_traces registered directly under recordings (not session)
@@ -187,6 +191,10 @@ def copy_processed_session(flm_sess, session_name, dest_processed_dir):
                                 fpath = plane_dir / fname
                                 if fpath.exists():
                                     paths_to_copy.add(fpath)
+                    # Also copy si_metadata.npy if it exists in the root
+                    meta_path = src_traces_path / "si_metadata.npy"
+                    if meta_path.exists():
+                        paths_to_copy.add(meta_path)
 
     # 4. monitor_frames_df
     monitor_frames_ds = flz.get_datasets(
