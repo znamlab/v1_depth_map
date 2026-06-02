@@ -27,6 +27,8 @@ dependencies = [
     "scikit-image",
     "defopt",
     "roifile",
+    "pyarrow",
+    "fastparquet",
     "wayla @ git+ssh://git@github.com/znamlab/wayla.git",
     "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git",
     "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git",
