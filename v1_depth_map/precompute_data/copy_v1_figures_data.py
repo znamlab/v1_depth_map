@@ -30,7 +30,13 @@ def robust_copy2(src, target, retries=5, delay=10):
 def robust_copytree(src, target, retries=5, delay=10, ignore=None):
     for i in range(retries):
         try:
-            shutil.copytree(src, target, dirs_exist_ok=True, ignore=ignore, copy_function=shutil.copy)
+            shutil.copytree(
+                src,
+                target,
+                dirs_exist_ok=True,
+                ignore=ignore,
+                copy_function=shutil.copy,
+            )
             return True
         except (OSError, TimeoutError) as e:
             if i < retries - 1:
@@ -500,6 +506,17 @@ def main():
                 / "hey2_3d-vision_foodres_20220101"
                 / "Analysis"
                 / "eye_tracking",
+                "dir",
+            )
+        )
+
+    # 2b. Camera calibration data
+    src_calib = processed_root / "hey2_3d-vision_foodres_20220101" / "Calibrations"
+    if src_calib.exists():
+        all_paths_to_copy.append(
+            (
+                src_calib,
+                dest_processed / "hey2_3d-vision_foodres_20220101" / "Calibrations",
                 "dir",
             )
         )

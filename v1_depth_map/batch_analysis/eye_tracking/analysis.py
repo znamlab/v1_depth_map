@@ -19,7 +19,6 @@ Camera were mirrored until 8.2x (excluded).
 
 import cv2
 import numpy as np
-from pathlib import Path
 import flexiznam as flz
 import pandas as pd
 import wayla
@@ -117,8 +116,10 @@ def get_gaze(
         raise NotImplementedError("Only string calib_session is supported")
 
     # Get camera extrinsics
-    processed_path = Path(flz.PARAMETERS["data_root"]["processed"])
-    calibration_folder = processed_path / project / "Calibrations"
+    processed_path = flz.get_data_root(
+        "processed", project=project, flexilims_session=flm_sess
+    )
+    calibration_folder = processed_path / "Calibrations"
 
     calib_data = dict()
     # The folder created by bonsai are camel case
@@ -187,7 +188,7 @@ def get_trial_df(mouse, project, session, recording, flm_sess=None):
         session_name=f"{mouse}_{session}",
         flexilims_session=flm_sess,
         project=project,
-        filter_datasets={"anatomical_only": 3, "ast_neuropil":False},
+        filter_datasets={"anatomical_only": 3, "ast_neuropil": False},
         recording_type="two_photon",
         protocol_base="SpheresPermTubeReward",
         photodiode_protocol=photodiode_protocol,
