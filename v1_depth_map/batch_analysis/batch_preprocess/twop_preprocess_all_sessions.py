@@ -1,8 +1,9 @@
+# %%
 import flexiznam as flz
 import numpy as np
 import pandas as pd
 from twop_preprocess import pipeline_utils
-from v1_depth_map.figure_utils import get_session_list
+from cottage_analysis.summary_analysis import get_session_list
 
 # Settings
 PROJECT = "hey2_3d-vision_foodres_20220101"
@@ -29,8 +30,12 @@ SESSION_LIST = get_session_list.get_sessions(
     trialnum_min=10,
     mouse_list=mouse_list,
 )
-
-PIPELINE_FILENAME = "run_suite2p_gpu_copy.sh"
+""" SESSION_LIST = [ "PZAH6.4b_S20220503",
+                "PZAH6.4b_S20220524",
+                "PZAG3.4f_S20220520",
+                "PZAG3.4f_S20220523"] """
+# %%
+PIPELINE_FILENAME = "run_dff_noneuropil.sh"
 CONFLICTS = "overwrite"
 TAU = 0.7
 
@@ -38,7 +43,7 @@ TAU = 0.7
 def main(
     project,
     session_list,
-    pipeline_filename="run_suite2p_gpu_copy.sh",
+    pipeline_filename="run_suite2p_gpu.sh",
     conflicts="skip",
     tau=0.7,
 ):
