@@ -46,4 +46,6 @@ if __name__ == "__main__":
         conflicts,
         use_slurm,
         log_fname=log_fname,
+        use_annotated=False,
+        ast_neuropil=False,
     )
