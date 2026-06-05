@@ -119,7 +119,7 @@ def get_gaze(
     processed_path = flz.get_data_root(
         "processed", project=project, flexilims_session=flm_sess
     )
-    calibration_folder = processed_path / "Calibrations"
+    calibration_folder = processed_path / project / "Calibrations"
 
     calib_data = dict()
     # The folder created by bonsai are camel case
