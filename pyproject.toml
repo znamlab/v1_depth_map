@@ -19,7 +19,7 @@ dependencies = [
     "pandas<3",
     "pathlib",
     "seaborn",
-    "matplotlib",
+    "matplotlib==3.9.2",
     "scipy",
     "tables",
     "scikit-learn",
