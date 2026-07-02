@@ -8,6 +8,7 @@ import matplotlib.transforms as transforms
 from matplotlib.patches import Ellipse, Rectangle
 from scipy import stats
 from cottage_analysis.plotting import rsof_plots, depth_selectivity_plots
+from cottage_analysis.analysis.fit_gaussian_blob import get_gaussian_angle
 
 
 def plot_example_neuron_rsof(
@@ -347,14 +348,15 @@ def plot_gaussian_theta_distribution(
     """
     thetas = []
     for popt in neurons_df[col].values:
-        if isinstance(popt, (list, np.ndarray)) and len(popt) >= 6:
-            thetas.append(popt[5])
+        angle = get_gaussian_angle(popt)
+        if not np.isnan(angle):
+            thetas.append(angle)
 
     if len(thetas) == 0:
         ax.text(0.5, 0.5, "No theta data", ha="center")
         return
 
-    thetas_deg = np.degrees(thetas)
+    thetas_deg = thetas  # already in degrees
 
     ax.hist(thetas_deg, bins=30, color="orange", alpha=0.7, edgecolor="k")
     ax.set_xlabel("Gaussian fit angle (degrees)", fontsize=fontsize_dict["label"])
