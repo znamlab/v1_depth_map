@@ -1,5 +1,4 @@
 from cottage_analysis.pipelines import pipeline_utils
-from cottage_analysis.summary_analysis import get_session_list
 import flexiznam as flz
 
 project = "hey2_3d-vision_foodres_20220101"

@@ -27,7 +27,7 @@ def main():
         )
         sessions_by_project[project] = session_list
 
-    print(f"Submitting Slurm array job for all sessions...")
+    print("Submitting Slurm array job for all sessions...")
     job_id = submit_fitting_array(
         sessions_by_project=sessions_by_project,
         conda_env="v1_depth_map",
