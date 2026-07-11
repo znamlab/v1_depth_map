@@ -159,12 +159,16 @@ def plot_expected_depth_vs_treadmill(
     vs preferred depth in closed loop.
     """
     ticks = np.asarray(ticks)
-    # Data is natively in cm (RS: cm/s, OF: rad/s => RS/OF: cm)
+    # Data is natively in metres: for the gaussian_2d fit preferred_RS is stored
+    # in m/s and preferred_OF in rad/s, so RS/OF is in m; preferred_depth is also
+    # in m (converted from cm in spheres.py). Multiply by 100 to display in cm,
+    # matching the axis labels and tick values below.
+    M_TO_CM = 100
     expected_depth = (
         df["preferred_RS_closedloop_crossval_g2d_treadmill"]
         / df["preferred_OF_closedloop_crossval_g2d_treadmill"]
-    )
-    treadmill_depth = df["preferred_depth_closedloop_crossval"]
+    ) * M_TO_CM
+    treadmill_depth = df["preferred_depth_closedloop_crossval"] * M_TO_CM
 
     x = np.log(expected_depth)
     y = np.log(treadmill_depth)
