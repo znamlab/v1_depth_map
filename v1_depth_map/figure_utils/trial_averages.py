@@ -188,9 +188,7 @@ def build_trial_average_cache(
                     rs_thr=rs_thr,
                     max_rs2motor_diff=max_rs2motor_diff,
                 )
-            except (
-                Exception
-            ) as e:  # noqa: BLE001 - report and move on so one bad session
+            except Exception as e:  # noqa: BLE001 - report and move on so one bad session
                 print(f"  skip {session_name}: {e}")  # doesn't abort the whole build
                 continue
             if out is None:
