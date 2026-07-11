@@ -15,3 +15,7 @@ v1_depth_map/ucl_neuro_symp_2923/
 notes.py
 v1_depth_map/_version.py
 dist/
+*.pdf
+*.svg
+*.png
+*.pickle
