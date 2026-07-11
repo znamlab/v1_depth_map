@@ -1,10 +1,13 @@
 {
-    "python.formatting.provider": "black",
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
     "editor.formatOnSave": true,
-    "nootebook.formatOnSave": true,
-    "python.formatting.blackArgs": [
-        "--line-length",
-        "88"
-    ],
-    "python.linting.enabled": true
+    "notebook.formatOnSave": true,
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.formatOnSave": true
+    },
+    "ruff.path": [
+        "uvx",
+        "ruff"
+    ]
 }
