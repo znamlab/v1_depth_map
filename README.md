@@ -5,7 +5,7 @@ Analysis code for v1 depth map project.
 1. Create an empty environment `conda create --name v1_depth_map "python==3.12"`
 2. Activate the environment by `conda activate v1_depth_map`.
 3. Install pip `conda install pip`.
-3. Install this package by `pip install .` (add `[figures]` for plotting). 
+3. Install this package by `pip install .` (add `[figures]` for plotting).
 
 ## Setting up for offline uses of database
 1. Follow installation instructures for https://github.com/znamlab/flexiznam.git.
@@ -55,4 +55,3 @@ python v1_depth_map/revisions/copy_v1_figures_data.py /path/to/destination --ski
   * `dest` (positional): The target directory where `raw` and `processed` data folders will be created (e.g., `/Volumes/BlackPasspo/v1_depth_map`).
   * `--skip-existing`: Skip copying files that already exist in the target directory to resume or accelerate a sync run.
   * `--dry-run`: Display all source-to-destination paths that would be copied without making any modifications.
-
