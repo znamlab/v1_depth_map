@@ -13,7 +13,7 @@ authors = [
     { name = "Petr Znamenskiy" },
 ]
 urls = { Homepage = "https://github.com/znamlab/v1_depth_map" }
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "pandas<3",
@@ -54,3 +54,6 @@ where = ["."]
 version_file = "v1_depth_map/_version.py"
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
+
+[tool.uv.sources]
+cottage_analysis = { path = "../cottage_analysis", editable = true }
