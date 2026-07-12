@@ -741,12 +741,16 @@ def main():
             if mouse_name_for_check in PROTOCOL2_MICE:
                 allowed_filenames.add("RotaryEncoder.csv")
             # eye-tracking calibration session also needs camera timestamps
+            # and, for the right eye camera, the actual video + metadata
+            # (needed by figsupp_eye_tracking.ipynb).
             if sess_name == "PZAG3.4f_S20220421":
                 allowed_filenames |= {
                     "left_eye_camera_timestamps.csv",
                     "right_eye_camera_timestamps.csv",
                     "face_camera_timestamps.csv",
                     "butt_camera_timestamps.csv",
+                    "right_eye_camera_data.avi",
+                    "right_eye_camera_metadata.txt",
                 }
 
             prefix = f"{sess_name}_{src.name}_"
