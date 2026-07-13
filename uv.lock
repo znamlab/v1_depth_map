@@ -1565,8 +1565,8 @@ wheels = [
 
 [[package]]
 name = "flexilims"
-version = "1.2"
-source = { git = "ssh://git@github.com/znamlab/flexilims.git#b5a273dc562aec49ed16539410d5351eef20467c" }
+version = "1.3"
+source = { git = "ssh://git@github.com/znamlab/flexilims.git#ca19bb7794468c0cf1341402cd3648fe535f1807" }
 dependencies = [
     { name = "pandas" },
     { name = "pyyaml" },
