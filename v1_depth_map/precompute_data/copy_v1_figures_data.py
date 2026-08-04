@@ -528,7 +528,14 @@ def main():
     notebook_sessions = get_session_list.get_sessions(
         flm_sess, exclude_openloop=False, exclude_pure_closedloop=False, v1_only=True
     )
-    print(f"Found {len(notebook_sessions)} sessions used in notebooks.")
+    size_control_sessions = get_session_list.get_size_control_sessions(
+        flm_sess, v1_only=True
+    )
+    notebook_sessions = sorted(set(notebook_sessions) | set(size_control_sessions))
+    print(
+        f"Found {len(notebook_sessions)} sessions used in notebooks "
+        f"({len(size_control_sessions)} SizeControl)."
+    )
 
     from tqdm import tqdm
 
