@@ -1,18 +1,29 @@
 """Re-run the RS/OF tuning fits for the revision treadmill sessions.
 
 The four `colasa_3d-vision_revisions` sessions that have a `SpheresTubeMotor` recording
-are fit twice:
+are fit up to three ways:
 
 - the **sphere** (closed-loop `SpheresPermTubeReward`) part **frame by frame**, as the
   standard pipeline does, writing `fit_rs_of_tuning_<model>[_crossval]_k<n>.pickle`;
 - the **treadmill** (`SpheresTubeMotor`) part on **trial averages**, writing
-  `fit_rs_of_tuning_<model>[_crossval]_k<n>_treadmill_trial_average_legacy.pickle`.
+  `fit_rs_of_tuning_<model>[_crossval]_k<n>_treadmill_trial_average_legacy.pickle`;
+- the **treadmill_frames** part, the same `SpheresTubeMotor` recordings but **frame by
+  frame** like the sphere half, writing
+  `fit_rs_of_tuning_<model>[_crossval]_k<n>_treadmill_legacy.pickle`. This mirrors the
+  standard pipeline's own per-frame `SpheresTubeMotor` fit (`analysis_pipeline.py`'s
+  `run_rsof_fit` block, `max_rs2motor_diff=0.3`, `file_special_sfx="_treadmill"`) so its
+  `method="plateau"` output is comparable to the real per-frame `*_treadmill` columns
+  already in `neurons_df.pickle` - just under a different, non-colliding tag.
 
-Both use the *legacy* ``(log_sigma_x2, log_sigma_y2, theta)`` 2D-Gaussian parameterisation
-of the `reviews` branch of cottage_analysis. That is the point of the `_legacy` filename
-tag: nemo carries identically-named `..._treadmill_trial_average.pickle` files whose popts
-are in the newer Cholesky parameterisation, and the two are NOT interchangeable. The tag
-makes them impossible to confuse if anything is ever synced between the two locations.
+All three use the *legacy* ``(log_sigma_x2, log_sigma_y2, theta)`` 2D-Gaussian
+parameterisation of the `reviews` branch of cottage_analysis. That is the point of the
+`_legacy` filename tag: nemo carries identically-named `..._treadmill_trial_average.pickle`
+files whose popts are in the newer Cholesky parameterisation, and the two are NOT
+interchangeable. The tag makes them impossible to confuse if anything is ever synced
+between the two locations. (The real per-frame `*_treadmill.pickle` family happens to
+already be legacy-parameterised for this project - see `treadmill.ipynb` cell 23 - so
+`treadmill_frames`'s `_legacy` tag is for naming consistency rather than a parameterisation
+guard, but it also keeps the filename from colliding with that real, untagged family.)
 
 **Which storage this writes to is controlled by `--site {local,nemo}`.** With `--site local`
 (the default), `~/.flexiznam/config.yml` has an explicit `project_paths` entry mapping
@@ -35,14 +46,18 @@ Typical use::
     python fit_revision_treadmill.py              # all sessions, both halves, 11 configs
     python fit_revision_treadmill.py --merge      # merge results into neurons_df.pickle
 
-`--method plateau` re-fits the treadmill half with `treadmill.sync_all_recordings`'s
-trapezoidal-ramp onset detector instead of the default `"model"` heuristic (the `sphere`
-half is unaffected, since it never goes through `treadmill.sync_all_recordings`). Output
-filenames/columns get a `_plateau` tag so they land alongside the `"model"` results instead
-of overwriting them::
+`--method plateau` re-fits a `SpheresTubeMotor` half (`treadmill` or `treadmill_frames`) with
+`treadmill.sync_all_recordings`'s trapezoidal-ramp onset detector instead of the default
+`"model"` heuristic (the `sphere` half is unaffected, since it never goes through
+`treadmill.sync_all_recordings`). Output filenames/columns get a `_plateau` tag so they land
+alongside the `"model"` results instead of overwriting them::
 
     python fit_revision_treadmill.py --only treadmill --method plateau
     python fit_revision_treadmill.py --only treadmill --method plateau --merge
+
+    # frame-by-frame plateau fit, comparable to the real per-frame *_treadmill columns
+    python fit_revision_treadmill.py --only treadmill_frames --method plateau
+    python fit_revision_treadmill.py --only treadmill_frames --method plateau --merge
 """
 
 import argparse
@@ -95,7 +110,7 @@ FILTER_DATASETS = dict(annotated=True)
 # None of these sessions is PZAH6.4b / PZAG3.4f, so the photodiode protocol is 5.
 PHOTODIODE_PROTOCOL = 5
 
-# The two halves. `file_special_sfx` lands in the pickle filename; `column_suffix` is
+# The three halves. `file_special_sfx` lands in the pickle filename; `column_suffix` is
 # applied later, at merge time, by merge_fit_dataframes.
 HALVES = {
     "sphere": dict(
@@ -111,6 +126,18 @@ HALVES = {
         max_rs2motor_diff=0.3,
         file_special_sfx="_treadmill_trial_average_legacy",
         column_suffix="_treadmill_trial_average",
+    ),
+    "treadmill_frames": dict(
+        # Frame-by-frame SpheresTubeMotor fit, mirroring analysis_pipeline.py's own
+        # per-frame treadmill config (protocol_base/max_rs2motor_diff/file_special_sfx
+        # all match its `special_sfx_base = "_treadmill"` branch) so it's comparable to
+        # the real, already-merged `*_treadmill` columns - just under a `_legacy`/method
+        # tag so it never collides with them.
+        protocol_base="SpheresTubeMotor",
+        trial_average=False,
+        max_rs2motor_diff=0.3,
+        file_special_sfx="_treadmill_legacy",
+        column_suffix="_treadmill",
     ),
 }
 
@@ -147,14 +174,17 @@ def half_config(half, method):
 
     The `sphere` half never touches `treadmill.sync_all_recordings` (it goes through
     `spheres.sync_all_recordings` instead), so `method` has no effect on it and its
-    tags are left untouched regardless of what is passed in. Only the `treadmill`
-    half's tags grow a `_{method}` suffix when `method != "model"`, so that e.g.
-    `method="plateau"` writes to `..._treadmill_trial_average_legacy_plateau.pickle`
-    and merges into `..._treadmill_trial_average_plateau` columns -- distinct from the
-    existing `model`-method pickles/columns, so neither run clobbers the other.
+    tags are left untouched regardless of what is passed in. Any `SpheresTubeMotor`
+    half's tags (`treadmill`, `treadmill_frames`) grow a `_{method}` suffix when
+    `method != "model"`, so that e.g. `method="plateau"` writes to
+    `..._treadmill_trial_average_legacy_plateau.pickle` / `..._treadmill_legacy_plateau.pickle`
+    and merges into `..._treadmill_trial_average_plateau` / `..._treadmill_plateau`
+    columns -- distinct from the existing `model`-method pickles/columns (and, for
+    `treadmill_frames`, from the real production `*_treadmill` columns too), so neither
+    run clobbers another.
     """
     cfg = dict(HALVES[half])
-    if half == "treadmill" and method != "model":
+    if cfg["protocol_base"] == "SpheresTubeMotor" and method != "model":
         cfg["file_special_sfx"] += f"_{method}"
         cfg["column_suffix"] += f"_{method}"
     return cfg
@@ -320,7 +350,11 @@ def submit_one(
         # The 7-param fits are an order of magnitude slower than the earlier local
         # estimate, so the limits are set from these numbers with headroom rather than
         # from that estimate. ncpu allows 7 days; peak RSS is 1.7 GB against the 32 G
-        # requested, so memory is not the constraint.
+        # requested, so memory is not the constraint. This budget is applied to every
+        # half unconditionally, including `treadmill_frames` - its SpheresTubeMotor
+        # recordings are shorter than the sphere sessions, so these sphere numbers are a
+        # conservative upper bound for it, not a tight estimate. Time one config first
+        # (see the module docstring) before trusting that headroom for the full set.
         slurm_options={
             "mem": "32G",
             "time": "48:00:00" if k_folds > 1 else "12:00:00",
@@ -412,10 +446,11 @@ def main():
         "--method",
         choices=["model", "plateau"],
         default="model",
-        help="Onset-detection method passed to treadmill.sync_all_recordings for the "
-        "'treadmill' half (ignored by the 'sphere' half). 'plateau' tags output "
-        "filenames/columns with a '_plateau' suffix so they don't clobber the "
-        "existing 'model' results. Defaults to 'model'.",
+        help="Onset-detection method passed to treadmill.sync_all_recordings for any "
+        "SpheresTubeMotor half ('treadmill', 'treadmill_frames'; ignored by the "
+        "'sphere' half). 'plateau' tags output filenames/columns with a '_plateau' "
+        "suffix so they don't clobber the existing 'model' results. Defaults to "
+        "'model'.",
     )
     parser.add_argument(
         "--site",
