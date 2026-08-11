@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from pathlib import Path
 
+from cottage_analysis.analysis import common_utils
+
 
 def plot_treadmill_protocol(
     trials_df,
@@ -10,10 +12,14 @@ def plot_treadmill_protocol(
     fs,
     trials_df_no_cut=None,
     max_abs_rs2motor_diff_ratio=0.3,
+    plot_exclude_frames=True,
     ax=None,
     save_path=None,
     add_vertical_lines=False,
     figsize=(15 / 2.54, 7 / 2.54),
+    xlim=(0, 61),
+    ylim=(-0.05, 0.8),
+    fontsize_dict=None,
 ):
     """
     Plots the treadmill protocol including running speed data and stimulus
@@ -29,6 +35,8 @@ def plot_treadmill_protocol(
             If None, uses trials_df. Defaults to None.
         max_abs_rs2motor_diff_ratio (float, optional): Threshold for excluding
             frames. Defaults to 0.3.
+        plot_exclude_frames (bool, optional): Whether to plot the excluded
+            frames. Defaults to True.
         ax (matplotlib.axes.Axes, optional): Axis to plot on. If None, creates a
             new figure. Defaults to None.
         save_path (str or Path, optional): Path to save the figure as a PDF.
@@ -37,8 +45,14 @@ def plot_treadmill_protocol(
             stimulus boundaries. Defaults to False.
         figsize (tuple, optional): Figure size in inches.
             Defaults to (15/2.54, 7/2.54).
-        xlim (tuple, optional): X-axis limits. Defaults to (0, 61).
-        ylim (tuple, optional): Y-axis limits. Defaults to (-0.05, 0.8).
+        xlim (tuple, optional): X-axis limits, None to leave them automatic.
+            Defaults to (0, 61).
+        ylim (tuple, optional): Y-axis limits, None to leave them automatic.
+            Defaults to (-0.05, 0.8).
+        fontsize_dict (dict, optional): Dictionary with font size settings.
+            Defaults to None.
+    Returns:
+        tuple: (fig, ax)
     """
     if trials_df_no_cut is None:
         trials_df_no_cut = trials_df
@@ -97,15 +111,18 @@ def plot_treadmill_protocol(
         fig = ax.get_figure()
 
     time_axis = np.arange(len(data)) / fs
-    ax.plot(time_axis, data, color="k", lw=1, clip_on=False, label="All Frames")
-    ax.plot(time_axis, valid_data, color="grey", label="Excluded Frames")
-    ax.plot(
-        time_axis,
-        used_data,
-        color="dodgerblue",
-        lw=2,
-        label="Analysed Frames",
-    )
+    if plot_exclude_frames:
+        ax.plot(time_axis, data, color="k", lw=1, clip_on=False, label="All Frames")
+        ax.plot(time_axis, valid_data, color="grey", label="Excluded Frames")
+    else:
+        ax.plot(time_axis, data, color="k", lw=1, clip_on=False)
+        ax.plot(
+            time_axis,
+            used_data,
+            color="dodgerblue",
+            lw=2,
+            label="Analysed Frames",
+        )
 
     has_of = ~np.isnan(of)
     ax.fill_between(
@@ -145,7 +162,7 @@ def plot_treadmill_protocol(
         f"{int(x_len)} s",
         ha="center",
         va="top",
-        fontsize=10,
+        fontsize=fontsize_dict["legend"],
         clip_on=False,
     )
     ax.text(
@@ -155,10 +172,14 @@ def plot_treadmill_protocol(
         ha="right",
         va="center",
         rotation=90,
-        fontsize=10,
+        fontsize=fontsize_dict["legend"],
         clip_on=False,
     )
 
+    if xlim is not None:
+        ax.set_xlim(*xlim)
+    if ylim is not None:
+        ax.set_ylim(*ylim)
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
@@ -185,19 +206,157 @@ def plot_treadmill_protocol(
     ax.legend(
         loc="upper left",
         frameon=False,
-        fontsize=12,
+        fontsize=fontsize_dict["legend"],
         bbox_to_anchor=(0.0, 0.9),
     )
 
-    if save_path is not None:
-        save_path = Path(save_path)
-        save_path.parent.mkdir(exist_ok=True, parents=True)
-        old_pdf_fonttype = mpl.rcParams["pdf.fonttype"]
-        old_ps_fonttype = mpl.rcParams["ps.fonttype"]
-        mpl.rcParams["pdf.fonttype"] = 42
-        mpl.rcParams["ps.fonttype"] = 42
-        fig.savefig(save_path, format="pdf", bbox_inches="tight", transparent=True)
-        mpl.rcParams["pdf.fonttype"] = old_pdf_fonttype
-        mpl.rcParams["ps.fonttype"] = old_ps_fonttype
+    _save_pdf(fig, save_path)
+
+    return fig, ax
+
+
+def _save_pdf(fig, save_path):
+    """Save a figure as a pdf with editable fonts, if save_path is not None."""
+    if save_path is None:
+        return
+    save_path = Path(save_path)
+    save_path.parent.mkdir(exist_ok=True, parents=True)
+    old_pdf_fonttype = mpl.rcParams["pdf.fonttype"]
+    old_ps_fonttype = mpl.rcParams["ps.fonttype"]
+    mpl.rcParams["pdf.fonttype"] = 42
+    mpl.rcParams["ps.fonttype"] = 42
+    fig.savefig(save_path, format="pdf", bbox_inches="tight", transparent=True)
+    mpl.rcParams["pdf.fonttype"] = old_pdf_fonttype
+    mpl.rcParams["ps.fonttype"] = old_ps_fonttype
+
+
+def plot_treadmill_stim_sampling(
+    trials_df,
+    ax=None,
+    max_abs_rs2motor_diff_ratio=0.3,
+    fontsize_dict={"label": 14, "tick": 12, "legend": 12},
+    markersize=5,
+    trial_markersize=20,
+    legend_on=True,
+    legend_kwargs=None,
+    figsize=(7 / 2.54, 7 / 2.54),
+    save_path=None,
+):
+    """Plot how the treadmill stimulus samples the running speed / optic flow plane.
+
+    Single imaging frames are shown in the background, with the per-trial averages on
+    top. Both axes are logarithmic (base 2) and ticked at the motor speeds and expected
+    optic flow speeds of the protocol.
+
+    Args:
+        trials_df (pd.DataFrame): DataFrame containing 'RS_stim', 'OF_stim',
+            'MotorSpeed_stim', 'expected_optic_flow_stim' and, optionally,
+            'max_abs_rs2motor_diff_ratio_stim'.
+        ax (matplotlib.axes.Axes, optional): Axis to plot on. If None, creates a new
+            figure. Defaults to None.
+        max_abs_rs2motor_diff_ratio (float, optional): Threshold for excluding frames
+            where the running speed does not match the motor speed. Set to None to keep
+            all frames. Defaults to 0.3.
+        fontsize_dict (dict, optional): Dictionary of fontsizes.
+        markersize (float, optional): Marker size for single frames. Defaults to 5.
+        trial_markersize (float, optional): Marker size for trial averages.
+            Defaults to 20.
+        legend_on (bool, optional): Whether to add the legend. Defaults to True.
+        legend_kwargs (dict, optional): Overrides for the legend keyword arguments.
+            Defaults to None.
+        figsize (tuple, optional): Figure size in inches, ignored if ax is given.
+            Defaults to (7/2.54, 7/2.54).
+        save_path (str or Path, optional): Path to save the figure as a PDF.
+            Defaults to None.
+
+    Returns:
+        tuple: (fig, ax)
+    """
+    if (max_abs_rs2motor_diff_ratio is not None) and (
+        "max_abs_rs2motor_diff_ratio_stim" in trials_df.columns
+    ):
+        trials_df = common_utils.filter_trials_by_rs2motor(
+            trials_df,
+            max_rs2motor_diff=max_abs_rs2motor_diff_ratio,
+            col2filter=["RS_stim", "OF_stim"],
+        )
+
+    # Per-frame running speed (cm/s) and optic flow (degrees/s). Only strictly positive
+    # values can be shown on log axes.
+    rs_frames = np.hstack(trials_df.RS_stim.values) * 100
+    of_frames = np.degrees(np.hstack(trials_df.OF_stim.values))
+    ok = (rs_frames > 0) & (of_frames > 0)
+    rs_frames, of_frames = rs_frames[ok], of_frames[ok]
+
+    # Per-trial averages, in the same units. Trials without any valid frame are NaN and
+    # dropped by the positivity check below.
+    def trial_mean(x):
+        return np.nanmean(x) if np.any(~np.isnan(x)) else np.nan
+
+    rs_trials = trials_df.RS_stim.map(trial_mean).values * 100
+    of_trials = np.degrees(trials_df.OF_stim.map(trial_mean).values)
+    ok = (rs_trials > 0) & (of_trials > 0)
+    rs_trials, of_trials = rs_trials[ok], of_trials[ok]
+
+    if ax is None:
+        fig = plt.figure(figsize=figsize)
+        ax = plt.subplot(1, 1, 1)
+    else:
+        fig = ax.get_figure()
+
+        ax.scatter(
+            rs_frames,
+            of_frames,
+            alpha=0.1,
+            color="k",
+            s=markersize,
+            edgecolors="none",
+            label="Single frames",
+        )
+        ax.scatter(
+            rs_trials,
+            of_trials,
+            alpha=0.8,
+            color="dodgerblue",
+            s=trial_markersize,
+            edgecolors="white",
+            linewidths=0.5,
+            label="Trial averages",
+        )
+
+    ax.set_xscale("log", base=2)
+    ax.set_yscale("log", base=2)
+
+    motor_speeds = np.unique(
+        trials_df.MotorSpeed_stim.map(np.nanmedian).dropna().round()
+    )
+    of_speeds = np.unique(
+        trials_df.expected_optic_flow_stim.map(np.nanmedian).dropna().round()
+    )
+    rs_ticks = motor_speeds[motor_speeds > 0].astype(int)
+    of_ticks = of_speeds[of_speeds > 0].astype(int)
+
+    ax.set_xticks(rs_ticks)
+    ax.set_xticklabels([f"{x}" for x in rs_ticks], fontsize=fontsize_dict["tick"])
+    ax.set_yticks(of_ticks)
+    ax.set_yticklabels([f"{x}" for x in of_ticks], fontsize=fontsize_dict["tick"])
+    ax.set_xlabel("Running speed (cm/s)", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("Optic flow speed (degrees/s)", fontsize=fontsize_dict["label"])
+    ax.spines["top"].set_visible(False)
+    ax.spines["right"].set_visible(False)
+    ax.spines["bottom"].set_bounds(min(rs_ticks), max(rs_ticks))
+    ax.spines["left"].set_bounds(min(of_ticks), max(of_ticks))
+
+    if legend_on:
+        kwargs = dict(
+            loc="upper right",
+            bbox_to_anchor=(1, 1.3),
+            fontsize=fontsize_dict["legend"],
+            frameon=False,
+        )
+        kwargs.update(legend_kwargs or {})
+        ax.legend(**kwargs)
+
+    _save_pdf(fig, save_path)
 
     return fig, ax
