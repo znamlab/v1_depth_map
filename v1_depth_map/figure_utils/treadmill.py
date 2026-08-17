@@ -366,3 +366,202 @@ def plot_treadmill_stim_sampling(
     _save_pdf(fig, save_path)
 
     return fig, ax
+
+
+def load_treadmill_population_neurons_df(
+    flm_sess_rev,
+    protocol_base="SpheresTubeMotor",
+    tdecay=2,
+    trise=0.15,
+    percentile=95,
+    load_simulated=False,
+):
+    """Load and filter the population `neurons_df` for treadmill-protocol sessions.
+
+    Finds every session in the project that ran the treadmill protocol, loads and
+    concatenates their `neurons_df` (and, if `load_simulated`, the matching
+    simulated-response dataframes), flags depth- and RS/OF-tuned neurons, and adds
+    ellipse/Gaussian-fit-derived columns for both the closed-loop and treadmill fits.
+
+    Significance of the RS/OF (`g2d`) fit is assessed against an empirical null:
+    the negative tail of the R-squared distribution is used to estimate the null's
+    width, and neurons above `percentile` of that null are flagged as tuned
+    (`rsof_neuron`/`rsof_neuron_treadmill`), see
+    `cottage_analysis.analysis.common_utils.empirical_null_threshold`.
+
+    Args:
+        flm_sess_rev: Flexilims session for the project holding the treadmill data.
+        protocol_base (str, optional): Protocol name used to find treadmill sessions.
+            Defaults to "SpheresTubeMotor".
+        tdecay (float, optional): Calcium decay time constant used to pick the
+            simulated-response file to load. Defaults to 2.
+        trise (float, optional): Calcium rise time constant used to pick the
+            simulated-response file to load. Defaults to 0.15.
+        percentile (float, optional): Percentile of the empirical null distribution
+            used as the significance threshold for `rsof_neuron`/
+            `rsof_neuron_treadmill`. Defaults to 95.
+        load_simulated (bool, optional): Whether to load and process the
+            simulated-response parquet files (`simul_df_treadmill`/`simul_df_spheres`).
+            These are only needed for simulated-vs-real comparisons and are slower to
+            load, so this defaults to False and can be set to True to also load them.
+
+    Returns:
+        tuple: (neurons_df, simul_df_treadmill, simul_df_spheres, valid_sessions,
+            treadmill_sessions). `simul_df_treadmill`/`simul_df_spheres` are None if
+            `load_simulated` is False.
+    """
+    from cottage_analysis.io_module import suite2p as s2p_io
+    from cottage_analysis.analysis import fit_gaussian_blob as fit_gb
+
+    mice = flz.get_entities(datatype="mouse", flexilims_session=flm_sess_rev)
+    all_sessions = flz.get_entities(datatype="session", flexilims_session=flm_sess_rev)
+
+    treadmill_sessions = {}
+    for _, mouse_data in mice.iterrows():
+        sessions = all_sessions[all_sessions.origin_id == mouse_data.id]
+        for session_name, sess_data in sessions.iterrows():
+            recordings = flz.get_children(
+                parent_id=sess_data.id,
+                flexilims_session=flm_sess_rev,
+                children_datatype="recording",
+            )
+            if not len(recordings):
+                continue
+            if protocol_base in recordings.protocol.values:
+                treadmill_sessions[session_name] = recordings
+
+    valid_sessions = []
+    all_dfs = []
+    simulated_responses = dict(treadmill=[], spheres=[])
+    for session_name in treadmill_sessions:
+        neurons_ds = flz.get_datasets(
+            origin_name=session_name,
+            dataset_type="neurons_df",
+            flexilims_session=flm_sess_rev,
+            allow_multiple=False,
+        )
+        if neurons_ds is None:
+            print(f"Neurons dataset not found for session {session_name}")
+            continue
+        neurons_df = pd.read_pickle(neurons_ds.path_full)
+        suite2p_ds = flz.get_datasets(
+            origin_name=session_name,
+            dataset_type="suite2p_rois",
+            filter_datasets={"annotated": True},
+            flexilims_session=flm_sess_rev,
+            allow_multiple=False,
+        )
+        neurons_df["is_cell"] = s2p_io.load_is_cell(suite2p_ds.path_full)
+        if "is_depth_neuron" not in neurons_df.columns:
+            print(
+                f"Depth selectivity not computed for session {session_name}, run basic analysis first"
+            )
+            continue
+        elif "is_depth_neuron_treadmill" not in neurons_df.columns:
+            print(
+                f"Treadmill data not processed for session {session_name}, run treadmill analysis first"
+            )
+            continue
+        valid_sessions.append(session_name)
+        neurons_df["session"] = session_name
+        neurons_df["roi_uid"] = session_name + "_" + neurons_df.roi.astype(str)
+        all_dfs.append(neurons_df)
+        if load_simulated:
+            for which in ["treadmill", "spheres"]:
+                simul_path = neurons_ds.path_full.with_name(
+                    f"simulated_responses_fit_{which}_{tdecay}_{trise}_circular.parquet"
+                )
+                if simul_path.exists():
+                    simul_df = pd.read_parquet(simul_path)
+                    simul_df["session"] = session_name
+                    simul_df["roi_uid"] = session_name + "_" + simul_df.roi.astype(str)
+                    simulated_responses[which].append(simul_df)
+                else:
+                    print(
+                        f"Simulated responses not found for {which} for session {session_name}"
+                    )
+    print(
+        f"{len(valid_sessions)}/{len(treadmill_sessions)} valid sessions with treadmill depth data"
+    )
+
+    neurons_df = pd.concat(all_dfs, ignore_index=True)
+    if load_simulated:
+        simul_df_treadmill = pd.concat(
+            simulated_responses["treadmill"], ignore_index=True
+        )
+        simul_df_spheres = pd.concat(simulated_responses["spheres"], ignore_index=True)
+    else:
+        simul_df_treadmill = None
+        simul_df_spheres = None
+
+    # Find tuned cells
+    neurons_df = neurons_df[neurons_df["is_cell"]].copy()
+
+    neurons_df["is_depth_neuron"] = (
+        neurons_df["depth_tuning_test_spearmanr_rval_closedloop"] > 0.1
+    ) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
+    neurons_df["is_depth_neuron_treadmill"] = (
+        neurons_df["depth_tuning_test_spearmanr_rval_closedloop_treadmill"] > 0.1
+    ) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop_treadmill"] < 0.05)
+
+    # Empirical-null significance test for the RS/OF (g2d) fit, closed-loop and treadmill
+    for which, flag_col in [
+        ("", "rsof_neuron"),
+        ("_treadmill", "rsof_neuron_treadmill"),
+    ]:
+        rsq_col = f"rsof_test_rsq_closedloop_g2d{which}"
+        rsq_vals = pd.to_numeric(neurons_df[rsq_col], errors="coerce").dropna().values
+        finite_vals = rsq_vals[np.isfinite(rsq_vals) & (rsq_vals >= -1)]
+        thr, _ = common_utils.empirical_null_threshold(
+            finite_vals, percentile=percentile
+        )
+        neurons_df[flag_col] = pd.to_numeric(neurons_df[rsq_col], errors="coerce") > thr
+
+    print(
+        f"{neurons_df.is_depth_neuron.sum()}/{len(neurons_df)} depth tuned neurons in closed loop"
+    )
+    print(
+        f"{neurons_df.is_depth_neuron_treadmill.sum()}/{len(neurons_df)} depth tuned neurons in closed loop treadmill"
+    )
+    print(
+        f"{neurons_df.rsof_neuron_treadmill.sum()}/{len(neurons_df)} rsof neurons in closed loop treadmill"
+    )
+
+    # Add ellipse properties calculated from fit parameters, for both real and simulated data
+    for which in ["_treadmill", ""]:
+        popt_col = neurons_df[f"rsof_popt_closedloop_g2d{which}"]
+        neurons_df[f"g2d_theta{which}"] = popt_col.apply(fit_gb.get_gaussian_angle)
+        neurons_df[f"g2d_semimajor{which}"] = popt_col.apply(
+            fit_gb.get_semimajor_length
+        )
+        neurons_df[f"g2d_semiminor{which}"] = popt_col.apply(
+            fit_gb.get_semiminor_length
+        )
+        neurons_df[f"g2d_eccentricity{which}"] = popt_col.apply(
+            fit_gb.get_gaussian_eccentricity
+        )
+        neurons_df[f"g2d_preferred_RS{which}"] = popt_col.apply(fit_gb.get_preferred_rs)
+        neurons_df[f"g2d_preferred_OF{which}"] = popt_col.apply(fit_gb.get_preferred_of)
+
+    if load_simulated:
+        simul_df_treadmill["g2d_theta_treadmill"] = simul_df_treadmill[
+            "popt_simulated"
+        ].apply(fit_gb.get_gaussian_angle)
+        simul_df_treadmill["g2d_eccentricity_treadmill"] = simul_df_treadmill[
+            "popt_simulated"
+        ].apply(fit_gb.get_gaussian_eccentricity)
+
+        simul_df_spheres["g2d_theta"] = simul_df_spheres["popt_simulated"].apply(
+            fit_gb.get_gaussian_angle
+        )
+        simul_df_spheres["g2d_eccentricity"] = simul_df_spheres["popt_simulated"].apply(
+            fit_gb.get_gaussian_eccentricity
+        )
+
+    return (
+        neurons_df,
+        simul_df_treadmill,
+        simul_df_spheres,
+        valid_sessions,
+        treadmill_sessions,
+    )
