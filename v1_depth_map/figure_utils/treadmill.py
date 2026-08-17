@@ -1,8 +1,10 @@
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from pathlib import Path
 
+import flexiznam as flz
 from cottage_analysis.analysis import common_utils
 
 
@@ -56,7 +58,8 @@ def plot_treadmill_protocol(
     """
     if trials_df_no_cut is None:
         trials_df_no_cut = trials_df
-
+    if fontsize_dict is None:
+        fontsize_dict = {"label": 7, "tick": 5, "legend": 5}
     # Prepare data
     data = None
     of = None
@@ -87,7 +90,7 @@ def plot_treadmill_protocol(
         )
 
     used_data = np.zeros_like(data) * np.nan
-    valid_data = np.zeros_like(data) * np.nan
+    excluded_data = np.zeros_like(data) * np.nan
 
     for trial in example_trials:
         trial_series = trials_df.loc[trial]
@@ -96,11 +99,14 @@ def plot_treadmill_protocol(
             trial_series.max_abs_rs2motor_diff_ratio_stim < max_abs_rs2motor_diff_ratio
         )
         trial_used = np.where(ok_mask, trial_valid, np.nan)
+        trial_excluded = np.where(ok_mask, np.nan, trial_valid)
 
         trial_indices = np.where(stim_part == trial)[0]
         if len(trial_indices) > 0:
             end_ind = trial_indices[-1]
-            valid_data[end_ind - len(trial_valid) + 1 : end_ind + 1] = trial_valid
+            excluded_data[end_ind - len(trial_excluded) + 1 : end_ind + 1] = (
+                trial_excluded
+            )
             used_data[end_ind - len(trial_used) + 1 : end_ind + 1] = trial_used
 
     # Plotting
@@ -113,16 +119,16 @@ def plot_treadmill_protocol(
     time_axis = np.arange(len(data)) / fs
     if plot_exclude_frames:
         ax.plot(time_axis, data, color="k", lw=1, clip_on=False, label="All Frames")
-        ax.plot(time_axis, valid_data, color="grey", label="Excluded Frames")
+        ax.plot(time_axis, excluded_data, color="grey", lw=2, label="Excluded Frames")
     else:
         ax.plot(time_axis, data, color="k", lw=1, clip_on=False)
-        ax.plot(
-            time_axis,
-            used_data,
-            color="dodgerblue",
-            lw=2,
-            label="Analysed Frames",
-        )
+    ax.plot(
+        time_axis,
+        used_data,
+        color="dodgerblue",
+        lw=2,
+        label="Analysed Frames",
+    )
 
     has_of = ~np.isnan(of)
     ax.fill_between(
@@ -152,7 +158,7 @@ def plot_treadmill_protocol(
         [x0, x0, x0 + x_len],
         [y0 + y_len, y0, y0],
         color="k",
-        lw=4,
+        lw=2,
         clip_on=False,
         solid_joinstyle="miter",
     )
@@ -198,7 +204,7 @@ def plot_treadmill_protocol(
             rand_x,
             rand_y,
             color="black",
-            s=25,
+            s=10,
             zorder=0,
             transform=ax.get_xaxis_transform(),
         )
@@ -304,25 +310,25 @@ def plot_treadmill_stim_sampling(
     else:
         fig = ax.get_figure()
 
-        ax.scatter(
-            rs_frames,
-            of_frames,
-            alpha=0.1,
-            color="k",
-            s=markersize,
-            edgecolors="none",
-            label="Single frames",
-        )
-        ax.scatter(
-            rs_trials,
-            of_trials,
-            alpha=0.8,
-            color="dodgerblue",
-            s=trial_markersize,
-            edgecolors="white",
-            linewidths=0.5,
-            label="Trial averages",
-        )
+    ax.scatter(
+        rs_frames,
+        of_frames,
+        alpha=0.1,
+        color="k",
+        s=markersize,
+        edgecolors="none",
+        label="Single frames",
+    )
+    ax.scatter(
+        rs_trials,
+        of_trials,
+        alpha=0.8,
+        color="dodgerblue",
+        s=trial_markersize,
+        edgecolors="white",
+        linewidths=0.5,
+        label="Trial averages",
+    )
 
     ax.set_xscale("log", base=2)
     ax.set_yscale("log", base=2)
