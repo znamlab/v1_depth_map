@@ -9,6 +9,7 @@ from matplotlib.patches import Ellipse, Rectangle
 from scipy import stats
 from cottage_analysis.plotting import rsof_plots, depth_selectivity_plots
 from cottage_analysis.analysis.fit_gaussian_blob import get_gaussian_angle
+from cottage_analysis.analysis import common_utils
 
 
 def plot_example_neuron_rsof(
@@ -152,12 +153,27 @@ def plot_expected_depth_vs_treadmill(
     plot_fit=True,
     plot_unity=False,
     stat_type="pearson",
+    suffix="",
+    depth_suffix=None,
     **kwargs,
 ):
     """
     Plots the expected treadmill depth (from preferred RS and OF ratio)
     vs preferred depth in closed loop.
+
+    Parameters
+    ----------
+    suffix : str
+        Suffix for RS and OF columns (e.g. '_treadmill', '_treadmill_trial_average').
+    depth_suffix : str or None
+        Suffix for preferred depth column (e.g. '_treadmill', '_treadmill_plateau').
+        If None, defaults to `suffix`. Decoupling is required because 1D depth fits
+        are always trial-averaged, so only onset-detection method ('model' vs 'plateau')
+        distinguishes them.
     """
+    if depth_suffix is None:
+        depth_suffix = suffix
+
     ticks = np.asarray(ticks)
     # Data is natively in metres: for the gaussian_2d fit preferred_RS is stored
     # in m/s and preferred_OF in rad/s, so RS/OF is in m; preferred_depth is also
@@ -165,10 +181,10 @@ def plot_expected_depth_vs_treadmill(
     # matching the axis labels and tick values below.
     M_TO_CM = 100
     expected_depth = (
-        df["preferred_RS_closedloop_crossval_g2d_treadmill"]
-        / df["preferred_OF_closedloop_crossval_g2d_treadmill"]
+        df[f"preferred_RS_closedloop_crossval_g2d{suffix}"]
+        / df[f"preferred_OF_closedloop_crossval_g2d{suffix}"]
     ) * M_TO_CM
-    treadmill_depth = df["preferred_depth_closedloop_crossval"] * M_TO_CM
+    treadmill_depth = df[f"preferred_depth_closedloop_crossval{depth_suffix}"] * M_TO_CM
 
     x = np.log(expected_depth)
     y = np.log(treadmill_depth)
@@ -224,10 +240,10 @@ def plot_expected_depth_vs_treadmill(
 
     ax.set_aspect("equal")
     ax.set_ylabel(
-        "Preferred depth\nin closed loop (cm)", fontsize=fontsize_dict["label"]
+        "Preferred depth during\nfree locomotion (cm)", fontsize=fontsize_dict["label"]
     )
     ax.set_xlabel(
-        "Ratio of preferred RS and OF\nwith treadmill (cm)",
+        "Ratio of preferred RS and OF\nwith motorized wheel (cm)",
         fontsize=fontsize_dict["label"],
     )
     # Place ticks at the presented depth values
@@ -237,7 +253,7 @@ def plot_expected_depth_vs_treadmill(
     ax.set_yticklabels(ticks)
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
 
-    return sc
+    return sc, {"x": x, "y": y}
 
 
 def plot_treadmill_vs_closedloop_comparison(
@@ -522,3 +538,77 @@ def add_ellipse_schematics(
                 rasterized=rasterized,
             )
             ax.add_patch(core_el)
+
+
+def plot_rsof_slice_no_fit(
+    ax,
+    b_s,
+    b_e,
+    tav_df,
+    of_bins,
+    fontsize_dict={"title": 15, "label": 10, "tick": 10, "legend": 10},
+):
+    """Plot binned mean dF/F vs optic flow (log x-axis) with bootstrap 95% CI,
+    for trials whose running speed falls in [b_s, b_e). No gaussian fit is
+    performed or drawn — a trimmed copy of
+    cottage_analysis.plotting.rsof_plots.plot_rsof_slice with the
+    common_utils.iterate_fit call and fit line removed.
+
+    Args:
+        ax (plt.Axes): axis to plot on.
+        b_s (float): lower bound of the running-speed bin (cm/s).
+        b_e (float): upper bound of the running-speed bin (cm/s).
+        tav_df (pd.DataFrame): per-trial averages with columns 'rs', 'of', 'dff'.
+        of_bins (array-like): bin edges for optic flow (same units as tav_df.of).
+        fontsize_dict (dict, optional): font sizes for text/labels.
+    """
+    mid_val = np.sqrt(b_s * b_e)
+    ax.text(
+        1,
+        0.8,
+        f"RS: {int(mid_val)}",
+        transform=ax.transAxes,
+        horizontalalignment="right",
+        fontsize=fontsize_dict.get("legend", 10),
+    )
+    ok_speed = (tav_df.rs > b_s) & (tav_df.rs < b_e)
+    if not np.any(ok_speed):
+        print(f"No trials found for RS {b_s:.1f}-{b_e:.1f}")
+        return
+    of = tav_df[ok_speed].of.values
+    dff = tav_df[ok_speed].dff.values
+    valid = ~(np.isnan(of) | np.isnan(dff))
+    of, dff = of[valid], dff[valid]
+    if len(of) == 0:
+        return
+
+    m, _, _ = stats.binned_statistic(of, dff, bins=of_bins, statistic="mean")
+    bin_mid = np.diff(of_bins) / 2 + of_bins[:-1]
+    bin_ids = np.digitize(of, of_bins) - 1
+
+    ci_low, ci_high = [], []
+    for i in range(len(bin_mid)):
+        samples = dff[bin_ids == i]
+        if len(samples) > 1:
+            low, high = common_utils.get_bootstrap_ci(samples, n_bootstraps=1000)
+            ci_low.append(low[0])
+            ci_high.append(high[0])
+        else:
+            val = samples[0] if len(samples) == 1 else np.nan
+            ci_low.append(val)
+            ci_high.append(val)
+    err = [m - ci_low, ci_high - m]
+    ax.errorbar(
+        bin_mid,
+        m,
+        yerr=err,
+        fmt="o",
+        color="darkorchid",
+        label="Binned mean & 95% CI",
+        capsize=3,
+        zorder=10,
+    )
+    ax.set_xscale("log")
+    ax.set_ylabel(r"$\Delta$F/F", fontsize=fontsize_dict["label"])
+    ax.axhline(0, color="grey", lw=0.5, zorder=-10)
+    ax.set_xlim(of_bins[0], of_bins[-1])
