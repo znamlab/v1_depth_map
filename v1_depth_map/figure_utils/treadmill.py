@@ -326,7 +326,7 @@ def plot_treadmill_stim_sampling(
         color="dodgerblue",
         s=trial_markersize,
         edgecolors="white",
-        linewidths=0.5,
+        linewidths=0.1,
         label="Trial averages",
     )
 
@@ -565,3 +565,41 @@ def load_treadmill_population_neurons_df(
         valid_sessions,
         treadmill_sessions,
     )
+
+
+def compute_treadmill_rsof_bins(trials_df_tm):
+    """Compute RS/OF bin edges and tick_dict matching the discrete motor
+    speeds/optic flows used on the treadmill.
+
+    Args:
+        trials_df_tm (pd.DataFrame): treadmill trials_df with 'MotorSpeed_stim'
+            and 'expected_optic_flow_stim' columns.
+
+    Returns:
+        tuple: (rs_bins, of_bins, tick_dict)
+    """
+    motor_speeds = np.round(np.unique(trials_df_tm.MotorSpeed_stim.map(np.nanmedian)))
+    ms_log = np.log2(motor_speeds)
+    rs_bw = np.median(np.diff(ms_log))
+    rs_bins = 2 ** np.arange(ms_log[0] - rs_bw * 1.5, ms_log[-1] + rs_bw * 2, rs_bw)
+    rs_bins = np.insert(rs_bins, 0, 0)
+
+    of_speeds = np.round(
+        np.unique(trials_df_tm.expected_optic_flow_stim.map(np.nanmedian))
+    )
+    of_log = np.log2(of_speeds)
+    of_bw = np.median(np.diff(of_log))
+    of_bins = 2 ** np.arange(of_log[0] - of_bw * 0.5, of_log[-1] + of_bw, of_bw)
+    of_bins = np.insert(of_bins, 0, 0)
+
+    rs_logbin = np.log2(rs_bins[1:])
+    rs_bin_middle = np.diff(rs_logbin) / 2 + rs_logbin[:-1]
+    of_logbin = np.log2(of_bins[1:])
+    of_bin_middle = np.diff(of_logbin) / 2 + of_logbin[:-1]
+    tick_dict = dict(
+        rs_tick_select=rs_bin_middle,
+        rs_tick_values=(2**rs_bin_middle).astype(int),
+        of_tick_select=of_bin_middle,
+        of_tick_values=2**of_bin_middle,
+    )
+    return rs_bins, of_bins, tick_dict
