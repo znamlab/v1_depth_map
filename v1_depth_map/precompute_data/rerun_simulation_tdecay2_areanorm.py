@@ -1,18 +1,31 @@
-"""Re-run the RS/OF simulated-response pipeline with the "max"-normalized kernel
+"""Re-run the RS/OF simulated-response pipeline with the area-normalized kernel
 and decay_tau=2 (aligned with `figsupp_simulation_control.ipynb`'s TDECAY).
 
 `cottage_analysis.analysis.spheres.simulation.make_biexponential_kernel` (and
-`make_exponential_kernel`) now take a `normalization` flag ("max" to normalize the
-kernel's peak to 1, or "area" to normalize its sum/unit-gain to 1), with "max" as the
-new default -- previously the kernel was always area/unit-gain normalized. This
-script regenerates the precomputed `simulated_responses_fit_{treadmill,spheres}_*
-.parquet` files (containing `fake_dff`) for the "motor" (treadmill) sessions of the
-colasa_3d-vision_revisions project, via `treadmill.simulate_and_fit_session` /
-`spheres.simulate_and_fit_session` (both submitted to slurm, matching how they were
-originally generated in `v1_depth_map/revisions/preprocess_rev_sessions.ipynb`,
-cells 26-27), using:
-  - the new default kernel normalization ("max"), and
+`make_exponential_kernel`) take a `normalization` flag: "area" normalizes the kernel's
+sum to 1 (unit gain, so a sustained input reaches the same steady state at the output),
+"max" normalizes its peak to 1. "area" is the default and is what this script uses -- a
+"max"-normalized run was tried and rejected because it inflates `fake_dff` amplitudes by
+roughly the area-normalized kernel's sum-to-peak ratio (~37x at decay_tau=2 / 15 Hz),
+which is not comparable to the real dF/F.
+
+This script regenerates the precomputed
+`simulated_responses_fit_{treadmill,spheres}_*.parquet` files (containing `fake_dff`)
+for the "motor" (treadmill) sessions of the colasa_3d-vision_revisions project, via
+`treadmill.simulate_and_fit_session` / `spheres.simulate_and_fit_session` (both
+submitted to slurm, matching how they were originally generated in
+`v1_depth_map/revisions/preprocess_rev_sessions.ipynb`, cells 26-27), using:
+  - the default kernel normalization ("area"), and
   - decay_tau=2 instead of the previously-used decay_tau=4.
+
+Note the output filename encodes only decay_tau/rise_tau/circularity, not the
+normalization, so this overwrites whatever `_2_0.15_circular.parquet` is already there.
+
+Note also that `simulate_and_fit_session` cuts trials with the *current* default
+onset detector ("plateau"), whereas the April-2026 artifacts were cut with "model".
+After running this, the `tread_kwargs=dict(method="model")` override in
+`figsupp_simulation_control.ipynb` (cell 10) must be dropped, or its frame-count
+assert will fire.
 """
 
 import os
@@ -28,7 +41,7 @@ PROJECT = "colasa_3d-vision_revisions"
 DECAY_TAU = 2  # matches figsupp_simulation_control.ipynb's TDECAY
 RISE_TAU = 0.15
 MAKE_CIRCULAR = True
-KERNEL_NORMALIZATION = "max"  # the new default; passed explicitly for clarity
+KERNEL_NORMALIZATION = "area"  # the default; passed explicitly for clarity
 USE_SLURM = True
 
 
@@ -78,7 +91,7 @@ def main():
             use_slurm=USE_SLURM,
             slurm_folder=slurm_folder,
             filter_datasets={"anatomical_only": 3, "annotated": True},
-            scripts_name=f"simul_tdecay{DECAY_TAU}_maxnorm_{session_name}_{circ_sfx}_treadmill",
+            scripts_name=f"simul_tdecay{DECAY_TAU}_areanorm_{session_name}_{circ_sfx}_treadmill",
         )
 
         # 2. Free locomotion (spheres) -- produces
@@ -93,7 +106,7 @@ def main():
             use_slurm=USE_SLURM,
             slurm_folder=slurm_folder,
             filter_datasets={"annotated": True},
-            scripts_name=f"simul_tdecay{DECAY_TAU}_maxnorm_{session_name}_{circ_sfx}_spheres",
+            scripts_name=f"simul_tdecay{DECAY_TAU}_areanorm_{session_name}_{circ_sfx}_spheres",
         )
 
     print(
