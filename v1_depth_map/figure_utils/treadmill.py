@@ -122,11 +122,13 @@ def plot_treadmill_protocol(
         ax.plot(time_axis, excluded_data, color="grey", lw=2, label="Excluded Frames")
     else:
         ax.plot(time_axis, data, color="k", lw=1, clip_on=False)
-    ax.plot(
+    ax.scatter(
         time_axis,
         used_data,
+        s=5,
         color="dodgerblue",
-        lw=2,
+        zorder=20,
+        # lw=2,
         label="Analysed Frames",
     )
 
@@ -245,6 +247,7 @@ def plot_treadmill_stim_sampling(
     trial_markersize=20,
     legend_on=True,
     legend_kwargs=None,
+    ylim=None,
     figsize=(7 / 2.54, 7 / 2.54),
     save_path=None,
 ):
@@ -270,6 +273,11 @@ def plot_treadmill_stim_sampling(
         legend_on (bool, optional): Whether to add the legend. Defaults to True.
         legend_kwargs (dict, optional): Overrides for the legend keyword arguments.
             Defaults to None.
+        ylim (tuple, optional): (ymin, ymax) for the optic flow axis, in degrees/s.
+            Use this to clip rare single-frame glitches (e.g. a one-frame near-stall
+            in the rendered eye position, giving a spuriously tiny optic flow value)
+            without excluding them from the underlying data. Defaults to None, i.e.
+            matplotlib's automatic limits.
         figsize (tuple, optional): Figure size in inches, ignored if ax is given.
             Defaults to (7/2.54, 7/2.54).
         save_path (str or Path, optional): Path to save the figure as a PDF.
@@ -318,6 +326,7 @@ def plot_treadmill_stim_sampling(
         s=markersize,
         edgecolors="none",
         label="Single frames",
+        rasterized=True,
     )
     ax.scatter(
         rs_trials,
@@ -333,6 +342,9 @@ def plot_treadmill_stim_sampling(
     ax.set_xscale("log", base=2)
     ax.set_yscale("log", base=2)
 
+    if ylim is not None:
+        ax.set_ylim(*ylim)
+
     motor_speeds = np.unique(
         trials_df.MotorSpeed_stim.map(np.nanmedian).dropna().round()
     )
@@ -347,7 +359,7 @@ def plot_treadmill_stim_sampling(
     ax.set_yticks(of_ticks)
     ax.set_yticklabels([f"{x}" for x in of_ticks], fontsize=fontsize_dict["tick"])
     ax.set_xlabel("Running speed (cm/s)", fontsize=fontsize_dict["label"])
-    ax.set_ylabel("Optic flow speed (degrees/s)", fontsize=fontsize_dict["label"])
+    ax.set_ylabel("Optic flow speed (°/s)", fontsize=fontsize_dict["label"])
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     ax.spines["bottom"].set_bounds(min(rs_ticks), max(rs_ticks))
@@ -497,12 +509,18 @@ def load_treadmill_population_neurons_df(
     # Find tuned cells
     neurons_df = neurons_df[neurons_df["is_cell"]].copy()
 
-    neurons_df["is_depth_neuron"] = (
-        neurons_df["depth_tuning_test_spearmanr_rval_closedloop"] > 0.1
-    ) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop"] < 0.05)
-    neurons_df["is_depth_neuron_treadmill"] = (
-        neurons_df["depth_tuning_test_spearmanr_rval_closedloop_treadmill"] > 0.1
-    ) & (neurons_df["depth_tuning_test_spearmanr_pval_closedloop_treadmill"] < 0.05)
+    common_utils.add_one_sided_spearman_significance(
+        neurons_df,
+        rval_col="depth_tuning_test_spearmanr_rval_closedloop",
+        pval_col="depth_tuning_test_spearmanr_pval_closedloop",
+        out_col="is_depth_neuron",
+    )
+    common_utils.add_one_sided_spearman_significance(
+        neurons_df,
+        rval_col="depth_tuning_test_spearmanr_rval_closedloop_treadmill",
+        pval_col="depth_tuning_test_spearmanr_pval_closedloop_treadmill",
+        out_col="is_depth_neuron_treadmill",
+    )
 
     # Empirical-null significance test for the RS/OF (g2d) fit, closed-loop and treadmill
     for which, flag_col in [
@@ -581,7 +599,10 @@ def compute_treadmill_rsof_bins(trials_df_tm):
     motor_speeds = np.round(np.unique(trials_df_tm.MotorSpeed_stim.map(np.nanmedian)))
     ms_log = np.log2(motor_speeds)
     rs_bw = np.median(np.diff(ms_log))
-    rs_bins = 2 ** np.arange(ms_log[0] - rs_bw * 1.5, ms_log[-1] + rs_bw * 2, rs_bw)
+    # one bin per motor speed, plus one extra below the slowest one to catch trials
+    # where the mouse ran slower than the wheel. Nothing above the fastest motor
+    # speed: that bin can only ever be empty.
+    rs_bins = 2 ** (ms_log[0] - rs_bw * 1.5 + rs_bw * np.arange(len(motor_speeds) + 2))
     rs_bins = np.insert(rs_bins, 0, 0)
 
     of_speeds = np.round(
@@ -600,6 +621,6 @@ def compute_treadmill_rsof_bins(trials_df_tm):
         rs_tick_select=rs_bin_middle,
         rs_tick_values=(2**rs_bin_middle).astype(int),
         of_tick_select=of_bin_middle,
-        of_tick_values=2**of_bin_middle,
+        of_tick_values=(2**of_bin_middle).astype(int),
     )
     return rs_bins, of_bins, tick_dict

@@ -18,7 +18,7 @@ import pandas as pd
 import flexiznam as flz
 
 from cottage_analysis.pipelines import pipeline_utils
-from cottage_analysis.analysis import find_depth_neurons
+from cottage_analysis.analysis import find_depth_neurons, common_utils
 
 PROJECT = "colasa_3d-vision_revisions"
 PHOTODIODE_PROTOCOL = 5
@@ -72,8 +72,11 @@ def update_neurons_df_depth_columns(neurons_df_path, fit_results_df, suffix):
     rval_col = f"depth_tuning_test_spearmanr_rval_closedloop{suffix}"
     pval_col = f"depth_tuning_test_spearmanr_pval_closedloop{suffix}"
     if rval_col in neurons_df.columns and pval_col in neurons_df.columns:
-        neurons_df[f"is_depth_neuron{suffix}"] = (neurons_df[rval_col] > 0.1) & (
-            neurons_df[pval_col] < 0.05
+        common_utils.add_one_sided_spearman_significance(
+            neurons_df,
+            rval_col=rval_col,
+            pval_col=pval_col,
+            out_col=f"is_depth_neuron{suffix}",
         )
 
     neurons_df.to_pickle(neurons_df_path)
