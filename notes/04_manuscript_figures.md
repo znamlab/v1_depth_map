@@ -20,7 +20,7 @@ This document tracks the assembly status of all Main and Supplementary figures f
 ## 2. Supplementary Figures Assembly Status
 
 | Figure | Description | Generating Notebook | Exported Files in `ver_rev1` | Assembly Status | Tasks & Action Items |
-| :--- | :--- | :--- | :--- | :---: | :--- |
+| **Fig S1** | Visual stimulus synchronization (Schematic, Sequence vs Photodiode, Position, Lag histogram) | [`figsupp_vis_stim_sync.ipynb`](../v1_depth_map/figures/figsupp_vis_stim_sync.ipynb) | `fig_supp_vis-stim.svg`<br>`lag_example.svg` | ✅ Ready / Assembled | Panels A–D complete (embedded schematic & layout matched) |
 | **Fig S2** | Speed & Eye tracking controls (Running speed, Optic flow, Eye tracking) | [`figsupp_speed.ipynb`](../v1_depth_map/figures/figsupp_speed.ipynb) | `figsupp_speed.svg` | ✅ Ready / Assembled | Panels A–L complete (full frame eye image, unclipped labels) |
 | **Fig S5** | Open-loop vs closed-loop responses | [`figsupp_openloop.ipynb`](../v1_depth_map/figures/figsupp_openloop.ipynb) | `fig_supp_openloop.svg` | 🎨 In Progress | Verify playback correlation plots |
 | **Fig S6** | Size control experiment | [`figsupp_size_control.ipynb`](../v1_depth_map/figures/figsupp_size_control.ipynb) | `fig_size_control/` | ✅ Assembled | 2P reruns & `neurons_df.pickle` updated (`ast_neuropil=False`) |
