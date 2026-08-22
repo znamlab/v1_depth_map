@@ -19,10 +19,10 @@ This document tracks the execution status, resource utilization, and action item
 | [`figsupp_openloop.ipynb`](../v1_depth_map/figures/figsupp_openloop.ipynb) | ✅ Success | 1.5 min | 3.59 GB | Supp: Open loop | Playback comparisons |
 | [`figsupp_rf.ipynb`](../v1_depth_map/figures/figsupp_rf.ipynb) | ✅ Success | 3.1 min | 1.24 GB | Supp: RF details | RF gradients and contralateral vs ipsilateral |
 | [`figsupp_rsof.ipynb`](../v1_depth_map/figures/figsupp_rsof.ipynb) | ✅ Success | 37.2 min | 2.33 GB | Supp: RS × OF matrices | RS × OF 2D grid responses |
-| [`figsupp_size_control.ipynb`](../v1_depth_map/figures/figsupp_size_control.ipynb) | ✅ Ready | 0.2 min | 1.30 GB | Supp: Size control | Fig S6 size-tuning controls (unclipped curves & stats generated) |
-| [`figsupp_vis_stim_sync.ipynb`](../v1_depth_map/figures/figsupp_vis_stim_sync.ipynb) | ✅ Success | 7.0 min | 6.33 GB | Supp: Visual sync | Harp photodiode synchronization |
-| [`figsupp_multidays.ipynb`](../v1_depth_map/figures/figsupp_multidays.ipynb) | ✅ Success | - | - | Supp: Multiday stability | Longitudinal tracking across days |
-| [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | ✅ Ready | - | - | Supp: Simulation control | Simulation reruns completed (Jobs `52276868`–`52276875`, `decay_tau=2`, area-norm) |
+| [`figsupp_size_control.ipynb`](../v1_depth_map/figures/figsupp_size_control.ipynb) | ✅ Ready | 0.2 min | 1.30 GB | Supp: Size control (`\label{sup:size}`) | Size-tuning invariance controls & stats |
+| [`figsupp_vis_stim_sync.ipynb`](../v1_depth_map/figures/figsupp_vis_stim_sync.ipynb) | ✅ Ready | 7.0 min | 6.33 GB | Supp: Visual sync (`\label{sup:vis_stim}`) | 100% vector Fig S1 with embedded vector schematic |
+| [`figsupp_multidays.ipynb`](../v1_depth_map/figures/figsupp_multidays.ipynb) | ✅ Success | - | - | Supp: Multiday stability | Longitudinal tracking across days (candidate Fig S7) |
+| [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | ✅ Ready | - | - | Supp: Simulation control | Synthetic dataset validation (candidate Fig S8) |
 
 ---
 
