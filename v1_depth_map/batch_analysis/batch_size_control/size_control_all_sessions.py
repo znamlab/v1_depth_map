@@ -9,6 +9,16 @@ session_list = [
     "PZAH10.2f_S20230907",
 ]
 
+# PZAH10.2f_S20230815's three recordings are *named* SpheresPermTubeReward but hold
+# genuine size-control data (OriginalSize sweeps [0.0435, 0.087, 0.174]; plain closed-loop
+# recordings hold a single 0.087). That misleading name needs no override here:
+# size_control.sync_all_recordings() filters on the `protocol` *attribute*
+# (`recordings.protocol == protocol_base`), not the recording name, and flexilims records
+# protocol='SizeControl' for all three. Overriding to "SpheresPermTubeReward" matches zero
+# recordings and fails with an UnboundLocalError on vs_df_all.
+PROTOCOL_BASE_OVERRIDES = {}
+DEFAULT_PROTOCOL_BASE = "SizeControl"
+
 use_slurm = 0
 log_fname = "size"
 
@@ -27,6 +37,9 @@ def main(
         else:
             photodiode_protocol = 5
 
+        protocol_base = PROTOCOL_BASE_OVERRIDES.get(session_name, DEFAULT_PROTOCOL_BASE)
+        print(f"{session_name}: protocol_base={protocol_base}")
+
         pipeline_utils.sbatch_session(
             project=project,
             session_name=session_name,
@@ -34,6 +47,7 @@ def main(
             conflicts=conflicts,
             photodiode_protocol=photodiode_protocol,
             use_slurm=use_slurm,
+            protocol_base=protocol_base,
             **kwargs,
         )
 
