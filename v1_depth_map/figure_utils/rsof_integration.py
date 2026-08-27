@@ -5,7 +5,7 @@ Helper functions to plot RSOF integration figures.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
-from matplotlib.patches import Ellipse, Rectangle
+from matplotlib.patches import Arc, Ellipse, Rectangle
 from scipy import stats
 from cottage_analysis.plotting import rsof_plots, depth_selectivity_plots
 from cottage_analysis.analysis.fit_gaussian_blob import get_gaussian_angle
@@ -163,12 +163,17 @@ def plot_expected_depth_vs_treadmill(
     Parameters
     ----------
     suffix : str
-        Suffix for RS and OF columns (e.g. '_treadmill', '_treadmill_trial_average').
+        Suffix for RS and OF columns. The onset-detection method is always explicit:
+        '_treadmill_trial_average_plateau' (the default the figures use) or
+        '_treadmill_trial_average_model' for trial-averaged fits, '_treadmill' or
+        '_treadmill_model' for per-frame fits. Note that bare '_treadmill' IS the plateau
+        family -- it kept its name because it is read at ~240 hardcoded sites.
     depth_suffix : str or None
-        Suffix for preferred depth column (e.g. '_treadmill', '_treadmill_plateau').
-        If None, defaults to `suffix`. Decoupling is required because 1D depth fits
-        are always trial-averaged, so only onset-detection method ('model' vs 'plateau')
-        distinguishes them.
+        Suffix for preferred depth column ('_treadmill' or its identical twin
+        '_treadmill_plateau', else '_treadmill_model'). If None, defaults to `suffix`.
+        Decoupling is required because 1D depth fits are always trial-averaged, so only
+        the onset-detection method distinguishes them -- there is no depth equivalent of
+        the '_trial_average' tag, and passing an RS/OF suffix here would not resolve.
     """
     if depth_suffix is None:
         depth_suffix = suffix
@@ -385,17 +390,185 @@ def plot_gaussian_theta_distribution(
     return ax
 
 
+# Perpendicular offsets from the -45 deg radial spoke, as a fraction of the radial axis
+# range. The insets sit just outside the radial tick labels, the axis label just outside
+# the insets.
+ECC_AXIS_INSET_ARC = 0.20
+ECC_AXIS_LABEL_ARC = 0.45
+
+# Radial scales the polar RS/OF panels can use. Each entry says how far the axis runs,
+# how to tick it, which shapes the legend insets illustrate, and - crucially - how to turn
+# a radial coordinate into an ellipse's minor/major axis ratio, so `add_ellipse_schematics`
+# draws the shape that actually belongs at that radius whatever the scale.
+#
+#   "eccentricity": r = sqrt(1 - b^2/a^2), the standard geometric eccentricity. Saturates
+#       hard - a 2:1 ellipse is already at 0.87 and a 4:1 at 0.97 - so real populations
+#       pile up against the outer ring.
+#   "elongation": r = log2(a/b). Zero is circular and every unit is a doubling, which is
+#       the scale elongation actually varies on, so the same population spreads out. Ridge
+#       fits are unbounded, hence the clip at the outermost tick: everything at 8:1 or
+#       beyond lands on the outer ring.
+RADIAL_SCALES = {
+    "eccentricity": dict(
+        rmax=1.0,
+        ticks=(0, 0.2, 0.4, 0.6, 0.8, 1.0),
+        ticklabels=("0", "0.2", "0.4", "0.6", "0.8", "1"),
+        label="Eccentricity",
+        legend_values=(0.2, 0.4, 0.6, 0.8),
+        legend_radii=(0.26, 0.44, 0.62, 0.80),
+        # r is the eccentricity itself -> b/a = sqrt(1 - r^2)
+        ratio=lambda v: float(np.sqrt(max(1.0 - float(v) ** 2, 0.0))),
+    ),
+    "elongation": dict(
+        rmax=3.0,
+        ticks=(0, 1, 2, 3),
+        ticklabels=("1:1", "2:1", "4:1", "\u22658:1"),
+        label="Elongation",
+        legend_values=(1, 2, 3),
+        legend_radii=(1.10, 2.05, 2.88),
+        # r = log2(a/b) -> b/a = 2**-r
+        ratio=lambda v: float(2.0 ** -float(v)),
+    ),
+}
+
+
+def _get_radial_scale(radial_scale):
+    """Look up a radial-scale spec by name, with a helpful error."""
+    try:
+        return RADIAL_SCALES[radial_scale]
+    except KeyError:
+        raise ValueError(
+            f"Unknown radial_scale {radial_scale!r}; expected one of "
+            f"{tuple(RADIAL_SCALES)}."
+        ) from None
+
+
+def _offset_theta(r, arc, base_deg=-45):
+    """Polar angle of a point `arc` away from the `base_deg` spoke, at radius `r`.
+
+    Used to lay text and ellipse insets alongside the eccentricity axis at a roughly
+    constant perpendicular distance from it, rather than at a constant angle (which
+    would bunch them up near the origin).
+
+    Args:
+        r (float): Radius of the point, in radial-axis units.
+        arc (float): Perpendicular distance from the spoke, in radial-axis units.
+        base_deg (float, optional): Angle of the spoke in degrees. Default is -45.
+
+    Returns:
+        float: Angle in degrees.
+    """
+    return base_deg - np.degrees(arc / r)
+
+
+def _draw_gradient_ellipse(
+    ax,
+    trans,
+    major_pts,
+    ratio,
+    angle,
+    color="red",
+    frame=True,
+    frame_half_pts=10.0,
+    rasterized=False,
+):
+    """Draw one soft-edged ellipse schematic on a white square frame.
+
+    The "gradient" is `n_layers` concentric alpha-ramped ellipses plus a sharp core.
+    Everything is drawn in points around the origin of `trans`, so the shape is
+    independent of the axes size and of the polar coordinates it sits in.
+
+    Args:
+        ax (matplotlib.axes.Axes): Axes to add the patches to.
+        trans (matplotlib.transforms.Transform): Transform mapping points-from-origin to
+            display coordinates (i.e. `Affine2D().scale(dpi/72) + ScaledTranslation(...)`).
+        major_pts (float): Length of the major axis, in points.
+        ratio (float): Minor/major axis ratio, i.e. `sqrt(1 - eccentricity**2)` with
+            the standard geometric definition of eccentricity.
+        angle (float): Rotation of the ellipse in degrees. The major axis is `height`,
+            so it points along +y at `angle=0`.
+        color (str, optional): Fill colour. Default is "red".
+        frame (bool, optional): Whether to draw the white square frame behind the
+            ellipse. Default is True.
+        frame_half_pts (float, optional): Half-side of the square frame, in points.
+            Default is 10.
+        rasterized (bool, optional): Whether to rasterize the patches. Default is False.
+    """
+    # Frame first so it sits behind the gradient layers
+    if frame:
+        ax.add_patch(
+            Rectangle(
+                xy=(-frame_half_pts, -frame_half_pts),
+                width=frame_half_pts * 2,
+                height=frame_half_pts * 2,
+                facecolor="white",
+                edgecolor="black",
+                linewidth=0.5,
+                transform=trans,
+                clip_on=False,
+                rasterized=rasterized,
+            )
+        )
+    n_layers = 15
+    for i in range(n_layers):
+        alpha = (i + 1) / n_layers
+        scale_el = 1 - (i / n_layers) * 0.8
+        ax.add_patch(
+            Ellipse(
+                xy=(0, 0),
+                width=major_pts * scale_el * ratio,
+                height=major_pts * scale_el,
+                angle=angle,
+                facecolor=color,
+                alpha=alpha * 0.25,
+                edgecolor="none",
+                transform=trans,
+                clip_on=False,
+                rasterized=rasterized,
+            )
+        )
+    # Core ellipse for sharpness
+    ax.add_patch(
+        Ellipse(
+            xy=(0, 0),
+            width=major_pts * 0.2 * ratio,
+            height=major_pts * 0.2,
+            angle=angle,
+            facecolor=color,
+            alpha=0.6,
+            edgecolor="none",
+            transform=trans,
+            clip_on=False,
+            rasterized=rasterized,
+        )
+    )
+
+
 def add_ellipse_schematics(
-    ax, plot_angle=True, plot_ecc=True, frame=True, scale=1.0, rasterized=False
+    ax,
+    plot_angle=True,
+    plot_ecc=True,
+    frame=True,
+    scale=1.0,
+    rasterized=False,
+    color="red",
+    perimeter_ratio=0.2,
+    radial_scale="eccentricity",
 ):
     """
-    Add oriented, gradient-filled ellipses to a polar plot to visualize tuning markers and eccentricity scales.
+    Add oriented, gradient-filled ellipses to a polar plot to visualize tuning markers and radial scale.
+
+    Each legend inset's shape is derived from the radius it sits at, via the active
+    `radial_scale`'s `ratio` function, so an inset next to a radial tick really has the
+    shape that tick denotes - whether the axis is eccentricity or log2 elongation. The
+    major axis is held constant, so every inset fits the same square frame and its shape
+    reads purely as elongation.
 
     Args:
         ax (matplotlib.axes.PolarAxes): The polar axes to which the ellipses will be added.
         plot_angle (bool, optional): Whether to plot the orientation ellipses around the
             perimeter. Default is True.
-        plot_ecc (bool, optional): Whether to plot the eccentricity legend ellipses along a
+        plot_ecc (bool, optional): Whether to plot the shape legend ellipses along the
             radial axis. Default is True.
         frame (bool, optional): Whether to draw a white rectangle with a thin black border
             around each ellipse. Default is True.
@@ -403,137 +576,354 @@ def add_ellipse_schematics(
             Default is 1.0.
         rasterized (bool, optional): Whether to rasterize the ellipses and frames.
             Default is False.
+        color (str, optional): Fill colour of the ellipses. Default is "red".
+        perimeter_ratio (float, optional): Minor/major axis ratio of the orientation
+            ellipses around the perimeter. Default is 0.2, i.e. 5:1 - elongated enough to
+            read as an orientation marker at small sizes.
+        radial_scale (str, optional): Key into `RADIAL_SCALES`, sets the radial extent and
+            the shape of the legend insets. Default is "eccentricity".
     """
+    spec = _get_radial_scale(radial_scale)
+    rmax = spec["rmax"]
     fig = ax.get_figure()
-
-    # PLOT ANGLE ELLIPSES
-    # Fixed frame size (same for every angle ellipse), in axes-fraction units
-    size = 0.1 * scale  # Roughly the size of the label text
+    # Points-per-inch to pixels; shared by both groups so `scale` behaves consistently
+    point_to_pixel = transforms.Affine2D().scale(fig.dpi / 72.0)
+    frame_half_pts = 10 * scale  # half-side of the square frame
+    # Major axis, sized to fill the frame with a small margin
+    size_pts = frame_half_pts * 1.6
 
     if plot_angle:
-        ecc = 0.95
-        ratio = np.sqrt(1 - ecc**2)
+        # PLOT ANGLE ELLIPSES
+        # One inset per angular tick, showing the tuning ellipse that produces that
+        # orientation. `Ellipse` puts the major axis (height) along +y at angle=0, so
+        # `angle = theta - 90` puts it at `theta` degrees from horizontal: vertical at
+        # 90 deg, horizontal at 0 deg.
+        ratio = perimeter_ratio
+        # Just outside the radial limit, beyond the angular tick labels
+        r_pos = 1.25 * rmax
+        for theta_deg in [-45, 0, 45, 90, 135]:
+            trans = point_to_pixel + transforms.ScaledTranslation(
+                np.radians(theta_deg), r_pos, ax.transData
+            )
+            _draw_gradient_ellipse(
+                ax,
+                trans,
+                major_pts=size_pts,
+                ratio=ratio,
+                angle=theta_deg - 90,
+                color=color,
+                frame=frame,
+                frame_half_pts=frame_half_pts,
+                rasterized=rasterized,
+            )
 
-        r_pos = 1.22  # Just outside the r=1 limit
-        for angle, theta_pos in zip([-45, 0, 45, 90, 135], [45, 90, -45, 0, 135]):
-            angle = 0  # vertical orientation
-            theta_pos = np.radians(theta_pos)
-            # Blended transform: position in data (polar) coords, shape in axes-fraction units
-            trans = ax.get_xaxis_transform()
-            # Optional frame — drawn BEFORE gradient layers so it sits behind the ellipse
-            if frame:
-                point_to_pixel = transforms.Affine2D().scale(fig.dpi / 72.0)
-                anchor = transforms.ScaledTranslation(
-                    theta_pos, r_pos, ax.get_xaxis_transform()
-                )
-                frame_trans = point_to_pixel + anchor
-                frame_half_pts = (
-                    10 * scale
-                )  # same as eccentricity frames → consistent look
-                rect = Rectangle(
-                    xy=(-frame_half_pts, -frame_half_pts),
-                    width=frame_half_pts * 1.8,
-                    height=frame_half_pts * 2,
-                    facecolor="white",
-                    edgecolor="black",
-                    linewidth=0.5,
-                    transform=frame_trans,
-                    clip_on=False,
-                    rasterized=rasterized,
-                )
-                ax.add_patch(rect)
-            # Draw concentric ellipses for a "gradient" effect
-            n_layers = 15
-            for i in range(n_layers):
-                alpha = (i + 1) / n_layers
-                scale_el = 1 - (i / n_layers) * 0.8
-                el = Ellipse(
-                    xy=(theta_pos, r_pos),
-                    width=size * scale_el * ratio,
-                    height=size * scale_el,
-                    angle=angle,
-                    facecolor="red",
-                    alpha=alpha * 0.3,
-                    edgecolor="none",
-                    transform=trans,
-                    clip_on=False,
-                    rasterized=rasterized,
-                )
-                ax.add_patch(el)
-            # Core ellipse for sharpness
-            core_el = Ellipse(
-                xy=(theta_pos, r_pos),
-                width=size * 0.2 * ratio,
-                height=size * 0.2,
-                angle=angle,
-                facecolor="red",
-                alpha=0.5,
-                edgecolor="none",
-                transform=trans,
-                clip_on=False,
-                rasterized=rasterized,
-            )
-            ax.add_patch(core_el)
     if plot_ecc:
-        # PLOT CIRCULARITY ELLIPSES
-        eccs_leg = [0.2, 0.4, 0.6, 0.8]
-        r_leg = [0.3, 0.46, 0.65, 0.82]
-        theta_val = [-1.8, -1.35, -1.2, -1.1]
-        size_pts = 10 * scale
+        # PLOT SHAPE LEGEND ELLIPSES
+        # Legend staircase running alongside the radial (-45 deg) axis: same orientation
+        # throughout, only the elongation changes. The offsets are fractions of the radial
+        # range so the layout is identical whatever `rmax` the scale uses.
         angle_leg = 45
-        # Fixed square frame of side 2*frame_half_pts points (same for all eccentricities).
-        # size_pts=10 is enough to enclose even the most eccentric ellipse (ecc=0.8)
-        # rotated at 45°: its bounding half-size is only ~7 pts.
-        frame_half_pts = size_pts
-        for ecc, r_pos, theta in zip(eccs_leg, r_leg, theta_val):
-            ratio = np.sqrt(1 - ecc**2)
-            data_to_pixel = transforms.ScaledTranslation(theta, r_pos, ax.transData)
-            point_to_pixel = transforms.Affine2D().scale(fig.dpi / 72.0)
-            trans = point_to_pixel + data_to_pixel
-            size_ = size_pts / ratio
-            # Optional frame — drawn BEFORE gradient layers so it sits behind the ellipse
-            if frame:
-                rect = Rectangle(
-                    xy=(-frame_half_pts, -frame_half_pts),
-                    width=frame_half_pts * 1.8,
-                    height=frame_half_pts * 2,
-                    facecolor="white",
-                    edgecolor="black",
-                    linewidth=0.5,
-                    transform=trans,
-                    clip_on=False,
-                    rasterized=rasterized,
-                )
-                ax.add_patch(rect)
-            # Draw concentric ellipses
-            n_layers = 15
-            for i in range(n_layers):
-                alpha = (i + 1) / n_layers
-                scale_el = 1 - (i / n_layers) * 0.8
-                el = Ellipse(
-                    xy=(0, 0),
-                    width=size_ * scale_el * ratio,
-                    height=size_ * scale_el,
-                    angle=angle_leg,
-                    facecolor="red",
-                    alpha=alpha * 0.25,
-                    edgecolor="none",
-                    transform=trans,
-                    clip_on=False,
-                    rasterized=rasterized,
-                )
-                ax.add_patch(el)
-            # Core
-            core_el = Ellipse(
-                xy=(0, 0),
-                width=size_ * 0.2 * ratio,
-                height=size_ * 0.2,
+        inset_arc = ECC_AXIS_INSET_ARC * rmax
+        for value, r_pos in zip(spec["legend_values"], spec["legend_radii"]):
+            trans = point_to_pixel + transforms.ScaledTranslation(
+                np.radians(_offset_theta(r_pos, inset_arc)),
+                r_pos,
+                ax.transData,
+            )
+            _draw_gradient_ellipse(
+                ax,
+                trans,
+                major_pts=size_pts,
+                ratio=spec["ratio"](value),
                 angle=angle_leg,
-                facecolor="red",
-                alpha=0.6,
-                edgecolor="none",
-                transform=trans,
-                clip_on=False,
+                color=color,
+                frame=frame,
+                frame_half_pts=frame_half_pts,
                 rasterized=rasterized,
             )
-            ax.add_patch(core_el)
+
+
+def plot_angle_eccentricity_polar(
+    ax,
+    theta_deg,
+    eccentricity,
+    fontsize_dict,
+    scale=1.0,
+    schematics=True,
+    ecc_label=None,
+    radial_scale="eccentricity",
+    axis_ratio=None,
+    **scatter_kwargs,
+):
+    """Polar scatter of g2d tuning-ellipse orientation against its shape.
+
+    Sets up the -45 to 135 degree wedge used throughout the RS/OF analyses (0 deg = optic
+    flow axis, 90 deg = running speed axis), scatters the neurons and adds the ellipse
+    schematics.
+
+    The radial axis is either the geometric eccentricity or the log2 elongation, see
+    `RADIAL_SCALES`. Eccentricity saturates - most well-fit neurons sit above 0.9 - so
+    "elongation" is usually the readable choice for a population.
+
+    Args:
+        ax (matplotlib.axes.PolarAxes): Polar axes to draw on.
+        theta_deg (array-like): Ellipse major-axis angle in degrees, wrapped to
+            [-45, 135] (as returned by `fit_gaussian_blob.get_gaussian_angle`).
+        eccentricity (array-like): Ellipse eccentricity,
+            `sqrt(1 - sigma_minor^2/sigma_major^2)`. Used directly when
+            `radial_scale="eccentricity"`; for "elongation" it is only a fallback for
+            `axis_ratio` (pass `axis_ratio` instead, it is numerically better near 1).
+        fontsize_dict (dict): Font sizes, keys "label" and "tick".
+        scale (float, optional): Scaling factor passed to `add_ellipse_schematics`.
+            Default is 1.0.
+        schematics (bool, optional): Whether to add the ellipse schematics. Default is
+            True.
+        ecc_label (str, optional): Label of the radial axis. Defaults to the active
+            scale's own label.
+        radial_scale (str, optional): Key into `RADIAL_SCALES`. Default is
+            "eccentricity".
+        axis_ratio (array-like, optional): Ellipse `sigma_major / sigma_minor` (>= 1).
+            Only used by `radial_scale="elongation"`, where it is preferred over
+            deriving the ratio from `eccentricity`.
+        **scatter_kwargs: Passed to `ax.scatter`.
+
+    Returns:
+        matplotlib.collections.PathCollection: The scatter artist.
+    """
+    spec = _get_radial_scale(radial_scale)
+    rmax = spec["rmax"]
+
+    if radial_scale == "eccentricity":
+        r = np.asarray(eccentricity, dtype=float)
+    else:  # "elongation": radius is log2 of the axis ratio
+        if axis_ratio is None:
+            if eccentricity is None:
+                raise ValueError("Provide either `axis_ratio` or `eccentricity`.")
+            # a/b = 1 / sqrt(1 - e^2); loses precision as e -> 1, hence the preference
+            # for an explicit `axis_ratio`
+            e = np.asarray(eccentricity, dtype=float)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                axis_ratio = 1.0 / np.sqrt(np.clip(1.0 - e**2, 0.0, None))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            r = np.log2(np.asarray(axis_ratio, dtype=float))
+    # Ridge fits are unbounded; park them on the outer ring rather than dropping them
+    r = np.clip(r, 0, rmax)
+
+    # zorder above the spines: clipped/ridge fits land exactly on the outer arc and would
+    # otherwise be hidden behind it
+    kwargs = dict(s=10, alpha=0.4, linewidths=0, clip_on=False, zorder=3)
+    kwargs.update(scatter_kwargs)
+    sc = ax.scatter(np.radians(np.asarray(theta_deg, dtype=float)), r, **kwargs)
+
+    ax.set_theta_zero_location("E")  # 0 is East (Right) -> OF
+    ax.set_thetalim(np.radians(-45), np.radians(135))
+    ax.set_xticks(np.radians([-45, 0, 45, 90, 135]))
+    ax.set_xticklabels(
+        ["-45°", "0°", "45°", "90°", "135°"], fontsize=fontsize_dict["tick"]
+    )
+    ax.tick_params(axis="both", labelsize=fontsize_dict["tick"], pad=0)
+    ax.set_rlim(0, rmax)
+    ax.set_rticks(list(spec["ticks"]))
+    ax.set_yticklabels(list(spec["ticklabels"]), fontsize=fontsize_dict["tick"])
+    # Radial labels along the radial axis rather than the 0 deg spoke
+    ax.set_rlabel_position(-45)
+    r_label = 0.57 * rmax
+    ax.text(
+        np.radians(_offset_theta(r_label, ECC_AXIS_LABEL_ARC * rmax)),
+        r_label,
+        spec["label"] if ecc_label is None else ecc_label,
+        rotation=-45,
+        ha="center",
+        va="center",
+        fontsize=fontsize_dict["label"],
+    )
+    if schematics:
+        add_ellipse_schematics(ax, scale=scale, radial_scale=radial_scale)
+    return sc
+
+
+# Colours of the two principal axes drawn by `plot_g2d_fit_schematic`. Exported so a
+# figure can colour-code the "sigma_major / sigma_minor" text of its legend to match.
+SEMIMAJOR_COLOR = "#0072B2"
+SEMIMINOR_COLOR = "#009E73"
+
+
+def plot_g2d_fit_schematic(
+    ax,
+    neurons_df,
+    roi,
+    sfx,
+    min_sigma,
+    fontsize_dict,
+    mass_fraction=0.5,
+    semimajor_color=SEMIMAJOR_COLOR,
+    semiminor_color=SEMIMINOR_COLOR,
+    draw_theta=True,
+    ticks=False,
+    **fit_kwargs,
+):
+    """Draw one neuron's 2D-Gaussian RS/OF fit, outlined with what the fit measures.
+
+    On top of the fitted surface (`rsof_plots.plot_RS_OF_fit`) this adds the iso-response
+    ellipse enclosing `mass_fraction` of the Gaussian's mass, its two principal semi-axes
+    colour-coded major/minor, and the angle theta between the major axis and the optic
+    flow axis. Intended as a schematic of the fit parameters rather than a data panel,
+    hence `ticks=False` by default.
+
+    `plot_RS_OF_fit` draws in log_base units of the *displayed* quantities (x =
+    log_base(RS in cm/s), y = log_base(OF in deg/s)) while the fit itself lives in natural
+    log of RS in m/s and OF in deg/s. Both axes rescale by the same 1/ln(base), so the
+    ellipse keeps its shape and theta is unchanged - only the centre and the sigmas need
+    converting. imshow sets aspect="equal", so the drawn angle is the true one.
+
+    Args:
+        ax (matplotlib.axes.Axes): Axes to draw on.
+        neurons_df (pd.DataFrame): Population dataframe, or any subset containing the
+            neuron. It must be narrowed to a single session first: the ROI is looked up by
+            `neurons_df.roi == roi`, which is not unique across sessions.
+        roi (int): ROI number of the neuron to draw.
+        sfx (str): Column suffix of the fit family, e.g.
+            "_treadmill_trial_average_plateau".
+        min_sigma (float): `min_sigma` the fit was run with, as returned by
+            `treadmill.add_trial_average_rsof_columns`.
+        fontsize_dict (dict): Font sizes, keys "label" and "tick".
+        mass_fraction (float, optional): Fraction of the Gaussian's mass the drawn
+            ellipse encloses. Raise it to widen the ellipse. Defaults to 0.5.
+        semimajor_color (str, optional): Colour of the semi-major axis.
+        semiminor_color (str, optional): Colour of the semi-minor axis.
+        draw_theta (bool, optional): Whether to add the horizontal reference, the arc and
+            the theta label. Defaults to True.
+        ticks (bool, optional): Whether to keep the axis ticks. Defaults to False.
+        **fit_kwargs: Passed to `rsof_plots.plot_RS_OF_fit`, overriding the schematic
+            defaults below. Pass `log_range`, `rs_bins`, `of_bins` and `tick_dict` here to
+            match the data matrices of the same figure.
+
+    Returns:
+        dict: The drawn geometry in display units - "centre" (x, y), "sigma_major",
+            "sigma_minor" (the scaled sigmas, not multiplied by the mass-fraction radius),
+            "theta_deg" (major axis, in [0, 180)) and "k_iso" (the Mahalanobis radius the
+            ellipse is drawn at).
+    """
+    fit_kwargs = dict(
+        model_label="Gaussian fit",
+        label_r2=False,
+        cbar_width=None,
+        xlabel="Running speed",
+        ylabel="Optic flow",
+        **fit_kwargs,
+    )
+    rsof_plots.plot_RS_OF_fit(
+        neurons_df=neurons_df,
+        roi=roi,
+        model="g2d",
+        sfx=sfx,
+        min_sigma=min_sigma,
+        fontsize_dict=fontsize_dict,
+        ax=ax,
+        **fit_kwargs,
+    )
+    if not ticks:
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    # Adding artists lets autoscaling push the limits past the imshow extent, which would
+    # shrink the matrix in the panel. Hold the limits the image set and restore them after.
+    fit_xlim, fit_ylim = ax.get_xlim(), ax.get_ylim()
+
+    popt = neurons_df.loc[neurons_df.roi == roi, f"rsof_popt_closedloop_g2d{sfx}"].iloc[
+        0
+    ]
+    _, fit_x0, fit_y0, log_sigma_x2, log_sigma_y2, fit_theta = popt[:6]
+    sigma_x = np.sqrt(np.exp(log_sigma_x2) + min_sigma)
+    sigma_y = np.sqrt(np.exp(log_sigma_y2) + min_sigma)
+
+    ln_base = np.log(fit_kwargs.get("log_range", {}).get("log_base", 10))
+    centre_x = (fit_x0 + np.log(100)) / ln_base  # m/s -> cm/s, then into log_base units
+    centre_y = fit_y0 / ln_base
+    sx, sy = sigma_x / ln_base, sigma_y / ln_base
+
+    # Mahalanobis radius enclosing a fraction f of a 2D Gaussian's mass: sqrt(-2*ln(1-f))
+    k_iso = np.sqrt(-2 * np.log(1 - mass_fraction))
+
+    ax.add_patch(
+        Ellipse(
+            (centre_x, centre_y),
+            width=2 * k_iso * sx,
+            height=2 * k_iso * sy,
+            angle=np.degrees(fit_theta),
+            facecolor="none",
+            edgecolor="k",
+            linewidth=1,
+            clip_on=True,
+        )
+    )
+
+    # sigma_x lies along theta, so whichever sigma is larger defines the major axis. Both
+    # segments run from the centre out to the ellipse, so they read as the semi-axes.
+    if sx >= sy:
+        axes_spec = ((fit_theta, sx), (fit_theta + np.pi / 2, sy))
+    else:
+        axes_spec = ((fit_theta + np.pi / 2, sy), (fit_theta, sx))
+    for (direction, half_length), color in zip(
+        axes_spec, (semimajor_color, semiminor_color)
+    ):
+        ax.plot(
+            [centre_x, centre_x + k_iso * half_length * np.cos(direction)],
+            [centre_y, centre_y + k_iso * half_length * np.sin(direction)],
+            color=color,
+            linewidth=1.2,
+            clip_on=True,
+        )
+
+    major_dir, major_len = axes_spec[0]
+    theta_draw_deg = np.degrees(major_dir) % 180
+    if draw_theta:
+        # Horizontal reference through the centre, plus the arc between it and the major
+        # axis, so theta can be read straight off the panel. The panel is narrow (the
+        # image is aspect-locked) and the arc has to sit clear of the ellipse outline, so
+        # both the arc and the label are sized off the ellipse's own radius along the
+        # bisector rather than off the semi-major axis.
+        bisector = np.radians(theta_draw_deg / 2)
+        d_bisector = bisector - fit_theta
+        r_edge = 1.0 / np.hypot(
+            np.cos(d_bisector) / (k_iso * sx), np.sin(d_bisector) / (k_iso * sy)
+        )
+        ax.plot(
+            [centre_x, centre_x + 0.65 * k_iso * major_len],
+            [centre_y, centre_y],
+            color="k",
+            ls="--",
+            linewidth=0.8,
+            clip_on=True,
+        )
+        arc_r = 0.42 * r_edge
+        ax.add_patch(
+            Arc(
+                (centre_x, centre_y),
+                width=2 * arc_r,
+                height=2 * arc_r,
+                theta1=0,
+                theta2=theta_draw_deg,
+                edgecolor="k",
+                linewidth=0.8,
+            )
+        )
+        # label on the bisector, between the arc and the ellipse outline
+        ax.text(
+            centre_x + 0.72 * r_edge * np.cos(bisector),
+            centre_y + 0.72 * r_edge * np.sin(bisector),
+            r"$\theta$",
+            fontsize=fontsize_dict["label"],
+            ha="center",
+            va="center",
+        )
+
+    ax.set_xlim(fit_xlim)
+    ax.set_ylim(fit_ylim)
+    return dict(
+        centre=(centre_x, centre_y),
+        sigma_major=max(sx, sy),
+        sigma_minor=min(sx, sy),
+        theta_deg=theta_draw_deg,
+        k_iso=k_iso,
+    )
