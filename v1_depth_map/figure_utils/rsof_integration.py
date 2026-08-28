@@ -5,6 +5,7 @@ Helper functions to plot RSOF integration figures.
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.transforms as transforms
+from matplotlib.lines import Line2D
 from matplotlib.patches import Arc, Ellipse, Rectangle
 from scipy import stats
 from cottage_analysis.plotting import rsof_plots, depth_selectivity_plots
@@ -408,6 +409,13 @@ ECC_AXIS_LABEL_ARC = 0.45
 #       the scale elongation actually varies on, so the same population spreads out. Ridge
 #       fits are unbounded, hence the clip at the outermost tick: everything at 8:1 or
 #       beyond lands on the outer ring.
+#
+# `size_mode` says which axis of the legend insets is held constant as the shape changes:
+#   "fixed_major": the major axis fills the frame and the minor shrinks. Reads as
+#       "same length, squeezed".
+#   "fixed_minor": the minor axis is the same in every inset and the major grows out of
+#       it. Reads as "a circle stretched along one axis", which is what the elongation
+#       axis actually measures - so the staircase starts from a circle at 1:1.
 RADIAL_SCALES = {
     "eccentricity": dict(
         rmax=1.0,
@@ -418,16 +426,28 @@ RADIAL_SCALES = {
         legend_radii=(0.26, 0.44, 0.62, 0.80),
         # r is the eccentricity itself -> b/a = sqrt(1 - r^2)
         ratio=lambda v: float(np.sqrt(max(1.0 - float(v) ** 2, 0.0))),
+        size_mode="fixed_major",
     ),
     "elongation": dict(
         rmax=3.0,
         ticks=(0, 1, 2, 3),
         ticklabels=("1:1", "2:1", "4:1", "\u22658:1"),
         label="Elongation",
-        legend_values=(1, 2, 3),
-        legend_radii=(1.10, 2.05, 2.88),
+        legend_values=(0, 1, 2, 3),
+        legend_radii=(0.0, 1.05, 2.02, 2.88),
         # r = log2(a/b) -> b/a = 2**-r
         ratio=lambda v: float(2.0 ** -float(v)),
+        size_mode="fixed_minor",
+        legend_minor_boost=3.0,
+        # With the minor axis held constant and boosted, the most elongated insets are
+        # longer than their frame; cut them off at the edge rather than let them spill
+        # over the panel. The outermost tick is "at least 8:1", so an inset running off
+        # the edge of its box reads correctly.
+        legend_clip=True,
+        # Insets sit exactly perpendicular to their tick, so `legend_radii` are distances
+        # along the spoke rather than plot radii. Needed for the 1:1 inset, which is at
+        # the origin, where the small-angle offset of `_offset_theta` blows up.
+        legend_exact=True,
     ),
 }
 
@@ -461,6 +481,79 @@ def _offset_theta(r, arc, base_deg=-45):
     return base_deg - np.degrees(arc / r)
 
 
+def _spoke_offset_point(along, arc, base_deg=-45):
+    """Exact polar coordinates of a point beside the `base_deg` spoke.
+
+    Unlike `_offset_theta`, which approximates the offset as an arc, this treats
+    (`along`, `arc`) as Cartesian coordinates in the spoke's own frame. It is therefore
+    valid all the way down to `along = 0` (the origin), where the arc approximation
+    diverges.
+
+    Args:
+        along (float): Distance from the origin along the spoke, in radial-axis units.
+        arc (float): Perpendicular distance from the spoke, in radial-axis units.
+        base_deg (float, optional): Angle of the spoke in degrees. Default is -45.
+
+    Returns:
+        tuple[float, float]: Angle in degrees and radius in radial-axis units.
+    """
+    return (
+        base_deg - np.degrees(np.arctan2(arc, along)),
+        float(np.hypot(along, arc)),
+    )
+
+
+def _legend_axes_pts(spec, size_pts, angle_deg):
+    """Major-axis length in points for each legend inset of a radial scale.
+
+    With `size_mode="fixed_major"` every inset has the same major axis and the minor
+    axis shrinks with the ratio. With `"fixed_minor"` it is the minor axis that is
+    shared, and the major grows as `minor / ratio`. The reference minor is the one that
+    would make the longest inset just fill the frame, scaled by `legend_minor_boost`; a
+    boost above 1 therefore trades insets that run past their frame for a minor axis
+    thick enough to see.
+
+    Args:
+        spec (dict): Entry of `RADIAL_SCALES`.
+        size_pts (float): Largest axis length that fits the frame, in points.
+        angle_deg (float): Rotation the insets are drawn at, in degrees. Only the
+            bounding box of the rotated ellipse depends on it.
+
+    Returns:
+        list[float]: Major axis in points, one per entry of `spec["legend_values"]`.
+    """
+    ratios = [spec["ratio"](v) for v in spec["legend_values"]]
+    if spec.get("size_mode", "fixed_major") == "fixed_major":
+        return [size_pts] * len(ratios)
+    # Half-extent of an ellipse (major m_a, minor m_a * ratio) rotated by `angle_deg`,
+    # as a fraction of its major axis. The frame is axis-aligned and square, so the
+    # binding constraint is the larger of the two half-extents.
+    c, s = np.cos(np.radians(angle_deg)), np.sin(np.radians(angle_deg))
+    r_min = min(ratios)
+    half_x = np.hypot(r_min * c, s) / 2
+    half_y = np.hypot(r_min * s, c) / 2
+    major_max = size_pts / (2 * max(half_x, half_y))
+    # A minor axis that just fits the longest inset in the frame is hairline-thin (the
+    # legend spans a factor of 8), so it is boosted to stay legible in print and the
+    # longest insets are allowed to run past their frame.
+    minor_pts = major_max * r_min * spec.get("legend_minor_boost", 1.0)
+    return [minor_pts / ratio for ratio in ratios]
+
+
+# Every schematic frame is drawn under every schematic ellipse, and both under the
+# scatter (which uses zorder 3), whatever order the insets are added in.
+FRAME_ZORDER = 1.0
+ELLIPSE_ZORDER = 1.5
+# Range the per-inset bands of `rasterized="each"` are spread over. It has to avoid the
+# axes' own artists entirely: any non-rasterized artist landing inside a band splits that
+# inset across two images, which is exactly what the mode exists to prevent. A polar axes
+# puts ThetaAxis and RadialAxis at 1.5 and the spines at 2.5, so the bands sit between
+# them. The insets are drawn outside the wedge, so being above the grid rather than below
+# it (as in single-layer mode) makes no visible difference.
+SCHEMATIC_ZORDER_BOTTOM = 1.55
+SCHEMATIC_ZORDER_TOP = 2.45
+
+
 def _draw_gradient_ellipse(
     ax,
     trans,
@@ -470,7 +563,11 @@ def _draw_gradient_ellipse(
     color="red",
     frame=True,
     frame_half_pts=10.0,
+    clip_to_frame=False,
     rasterized=False,
+    frame_zorder=FRAME_ZORDER,
+    ellipse_zorder=ELLIPSE_ZORDER,
+    flush_zorder=None,
 ):
     """Draw one soft-edged ellipse schematic on a white square frame.
 
@@ -492,56 +589,66 @@ def _draw_gradient_ellipse(
             ellipse. Default is True.
         frame_half_pts (float, optional): Half-side of the square frame, in points.
             Default is 10.
+        clip_to_frame (bool, optional): Whether to clip the ellipse to the frame, so an
+            ellipse longer than its frame is cut off at the edge rather than running
+            past it. Ignored when `frame` is False. Default is False.
         rasterized (bool, optional): Whether to rasterize the patches. Default is False.
+        frame_zorder (float, optional): zorder of the frame. Defaults to `FRAME_ZORDER`.
+        ellipse_zorder (float, optional): zorder of the gradient layers. Defaults to
+            `ELLIPSE_ZORDER`.
+        flush_zorder (float, optional): If given, an invisible, non-rasterized artist is
+            added at this zorder, just above the inset. Matplotlib merges *consecutive*
+            rasterized artists into one image, so this is what ends the group and makes
+            the inset its own image in the output. Default is None (no separator).
     """
-    # Frame first so it sits behind the gradient layers
+    # Explicit zorders rather than draw order: an ellipse longer than its own frame would
+    # otherwise be painted over by the white frame of the next inset along.
+    box = Rectangle(
+        xy=(-frame_half_pts, -frame_half_pts),
+        width=frame_half_pts * 2,
+        height=frame_half_pts * 2,
+        facecolor="white",
+        edgecolor="black",
+        linewidth=0.5,
+        transform=trans,
+        clip_on=False,
+        zorder=frame_zorder,
+        rasterized=rasterized,
+    )
     if frame:
-        ax.add_patch(
-            Rectangle(
-                xy=(-frame_half_pts, -frame_half_pts),
-                width=frame_half_pts * 2,
-                height=frame_half_pts * 2,
-                facecolor="white",
-                edgecolor="black",
-                linewidth=0.5,
-                transform=trans,
-                clip_on=False,
-                rasterized=rasterized,
-            )
-        )
+        ax.add_patch(box)
+    # The frame is drawn with a stroke centred on its edge, so clipping to the patch cuts
+    # the ellipse at the middle of the border line and leaves it looking contained.
+    clip = frame and clip_to_frame
     n_layers = 15
-    for i in range(n_layers):
-        alpha = (i + 1) / n_layers
-        scale_el = 1 - (i / n_layers) * 0.8
-        ax.add_patch(
-            Ellipse(
-                xy=(0, 0),
-                width=major_pts * scale_el * ratio,
-                height=major_pts * scale_el,
-                angle=angle,
-                facecolor=color,
-                alpha=alpha * 0.25,
-                edgecolor="none",
-                transform=trans,
-                clip_on=False,
-                rasterized=rasterized,
-            )
-        )
-    # Core ellipse for sharpness
-    ax.add_patch(
-        Ellipse(
+
+    def add_layer(scale_el, alpha):
+        patch = Ellipse(
             xy=(0, 0),
-            width=major_pts * 0.2 * ratio,
-            height=major_pts * 0.2,
+            width=major_pts * scale_el * ratio,
+            height=major_pts * scale_el,
             angle=angle,
             facecolor=color,
-            alpha=0.6,
+            alpha=alpha,
             edgecolor="none",
             transform=trans,
-            clip_on=False,
+            clip_on=clip,
+            zorder=ellipse_zorder,
             rasterized=rasterized,
         )
-    )
+        # The path and its transform, not the `box` patch: `set_clip_path` special-cases
+        # a Rectangle into a clip *box* and leaves the clip *path* unset, which then lets
+        # `add_patch` fill it in with the polar wedge - and the insets sit outside it, so
+        # they would vanish entirely.
+        if clip:
+            patch.set_clip_path(box.get_path(), box.get_transform())
+        ax.add_patch(patch)
+
+    for i in range(n_layers):
+        add_layer(1 - (i / n_layers) * 0.8, (i + 1) / n_layers * 0.25)
+    add_layer(0.2, 0.6)  # core, for sharpness
+    if flush_zorder is not None:
+        ax.add_line(Line2D([], [], visible=False, zorder=flush_zorder))
 
 
 def add_ellipse_schematics(
@@ -552,7 +659,7 @@ def add_ellipse_schematics(
     scale=1.0,
     rasterized=False,
     color="red",
-    perimeter_ratio=0.2,
+    perimeter_ratio=0.4,
     radial_scale="eccentricity",
 ):
     """
@@ -560,9 +667,12 @@ def add_ellipse_schematics(
 
     Each legend inset's shape is derived from the radius it sits at, via the active
     `radial_scale`'s `ratio` function, so an inset next to a radial tick really has the
-    shape that tick denotes - whether the axis is eccentricity or log2 elongation. The
-    major axis is held constant, so every inset fits the same square frame and its shape
-    reads purely as elongation.
+    shape that tick denotes - whether the axis is eccentricity or log2 elongation. Which
+    axis of the inset is held constant as the shape changes is the scale's `size_mode`:
+    "fixed_major" squeezes the minor axis in, "fixed_minor" (used by "elongation")
+    stretches the major axis out of a common circle. The frames are the same square in
+    both cases, so they read as a ruler for the axis that is held constant - under
+    "fixed_minor" the most elongated insets deliberately run past theirs.
 
     Args:
         ax (matplotlib.axes.PolarAxes): The polar axes to which the ellipses will be added.
@@ -574,23 +684,52 @@ def add_ellipse_schematics(
             around each ellipse. Default is True.
         scale (float, optional): Scaling factor for the size of the ellipses and frames.
             Default is 1.0.
-        rasterized (bool, optional): Whether to rasterize the ellipses and frames.
-            Default is False.
+        rasterized (bool or str, optional): Whether to rasterize the ellipses and frames.
+            False (default) leaves them vector; True puts all of them in one raster layer;
+            "each" gives every inset its own raster layer, so the output carries one image
+            per box and the boxes can be moved independently in a vector editor. "each"
+            also gives every inset its own zorder band rather than drawing all the frames
+            below all the ellipses, so an inset that overflowed its frame could be painted
+            over by the next one along - at the default sizes none do.
         color (str, optional): Fill colour of the ellipses. Default is "red".
         perimeter_ratio (float, optional): Minor/major axis ratio of the orientation
-            ellipses around the perimeter. Default is 0.2, i.e. 5:1 - elongated enough to
-            read as an orientation marker at small sizes.
+            ellipses around the perimeter. Default is 0.4, i.e. 2.5:1 - still clearly
+            oriented, but thick enough to read as an ellipse rather than a line at small
+            sizes.
         radial_scale (str, optional): Key into `RADIAL_SCALES`, sets the radial extent and
             the shape of the legend insets. Default is "eccentricity".
     """
     spec = _get_radial_scale(radial_scale)
     rmax = spec["rmax"]
     fig = ax.get_figure()
-    # Points-per-inch to pixels; shared by both groups so `scale` behaves consistently
-    point_to_pixel = transforms.Affine2D().scale(fig.dpi / 72.0)
+    # Points to display units; shared by both groups so `scale` behaves consistently.
+    # `dpi_scale_trans` (inches -> display) rather than a baked-in `fig.dpi / 72`: the
+    # dpi is not the same at draw time as it was here - the vector backends draw at 72
+    # and a rasterized artist at the savefig dpi - so a frozen factor makes the insets
+    # come out a different physical size in every output.
+    point_to_pixel = transforms.Affine2D().scale(1 / 72) + fig.dpi_scale_trans
     frame_half_pts = 10 * scale  # half-side of the square frame
     # Major axis, sized to fill the frame with a small margin
     size_pts = frame_half_pts * 1.6
+
+    # With rasterized="each", each inset needs its own zorder band and a separator above
+    # it: matplotlib merges consecutive rasterized artists into one image, so without a
+    # non-rasterized artist between them all the insets end up in a single image.
+    per_inset = rasterized == "each"
+    n_insets = (5 if plot_angle else 0) + (
+        len(spec["legend_values"]) if plot_ecc else 0
+    )
+    band = (SCHEMATIC_ZORDER_TOP - SCHEMATIC_ZORDER_BOTTOM) / max(n_insets, 1)
+    inset_count = 0
+
+    def next_zorders():
+        """(frame, ellipse, separator) zorders for the next inset."""
+        nonlocal inset_count
+        if not per_inset:
+            return FRAME_ZORDER, ELLIPSE_ZORDER, None
+        base = SCHEMATIC_ZORDER_BOTTOM + inset_count * band
+        inset_count += 1
+        return base, base + 0.4 * band, base + 0.8 * band
 
     if plot_angle:
         # PLOT ANGLE ELLIPSES
@@ -605,6 +744,7 @@ def add_ellipse_schematics(
             trans = point_to_pixel + transforms.ScaledTranslation(
                 np.radians(theta_deg), r_pos, ax.transData
             )
+            z_frame, z_ellipse, z_flush = next_zorders()
             _draw_gradient_ellipse(
                 ax,
                 trans,
@@ -614,7 +754,10 @@ def add_ellipse_schematics(
                 color=color,
                 frame=frame,
                 frame_half_pts=frame_half_pts,
-                rasterized=rasterized,
+                rasterized=bool(rasterized),
+                frame_zorder=z_frame,
+                ellipse_zorder=z_ellipse,
+                flush_zorder=z_flush,
             )
 
     if plot_ecc:
@@ -622,24 +765,38 @@ def add_ellipse_schematics(
         # Legend staircase running alongside the radial (-45 deg) axis: same orientation
         # throughout, only the elongation changes. The offsets are fractions of the radial
         # range so the layout is identical whatever `rmax` the scale uses.
-        angle_leg = 45
+        # Drawn at a tuning angle of 45 deg, as the perimeter insets are: same
+        # `theta - 90` convention, so the major axis points 45 deg up from horizontal.
+        angle_leg = 45 - 90
         inset_arc = ECC_AXIS_INSET_ARC * rmax
-        for value, r_pos in zip(spec["legend_values"], spec["legend_radii"]):
+        majors = _legend_axes_pts(spec, size_pts, angle_leg)
+        for value, r_pos, major_pts in zip(
+            spec["legend_values"], spec["legend_radii"], majors
+        ):
+            if spec.get("legend_exact", False):
+                theta_deg, r_draw = _spoke_offset_point(r_pos, inset_arc)
+            else:
+                theta_deg, r_draw = _offset_theta(r_pos, inset_arc), r_pos
             trans = point_to_pixel + transforms.ScaledTranslation(
-                np.radians(_offset_theta(r_pos, inset_arc)),
-                r_pos,
+                np.radians(theta_deg),
+                r_draw,
                 ax.transData,
             )
+            z_frame, z_ellipse, z_flush = next_zorders()
             _draw_gradient_ellipse(
                 ax,
                 trans,
-                major_pts=size_pts,
+                major_pts=major_pts,
                 ratio=spec["ratio"](value),
                 angle=angle_leg,
                 color=color,
                 frame=frame,
                 frame_half_pts=frame_half_pts,
-                rasterized=rasterized,
+                clip_to_frame=spec.get("legend_clip", False),
+                rasterized=bool(rasterized),
+                frame_zorder=z_frame,
+                ellipse_zorder=z_ellipse,
+                flush_zorder=z_flush,
             )
 
 
@@ -653,6 +810,7 @@ def plot_angle_eccentricity_polar(
     ecc_label=None,
     radial_scale="eccentricity",
     axis_ratio=None,
+    rasterize_schematics=False,
     **scatter_kwargs,
 ):
     """Polar scatter of g2d tuning-ellipse orientation against its shape.
@@ -685,7 +843,16 @@ def plot_angle_eccentricity_polar(
         axis_ratio (array-like, optional): Ellipse `sigma_major / sigma_minor` (>= 1).
             Only used by `radial_scale="elongation"`, where it is preferred over
             deriving the ratio from `eccentricity`.
-        **scatter_kwargs: Passed to `ax.scatter`.
+        rasterize_schematics (bool or str, optional): Whether to rasterize the ellipse
+            schematics only. Each is ~16 alpha-blended patches, so a panel carries a few
+            hundred overlapping translucent shapes that bloat a PDF/SVG and are slow to
+            open in a vector editor; rasterizing them leaves the scatter, the axes and
+            all the text as vector. True merges them into one image, "each" gives every
+            inset its own image so they stay individually selectable and movable in a
+            vector editor. Passed to `add_ellipse_schematics` as `rasterized`. Default is
+            False.
+        **scatter_kwargs: Passed to `ax.scatter`. Note `rasterized` here applies to the
+            scatter, not the schematics.
 
     Returns:
         matplotlib.collections.PathCollection: The scatter artist.
@@ -738,7 +905,12 @@ def plot_angle_eccentricity_polar(
         fontsize=fontsize_dict["label"],
     )
     if schematics:
-        add_ellipse_schematics(ax, scale=scale, radial_scale=radial_scale)
+        add_ellipse_schematics(
+            ax,
+            scale=scale,
+            radial_scale=radial_scale,
+            rasterized=rasterize_schematics,
+        )
     return sc
 
 
