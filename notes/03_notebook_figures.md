@@ -21,7 +21,7 @@ This document tracks the execution status, resource utilization, and action item
 | [`figsupp_rsof.ipynb`](../v1_depth_map/figures/figsupp_rsof.ipynb) | ✅ Success | 37.2 min | 2.33 GB | Supp: RS × OF matrices | RS × OF 2D grid responses |
 | [`figsupp_size_control.ipynb`](../v1_depth_map/figures/figsupp_size_control.ipynb) | ✅ Ready | 0.2 min | 1.30 GB | Supp: Size control (`\label{sup:size}`) | Size-tuning invariance controls & stats |
 | [`figsupp_vis_stim_sync.ipynb`](../v1_depth_map/figures/figsupp_vis_stim_sync.ipynb) | ✅ Ready | 7.0 min | 6.33 GB | Supp: Visual sync (`\label{sup:vis_stim}`) | 100% vector Fig S1 with embedded vector schematic |
-| [`figsupp_multidays.ipynb`](../v1_depth_map/figures/figsupp_multidays.ipynb) | ✅ Success | - | - | Supp: Multiday stability | Longitudinal tracking across days (candidate Fig S7) |
+| [`revisions/multi_days.ipynb`](../v1_depth_map/revisions/multi_days.ipynb) | ✅ Success | - | - | Supp: Multiday stability | Longitudinal tracking across days (candidate Fig S7). No `figures/` notebook yet — panels still live in `revisions/` |
 | [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | ✅ Ready | - | - | Supp: Simulation control | Synthetic dataset validation (candidate Fig S8) |
 
 ---

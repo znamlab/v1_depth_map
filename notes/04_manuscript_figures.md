@@ -36,7 +36,7 @@ This document tracks the assembly status of all Main and Supplementary figures f
 
 | Candidate Figure | Text Reference in `v1_depth_map.tex` | Description | Generating Notebook / Script | Status | Action Items |
 | :--- | :--- | :--- | :--- | :---: | :--- |
-| **Multi-day Stability** | Line 172: *(Figure 1O-P / Supp)* | Longitudinal tracking of depth selectivity across consecutive days | [`figsupp_multidays.ipynb`](../v1_depth_map/figures/figsupp_multidays.ipynb) | 🎨 In Progress | Single-cell exemplars tracked over multiple days |
+| **Multi-day Stability** | Line 172: *(Figure 1O-P / Supp)* | Longitudinal tracking of depth selectivity across consecutive days | [`revisions/multi_days.ipynb`](../v1_depth_map/revisions/multi_days.ipynb) | 🎨 In Progress | Single-cell exemplars tracked over multiple days. Needs promoting to a `figures/figsupp_*` notebook |
 | **Simulation Control** | Line 211: *"(FIG SUP)"* (tri-modal distribution absent in synthetic data) | Synthetic neural response model validation & simulation fitting | [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | ✅ Ready | Simulation reruns completed (`decay_tau=2`, area-norm) |
 | **Motorized Wheel & History Blur** | Line 207: *"(Figure SUP)"* (residual co-fluctuations along iso-depth lines) | Motorized wheel constant speed periods & stimulus history control | [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb) / `treadmill.ipynb` | 🎨 In Progress | Motorized vs free locomotion comparison |
 
