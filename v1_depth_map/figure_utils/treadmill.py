@@ -176,7 +176,7 @@ def plot_treadmill_protocol(
     ax.text(
         x0 - (x_len * 0.1),
         y0 + y_len / 2,
-        f"{int(y_len*100)} cm/s",
+        f"{int(y_len * 100)} cm/s",
         ha="right",
         va="center",
         rotation=90,
@@ -583,6 +583,141 @@ def load_treadmill_population_neurons_df(
         valid_sessions,
         treadmill_sessions,
     )
+
+
+def add_trial_average_rsof_columns(
+    neurons_df,
+    ta_suffix="_treadmill_trial_average_plateau",
+    percentile=95,
+    models=("gof", "grs", "gadd", "g2d", "gratio"),
+    null_method="empirical",
+    verbose=True,
+):
+    """Derive ellipse geometry and significance flags from the trial-averaged g2d fits.
+
+    `load_treadmill_population_neurons_df` only does this for the per-frame fits (the ""
+    and "_treadmill" suffixes). The trial-averaged fits - one sample per trial rather than
+    per imaging frame - live in separate columns written by
+    `precompute_data/fit_revision_treadmill.py` and merged into each session's
+    `neurons_df.pickle`, so they are already loaded but have no derived columns.
+
+    Adds, all suffixed with `ta_suffix`: `g2d_theta` (degrees, wrapped to [-45, 135]),
+    `g2d_eccentricity`, `g2d_semimajor`, `g2d_semiminor`, `g2d_preferred_RS` (cm/s),
+    `g2d_preferred_OF` (deg/s) and `best_model`; plus one `<rsq_col>_sig` flag per model.
+
+    `g2d_eccentricity` is the standard geometric eccentricity of the tuning ellipse,
+    `sqrt(1 - sigma_minor^2 / sigma_major^2)`.
+
+    Fits whose Gaussian is a "ridge" spanning the whole sampled plane are kept as they
+    are: `exp(log_sigma2)` overflows on the unbounded axis, so they simply come out at
+    eccentricity 1 with a well-defined angle.
+
+    Args:
+        neurons_df (pd.DataFrame): Population dataframe, modified in place.
+        ta_suffix (str, optional): Column suffix of the trial-averaged fits.
+            "_treadmill_trial_average" is the default ("model") onset detection,
+            "_treadmill_trial_average_plateau" the "plateau" one. Defaults to the latter,
+            matching `tread_kwargs=dict(method="plateau")`.
+        percentile (float, optional): Percentile of the empirical null used as the
+            significance threshold. Defaults to 95.
+        models (tuple, optional): Models refit on the trial averages, used for the
+            significance flags and `best_model`.
+        null_method (str, optional): Passed to `common_utils.empirical_null_threshold`.
+            Defaults to "empirical" (percentile of the mirrored negative tail itself),
+            matching the default of `common_utils.add_rsq_significance`. "gaussian" fits
+            a zero-mean Gaussian to that tail instead.
+        verbose (bool, optional): Whether to print per-model thresholds and counts.
+            Defaults to True.
+
+    Returns:
+        float: `min_sigma` recorded by the fit, needed by `plot_RS_OF_fit` and the
+            semi-axis helpers.
+    """
+    from cottage_analysis.analysis import fit_gaussian_blob as fit_gb
+
+    ta = ta_suffix
+    popt_col = f"rsof_popt_closedloop_g2d{ta}"
+    rsq_cols = {m: f"rsof_test_rsq_closedloop_{m}{ta}" for m in models}
+
+    missing = [c for c in [popt_col, *rsq_cols.values()] if c not in neurons_df.columns]
+    if missing:
+        raise KeyError(
+            f"Missing trial-average columns: {missing}\n"
+            "Run precompute_data/fit_revision_treadmill.py (--only treadmill) and "
+            "then --merge."
+        )
+
+    # min_sigma is recorded by the fit itself - read it rather than assuming 0.25. The k1
+    # and k5 pickles both carry this column, so merge_fit_dataframes disambiguates them
+    # as _x/_y (same pre-existing artefact as the sphere and per-frame treadmill
+    # families); either is fine.
+    ms_col = next(
+        (
+            c
+            for c in (
+                f"rsof_minSigma_closedloop_g2d{ta}",
+                f"rsof_minSigma_closedloop_g2d{ta}_x",
+            )
+            if c in neurons_df.columns
+        ),
+        None,
+    )
+    if ms_col is None:
+        raise KeyError(f"No rsof_minSigma_closedloop_g2d{ta}[_x] column")
+    min_sigma = float(
+        pd.to_numeric(neurons_df[ms_col], errors="coerce").dropna().unique()[0]
+    )
+
+    # ---- Ellipse geometry -------------------------------------------------------------
+    ok = neurons_df[popt_col].apply(
+        lambda x: isinstance(x, (list, np.ndarray)) and len(x) >= 6
+    )
+    # Legacy parameterisation: get_gaussian_angle takes no min_sigma, the others do
+    neurons_df.loc[ok, f"g2d_theta{ta}"] = neurons_df.loc[ok, popt_col].apply(
+        fit_gb.get_gaussian_angle
+    )
+    for name, fn in [
+        (f"g2d_eccentricity{ta}", fit_gb.get_gaussian_eccentricity),
+        (f"g2d_semimajor{ta}", fit_gb.get_semimajor_length),
+        (f"g2d_semiminor{ta}", fit_gb.get_semiminor_length),
+    ]:
+        neurons_df.loc[ok, name] = neurons_df.loc[ok, popt_col].apply(
+            lambda x, fn=fn: fn(x, min_sigma=min_sigma)
+        )
+    neurons_df.loc[ok, f"g2d_preferred_RS{ta}"] = neurons_df.loc[ok, popt_col].apply(
+        fit_gb.get_preferred_rs
+    )
+    neurons_df.loc[ok, f"g2d_preferred_OF{ta}"] = neurons_df.loc[ok, popt_col].apply(
+        fit_gb.get_preferred_of
+    )
+
+    # ---- Significance from an empirical null ------------------------------------------
+    for model, col in rsq_cols.items():
+        vals = pd.to_numeric(neurons_df[col], errors="coerce").dropna().values
+        vals = vals[np.isfinite(vals) & (vals >= -1)]  # drop sentinel values
+        thr, sigma = common_utils.empirical_null_threshold(
+            vals, percentile=percentile, method=null_method
+        )
+        neurons_df[f"{col}_sig"] = pd.to_numeric(neurons_df[col], errors="coerce") > thr
+        if verbose:
+            print(
+                f"{model:8s} sigma={sigma:.4f}  threshold={thr:.4f}  "
+                f"passing={neurons_df[f'{col}_sig'].mean() * 100:5.1f}%"
+            )
+
+    # Best model per neuron (highest test R-squared), as a model name not a column name
+    rsq_frame = neurons_df[list(rsq_cols.values())].apply(
+        pd.to_numeric, errors="coerce"
+    )
+    neurons_df[f"best_model{ta}"] = rsq_frame.idxmax(axis=1).map(
+        {v: k for k, v in rsq_cols.items()}
+    )
+
+    if verbose:
+        print(f"popt_col = {popt_col}\n  -> min_sigma = {min_sigma}")
+        print(f"ellipse properties for {int(ok.sum())} neurons")
+
+    return min_sigma
 
 
 def compute_treadmill_rsof_bins(trials_df_tm):
