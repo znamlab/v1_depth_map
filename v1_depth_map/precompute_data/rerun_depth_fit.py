@@ -1,8 +1,9 @@
 """Re-run 1D depth tuning fits for treadmill sessions (model and plateau onset detection).
 
 Variants:
-1. _treadmill: method="model" (already computed in production pipeline)
-2. _treadmill_plateau: method="plateau"
+1. _treadmill: method="plateau" (the production default since cottage_analysis c4ea1cd),
+   mirrored to _treadmill_plateau as a self-documenting twin
+2. _treadmill_model: method="model"
 
 Note: 1D depth tuning fits (find_depth_neurons.fit_preferred_depth) always reduce each trial
 to trial-mean dF/F, so there is no per-frame vs trial-average distinction for depth fits.
@@ -24,17 +25,36 @@ PROJECT = "colasa_3d-vision_revisions"
 PHOTODIODE_PROTOCOL = 5
 FILTER_DATASETS = dict(annotated=True)
 
-# 2 treadmill depth dataset variants
+# Substrings marking a column as 1D depth-tuning output rather than RS/OF. Used to keep
+# the write-back below to the columns this script actually produced.
+DEPTH_COLUMN_KEYS = (
+    "preferred_depth",
+    "depth_tuning",
+    "best_depth",
+    "is_depth_neuron",
+    "depth_neuron_anova",
+)
+
+# 2 treadmill depth dataset variants.
+#
+# The onset method is always explicit in the output name. `_treadmill` IS the plateau
+# family -- it is read at ~240 hardcoded sites across the figures and keeps its name -- and
+# `_treadmill_plateau` is maintained alongside it as a self-documenting twin (which is what
+# figure_rsof_integration.ipynb reads as `depth_sfx`). `mirror_suffix` keeps the twin in
+# lockstep so it can never drift from the family it names.
+# See revisions/migrate_treadmill_columns.py for the full convention.
 VARIANTS = [
-    {
-        "name": "model_single_frames",
-        "method": "model",
-        "suffix": "_treadmill",
-    },
     {
         "name": "plateau_single_frames",
         "method": "plateau",
-        "suffix": "_treadmill_plateau",
+        "suffix": "_treadmill",
+        "mirror_suffix": "_treadmill_plateau",
+    },
+    {
+        "name": "model_single_frames",
+        "method": "model",
+        "suffix": "_treadmill_model",
+        "mirror_suffix": None,
     },
 ]
 
@@ -53,8 +73,15 @@ def assert_local_only():
         )
 
 
-def update_neurons_df_depth_columns(neurons_df_path, fit_results_df, suffix):
-    """Safely append or update depth fit columns directly into neurons_df.pickle without calling merge_fit_dataframes."""
+def update_neurons_df_depth_columns(
+    neurons_df_path, fit_results_df, suffix, mirror_suffix=None
+):
+    """Safely append or update depth fit columns directly into neurons_df.pickle without calling merge_fit_dataframes.
+
+    If `mirror_suffix` is given, every written column is also copied under that suffix, so
+    a self-documenting twin family (e.g. `_treadmill_plateau` beside `_treadmill`) stays
+    byte-identical to the family it names instead of silently going stale.
+    """
     neurons_df = pd.read_pickle(neurons_df_path)
 
     # Check ROI alignment
@@ -62,8 +89,17 @@ def update_neurons_df_depth_columns(neurons_df_path, fit_results_df, suffix):
         neurons_df.roi
     ), f"ROI mismatch between fit results and {neurons_df_path}"
 
-    # Identify depth columns created for this suffix (strictly ending with suffix)
-    depth_cols = [c for c in fit_results_df.columns if c.endswith(suffix)]
+    # Identify depth columns created for this suffix (strictly ending with suffix).
+    # `endswith` is exact, so suffix="_treadmill" does not pick up "_treadmill_model" or
+    # "_treadmill_plateau" columns that are already in the frame. It does, however, match
+    # the *RS/OF* columns of the same family (fit_results_df starts as a copy of the whole
+    # neurons_df), so restrict to depth columns -- otherwise this writes ~84 RS/OF columns
+    # straight back onto themselves, which is wasteful and only harmless by luck.
+    depth_cols = [
+        c
+        for c in fit_results_df.columns
+        if c.endswith(suffix) and any(key in c for key in DEPTH_COLUMN_KEYS)
+    ]
 
     for col in depth_cols:
         neurons_df[col] = fit_results_df[col]
@@ -79,9 +115,19 @@ def update_neurons_df_depth_columns(neurons_df_path, fit_results_df, suffix):
             out_col=f"is_depth_neuron{suffix}",
         )
 
+    n_mirrored = 0
+    if mirror_suffix:
+        written = depth_cols + [f"is_depth_neuron{suffix}"]
+        for col in written:
+            if col not in neurons_df.columns:
+                continue
+            neurons_df[col[: -len(suffix)] + mirror_suffix] = neurons_df[col]
+            n_mirrored += 1
+
     neurons_df.to_pickle(neurons_df_path)
     print(
         f"Updated {len(depth_cols)} depth columns for suffix '{suffix}' in {neurons_df_path.name}"
+        + (f" (+{n_mirrored} mirrored to '{mirror_suffix}')" if mirror_suffix else "")
     )
 
 
@@ -108,14 +154,32 @@ def run_depth_fit_for_session(session_name, flexilims_session, skip_existing=Fal
         method = var["method"]
 
         pref_depth_col = f"preferred_depth_closedloop_crossval{suffix}"
+        # A variant counts as done only if the cross-validated Spearman statistics are
+        # there too, not just the preferred depth. They are what
+        # `add_one_sided_spearman_significance` needs, so without them
+        # `is_depth_neuron{suffix}` comes out all-False and silently empties every
+        # downstream depth-cell selection -- which is exactly how the treadmill plateau
+        # fits looked "present but complete" while carrying no depth neurons at all.
+        stat_cols = [
+            f"depth_tuning_test_spearmanr_rval_closedloop{suffix}",
+            f"depth_tuning_test_spearmanr_pval_closedloop{suffix}",
+        ]
         if skip_existing:
             curr_df = pd.read_pickle(neurons_df_path)
-            if (
-                pref_depth_col in curr_df.columns
-                and not curr_df[pref_depth_col].isna().all()
-            ):
-                print(f"--- Skip {var['name']} (exists): {pref_depth_col} ---")
+            have = [
+                c
+                for c in [pref_depth_col] + stat_cols
+                if c in curr_df.columns and not curr_df[c].isna().all()
+            ]
+            if len(have) == 3:
+                print(f"--- Skip {var['name']} (complete): {pref_depth_col} ---")
                 continue
+            if have:
+                missing = set([pref_depth_col] + stat_cols) - set(have)
+                print(
+                    f"--- Refitting {var['name']}: present but INCOMPLETE, "
+                    f"empty/missing {sorted(missing)} ---"
+                )
 
         print(f"\n--- Fitting variant: {var['name']} (suffix: {suffix}) ---")
         t0 = time.time()
@@ -190,7 +254,9 @@ def run_depth_fit_for_session(session_name, flexilims_session, skip_existing=Fal
         )
 
         # 3. Direct update to neurons_df.pickle without calling merge_fit_dataframes
-        update_neurons_df_depth_columns(neurons_df_path, ndf, suffix)
+        update_neurons_df_depth_columns(
+            neurons_df_path, ndf, suffix, mirror_suffix=var.get("mirror_suffix")
+        )
         print(f"Completed {var['name']} in {(time.time() - t0):.1f} s")
 
 
