@@ -7,6 +7,12 @@ from pathlib import Path
 import flexiznam as flz
 from cottage_analysis.analysis import common_utils
 
+# Column suffix of the simulated fits run with the real trial-average plateau
+# configuration (`precompute_data/fit_revision_simulation.py`), as opposed to the per-frame
+# default configuration of `treadmill.simulate_and_fit_session`. It matches the `TA` suffix
+# the notebooks use for the real fits, so the two families cannot be confused.
+TA_SIM_SUFFIX = "_trial_average_plateau"
+
 
 def plot_treadmill_protocol(
     trials_df,
@@ -387,6 +393,7 @@ def load_treadmill_population_neurons_df(
     trise=0.15,
     percentile=95,
     load_simulated=False,
+    load_simulated_trial_average=False,
 ):
     """Load and filter the population `neurons_df` for treadmill-protocol sessions.
 
@@ -416,6 +423,13 @@ def load_treadmill_population_neurons_df(
             simulated-response parquet files (`simul_df_treadmill`/`simul_df_spheres`).
             These are only needed for simulated-vs-real comparisons and are slower to
             load, so this defaults to False and can be set to True to also load them.
+        load_simulated_trial_average (bool, optional): Whether to also load the fits of the
+            same simulated treadmill responses run with the real trial-average plateau
+            configuration (`precompute_data/fit_revision_simulation.py`), rather than the
+            per-frame configuration `simulate_and_fit_session` used. They are merged into
+            `simul_df_treadmill` with the `TA_SIM_SUFFIX` suffix, alongside derived
+            ellipse geometry, so the two fit families sit side by side on the same row.
+            Requires `load_simulated`. Defaults to False.
 
     Returns:
         tuple: (neurons_df, simul_df_treadmill, simul_df_spheres, valid_sessions,
@@ -442,9 +456,15 @@ def load_treadmill_population_neurons_df(
             if protocol_base in recordings.protocol.values:
                 treadmill_sessions[session_name] = recordings
 
+    if load_simulated_trial_average and not load_simulated:
+        raise ValueError(
+            "load_simulated_trial_average=True needs load_simulated=True: the "
+            "trial-average fits are merged into simul_df_treadmill."
+        )
+
     valid_sessions = []
     all_dfs = []
-    simulated_responses = dict(treadmill=[], spheres=[])
+    simulated_responses = dict(treadmill=[], spheres=[], treadmill_trial_average=[])
     for session_name in treadmill_sessions:
         neurons_ds = flz.get_datasets(
             origin_name=session_name,
@@ -492,6 +512,23 @@ def load_treadmill_population_neurons_df(
                     print(
                         f"Simulated responses not found for {which} for session {session_name}"
                     )
+        if load_simulated_trial_average:
+            # Fits of the SAME simulated dF/F, but with the real trial-average plateau
+            # config. Written by `precompute_data/fit_revision_simulation.py`; `fake_dff`
+            # is not repeated in this file, it stays in the one loaded above.
+            ta_path = neurons_ds.path_full.with_name(
+                "simulated_responses_fit_treadmill_trial_average_plateau"
+                f"_{tdecay}_{trise}_circular.parquet"
+            )
+            if ta_path.exists():
+                ta_df = pd.read_parquet(ta_path)
+                ta_df["roi_uid"] = session_name + "_" + ta_df.roi.astype(str)
+                simulated_responses["treadmill_trial_average"].append(ta_df)
+            else:
+                print(
+                    "Trial-average simulated fits not found for session "
+                    f"{session_name}: run precompute_data/fit_revision_simulation.py"
+                )
     print(
         f"{len(valid_sessions)}/{len(treadmill_sessions)} valid sessions with treadmill depth data"
     )
@@ -502,6 +539,24 @@ def load_treadmill_population_neurons_df(
             simulated_responses["treadmill"], ignore_index=True
         )
         simul_df_spheres = pd.concat(simulated_responses["spheres"], ignore_index=True)
+        if load_simulated_trial_average:
+            ta_frames = simulated_responses["treadmill_trial_average"]
+            if not ta_frames:
+                raise FileNotFoundError(
+                    "load_simulated_trial_average=True but no session had a "
+                    "simulated_responses_fit_treadmill_trial_average_plateau parquet."
+                )
+            ta_all = pd.concat(ta_frames, ignore_index=True).drop(columns=["roi"])
+            ta_all = ta_all.rename(
+                columns={
+                    col: f"{col}{TA_SIM_SUFFIX}"
+                    for col in ta_all.columns
+                    if col != "roi_uid"
+                }
+            )
+            simul_df_treadmill = simul_df_treadmill.merge(
+                ta_all, on="roi_uid", how="left"
+            )
     else:
         simul_df_treadmill = None
         simul_df_spheres = None
@@ -575,6 +630,38 @@ def load_treadmill_population_neurons_df(
         simul_df_spheres["g2d_eccentricity"] = simul_df_spheres["popt_simulated"].apply(
             fit_gb.get_gaussian_eccentricity
         )
+
+        if load_simulated_trial_average:
+            # `min_sigma` is recorded by the fit, so read it rather than relying on the
+            # helpers' default (as `add_trial_average_rsof_columns` does for the real
+            # fits). Semi-axes are added here too, which the per-frame simulated family
+            # lacks - that is why the notebooks recompute elongation inline for it.
+            min_sigma_sim = float(
+                pd.to_numeric(
+                    simul_df_treadmill[f"min_sigma{TA_SIM_SUFFIX}"], errors="coerce"
+                )
+                .dropna()
+                .iloc[0]
+            )
+            popt_ta = simul_df_treadmill[f"popt_simulated{TA_SIM_SUFFIX}"]
+            ok = popt_ta.apply(
+                lambda x: isinstance(x, (list, np.ndarray)) and len(x) >= 6
+            )
+            simul_df_treadmill.loc[ok, f"g2d_theta{TA_SIM_SUFFIX}"] = popt_ta[ok].apply(
+                fit_gb.get_gaussian_angle
+            )
+            for name, fn in [
+                (f"g2d_semimajor{TA_SIM_SUFFIX}", fit_gb.get_semimajor_length),
+                (f"g2d_semiminor{TA_SIM_SUFFIX}", fit_gb.get_semiminor_length),
+                (f"g2d_eccentricity{TA_SIM_SUFFIX}", fit_gb.get_gaussian_eccentricity),
+            ]:
+                simul_df_treadmill.loc[ok, name] = popt_ta[ok].apply(
+                    lambda x, fn=fn: fn(x, min_sigma=min_sigma_sim)
+                )
+            print(
+                f"{int(ok.sum())}/{len(simul_df_treadmill)} simulated ROIs with a "
+                "trial-average plateau fit"
+            )
 
     return (
         neurons_df,
