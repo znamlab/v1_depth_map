@@ -42,20 +42,27 @@ Outputs, per session, beside `neurons_df.pickle`:
     simulated_responses_fit_treadmill_trial_average_plateau_2_0.15_circular.parquet
     simulation_fit_current.json     (provenance; NOT param_range_current.json, which
                                      belongs to the real fits and must not be clobbered)
+    simulated_traces_treadmill_trial_average_plateau_2_0.15_circular.parquet  (--traces)
 
-`fake_dff` is deliberately NOT stored - it is already in the April parquet - so the file is
-a few KB rather than ~100 MB.
+The simulated dF/F trace is kept in its own file rather than in the fit parquet: it is
+~100 MB per session against a few hundred kB for the fits, and the loader reads the fit
+parquet for every session on every call. `--traces` regenerates it (plateau-cut, from the
+trial-average plateau seed), which is what lets `figsupp_simulation_control.ipynb` drop the
+`tread_kwargs=dict(method="model")` override its example-cell panels needed for the April
+artifacts.
 
 Typical use::
 
     python fit_revision_simulation.py --dry-run
     python fit_revision_simulation.py --sessions PZAG17.3a_S20250402   # time one first
     python fit_revision_simulation.py                                   # all four
+    python fit_revision_simulation.py --traces --no-fits                # traces only
 
-Cost: the session load dominates at a few minutes; the simulation is one convolution per
-ROI (seconds); the trial-average g2d fit is ~40 s at k=1 and ~3-4 min at k=5 for ~780 ROIs.
-Roughly 10 min per session. Peak memory is the ~50k frame x ~800 ROI dF/F array, held twice
-between the simulation and the swap below.
+Cost, measured on PZAG17.3a_S20250402 (784 ROIs, 225 trials, local drive): load and
+simulate 0.2 min (the monitor frames were already cached; budget more if not), k=1 fit
+2.7 min, k=5 fit 11.8 min, 14.9 min total. The k=5 fit dominates, at ~1.2 ROIs/s. Peak
+memory is the ~50k frame x ~800 ROI dF/F array, held twice between the simulation and the
+swap below.
 """
 
 import argparse
@@ -123,6 +130,15 @@ def output_filename():
     is_circ = "_circular" if MAKE_CIRCULAR else "_elliptical"
     return (
         f"simulated_responses_fit_treadmill_trial_average_{METHOD}"
+        f"_{DECAY_TAU}_{RISE_TAU}{is_circ}.parquet"
+    )
+
+
+def trace_filename():
+    """Parquet name for the simulated dF/F trace, kept out of the fit file (~100 MB)."""
+    is_circ = "_circular" if MAKE_CIRCULAR else "_elliptical"
+    return (
+        f"simulated_traces_treadmill_trial_average_{METHOD}"
         f"_{DECAY_TAU}_{RISE_TAU}{is_circ}.parquet"
     )
 
@@ -211,18 +227,45 @@ def _rename_fit_columns(fit_df, mapping, k_folds):
     return out
 
 
-def fit_one_session(session_name, skip_existing=True):
-    """Simulate and fit one session. Returns the results dataframe, or None if skipped."""
-    cfg = target_config(TARGET, METHOD)
-    neurons_ds, neurons_df = load_neurons_df(session_name)
-    out_path = neurons_ds.path_full.with_name(output_filename())
-    if skip_existing and out_path.exists():
-        print(f"--- skip (exists): {out_path.name}")
-        return None
+def write_traces(neurons_ds, trials_df, n_rois):
+    """Write the simulated dF/F trace, one row per ROI.
 
+    Concatenated across trials exactly as `simulate_and_fit_session` did, so a notebook can
+    slice it back per trial from the cumulative `dff_stim` lengths of a `trials_df` loaded
+    with the SAME onset method - `plateau` here, which is the point: the April artifacts
+    were cut with `model` and needed an override to line up.
+    """
+    fake_all = np.concatenate(trials_df["fake_dff_stim"].values, axis=0)
+    assert (
+        fake_all.shape[1] == n_rois
+    ), f"trace has {fake_all.shape[1]} ROIs but the session has {n_rois}"
+    traces = pd.DataFrame(
+        {
+            "roi": np.arange(fake_all.shape[1]),
+            "fake_dff": [fake_all[:, i] for i in range(fake_all.shape[1])],
+        }
+    )
+    out_path = neurons_ds.path_full.with_name(trace_filename())
+    tmp = out_path.with_suffix(".parquet.partial")
+    traces.to_parquet(tmp, index=False)
+    tmp.replace(out_path)
+    print(
+        f"### wrote {out_path.name} ({out_path.stat().st_size / 1e6:.1f} MB, "
+        f"{fake_all.shape[0]} frames x {fake_all.shape[1]} ROIs)"
+    )
+    return out_path
+
+
+def simulate_one_session(session_name, cfg):
+    """Load the session with `METHOD` onsets and the simulation injected.
+
+    Returns (neurons_ds, trials_df with `fake_dff_stim`, popt_list, n_seed).
+    """
+    neurons_ds, neurons_df = load_neurons_df(session_name)
     popt_list, n_seed = seed_popt_list(neurons_df)
 
-    # One load, shared by both fits. `tread_kwargs` reaches `sync_all_recordings`
+    # One load, shared by the traces and both fits. `tread_kwargs` reaches
+    # `sync_all_recordings`
     # (pipeline_utils.load_session forwards `**(tread_kwargs or {})`), so the same call
     # both cuts trials with `method` and simulates the responses.
     t0 = time.time()
@@ -245,8 +288,16 @@ def fit_one_session(session_name, skip_existing=True):
     )
     print(f"### loaded and simulated in {(time.time() - t0) / 60:.1f} min")
 
-    # Same exclusion as fit_revision_treadmill.fit_session_target.
+    # Same exclusion as fit_revision_treadmill.fit_session_target. None of the four
+    # revision sessions has a multidepth SpheresTubeMotor recording, so this is a no-op
+    # today - asserted because if one ever appears, the trace written below would cover a
+    # different trial set than the fits, and a notebook slicing it would silently
+    # misalign.
     is_multidepth = trials_df.recording_name.str.contains("multidepth")
+    assert not is_multidepth.any(), (
+        f"{int(is_multidepth.sum())} multidepth trials in {session_name}: the trace and "
+        "the fits would no longer share a trial set"
+    )
     trials_df = trials_df[~is_multidepth]
 
     if "fake_dff_stim" not in trials_df.columns:
@@ -260,11 +311,34 @@ def fit_one_session(session_name, skip_existing=True):
             f"simulated trace shape {fake.shape} != real {real.shape}; the simulation "
             "was not sliced on the same trials as the data"
         )
+    return neurons_ds, trials_df, popt_list, n_seed
+
+
+def fit_one_session(session_name, skip_existing=True, do_fits=True, do_traces=False):
+    """Simulate one session, then write its traces and/or fits."""
+    cfg = target_config(TARGET, METHOD)
+    fit_path = load_neurons_df(session_name)[0].path_full.with_name(output_filename())
+    trace_path = fit_path.with_name(trace_filename())
+    want_fits = do_fits and not (skip_existing and fit_path.exists())
+    want_traces = do_traces and not (skip_existing and trace_path.exists())
+    if not want_fits and not want_traces:
+        print(f"--- skip (exists): {fit_path.name}" if do_fits else "", end="")
+        print(f"--- skip (exists): {trace_path.name}" if do_traces else "")
+        return None
+
+    neurons_ds, trials_df, popt_list, n_seed = simulate_one_session(session_name, cfg)
+
+    if want_traces:
+        write_traces(neurons_ds, trials_df, len(popt_list))
+    if not want_fits:
+        return None
+
     # `pop` rather than a plain assignment: both arrays are ~50k frames x ~800 ROIs, and
     # nothing downstream needs the real dF/F.
     trials_df["dff_stim"] = trials_df.pop("fake_dff_stim")
     print(f"### fitting {len(trials_df)} trials of simulated dF/F")
 
+    out_path = fit_path
     results = None
     for k_folds in K_FOLDS:
         t0 = time.time()
@@ -344,6 +418,14 @@ def main():
         action="store_true",
         help="report what would be written, without loading any recording",
     )
+    parser.add_argument(
+        "--traces",
+        action="store_true",
+        help="also write the simulated dF/F trace parquet (~100 MB per session)",
+    )
+    parser.add_argument(
+        "--no-fits", action="store_true", help="skip the fits (use with --traces)"
+    )
     parser.add_argument("--site", choices=sorted(("local", "nemo")), default="local")
     args = parser.parse_args()
 
@@ -370,18 +452,33 @@ def main():
                 if has_seed
                 else 0
             )
-            state = "exists" if out_path.exists() else "would write"
+            targets = []
+            if not args.no_fits:
+                targets.append(out_path)
+            if args.traces:
+                targets.append(out_path.with_name(trace_filename()))
+            for target in targets:
+                state = "exists" if target.exists() else "would write"
+                print(f"{session_name}: {state} {target.name}")
             print(
-                f"{session_name}: {state} {out_path.name} | "
-                f"seed column {'present' if has_seed else 'MISSING'} "
+                f"{session_name}: seed column "
+                f"{'present' if has_seed else 'MISSING'} "
                 f"({n_seed}/{len(neurons_df)} ROIs)"
             )
         return
 
+    if args.no_fits and not args.traces:
+        parser.error("--no-fits leaves nothing to do; pass --traces too")
+
     t_start = time.time()
     for session_name in args.sessions:
         print(f"\n=== {session_name}")
-        fit_one_session(session_name, skip_existing=not args.redo)
+        fit_one_session(
+            session_name,
+            skip_existing=not args.redo,
+            do_fits=not args.no_fits,
+            do_traces=args.traces,
+        )
     print(f"\ntotal: {(time.time() - t_start) / 60:.1f} min")
 
 
