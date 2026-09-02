@@ -11,10 +11,10 @@ This document tracks the execution status, resource utilization, and action item
 | Notebook | Status | Execution Time | Peak RAM | Target Figures / Panels | Reason / Actions Needed |
 | :--- | :---: | :---: | :---: | :--- | :--- |
 | [`figure_depth_selectivity.ipynb`](../v1_depth_map/figures/figure_depth_selectivity.ipynb) | ✅ Ready | 49.7 min | 5.14 GB | Fig 1 (Panels A–P full assembly), Fig 2 panels | Full multi-panel publication assembly cell included |
-| [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) | ✅ Success | 7.9 min | 2.31 GB | Fig 3 / RF panels | Receptive field mapping & 3D RF profiles |
+| [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) | ✅ Success | 7.9 min | 2.31 GB | Fig 4 & Fig 5 / RF panels | Receptive field mapping & 3D RF profiles |
 | [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb) | ✅ Ready | 13.3 min | 4.98 GB | Fig 2 (Panels A–K full assembly) | Full multi-panel publication assembly cell included |
 | [`figure_openloop.ipynb`](../v1_depth_map/figures/figure_openloop.ipynb) | ✅ Success | 11.2 min | 5.08 GB | Open-loop responses | Open-loop vs closed-loop comparison |
-| [`figure_depth_cells.ipynb`](../v1_depth_map/figures/figure_depth_cells.ipynb) | ✅ Success | - | - | Depth cell examples | Single-cell exemplars and FOVs |
+| [`figure_depth_cells.ipynb`](../v1_depth_map/figures/figure_depth_cells.ipynb) | ✅ Success | - | - | Fig 3 (Depth cells) | Single-cell exemplars and FOVs |
 | [`figsupp_speed.ipynb`](../v1_depth_map/figures/figsupp_speed.ipynb) | ✅ Ready | 1.8 min | 2.50 GB | Supp: Speed & Eye tracking | Running speed, optic flow speed, & pupil/gaze tracking (Panels A–L) |
 | [`figsupp_openloop.ipynb`](../v1_depth_map/figures/figsupp_openloop.ipynb) | ✅ Success | 1.5 min | 3.59 GB | Supp: Open loop | Playback comparisons |
 | [`figsupp_rf.ipynb`](../v1_depth_map/figures/figsupp_rf.ipynb) | ✅ Success | 3.1 min | 1.24 GB | Supp: RF details | RF gradients and contralateral vs ipsilateral |

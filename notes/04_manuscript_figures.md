@@ -12,8 +12,9 @@ This document tracks the assembly status of all Main and Supplementary figures f
 | :--- | :--- | :--- | :--- | :--- | :---: | :--- |
 | **Figure 1** | `\label{fig:intro}`<br>`figures/fig1.pdf` | Depth selectivity in mouse V1 (Panels A–P) | [`figure_depth_selectivity.ipynb`](../v1_depth_map/figures/figure_depth_selectivity.ipynb) | `fig1.svg`<br>`fig1.pdf`<br>`fig1_4examples.svg` | ✅ Ready / Assembled | Complete 16-panel assembly (A–P) generated directly from notebook |
 | **Figure 2** | `\label{fig:rsof}`<br>`figures/fig2.pdf` | Depth representation vs speed & flow (RS × OF) (Panels A–K) | [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb) | `fig2.svg`<br>`fig2.pdf` | ✅ Ready / Assembled | Complete 11-panel assembly (A–K) generated directly from notebook |
-| **Figure 3** | `\label{fig:rf}`<br>`figures/fig3.png` | Receptive fields & 3D tuning | [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) | `fig_3d_rfs.pdf`<br>`fig_rf_example_fov.svg`<br>`fig_rf_examples.pdf`<br>`rf_position_corrected.svg`<br>`v1_map_vrange_0.1_2.0_a0.3.svg` | 🎨 In Progress | - Confirm retinotopic map overlay scaling<br>- Review contralateral vs ipsilateral ROIs |
-| **Figure 4** | `\label{fig:v1map}`<br>`figures/fig4.png` | Depth map across V1 / visual space | [`figure_depth_cells.ipynb`](../v1_depth_map/figures/figure_depth_cells.ipynb) | `fig_depth_cells.svg`<br>`fig_depth_cells_examples.svg`<br>`fig_depth_cells_examples_overlaid.svg` | 🎨 In Progress | - Refine example traces and tuning overlays |
+| **Figure 3** | `\label{fig:depth_cells}`<br>`figures/fig3.pdf` | Depth cells exemplars & single-cell tuning profiles | [`figure_depth_cells.ipynb`](../v1_depth_map/figures/figure_depth_cells.ipynb) | `fig_depth_cells.svg`<br>`fig_depth_cells_examples.svg`<br>`fig_depth_cells_examples_overlaid.svg` | 🎨 In Progress | - Refine single-cell exemplars, FOVs, and tuning overlays |
+| **Figure 4** | `\label{fig:rf}`<br>`figures/fig4.png` | Receptive fields & 3D tuning | [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) | `fig_3d_rfs.pdf`<br>`fig_rf_example_fov.svg`<br>`fig_rf_examples.pdf`<br>`rf_position_corrected.svg` | 🎨 In Progress | - Confirm retinotopic map overlay scaling<br>- Review contralateral vs ipsilateral ROIs |
+| **Figure 5** | `\label{fig:v1map}`<br>`figures/fig5.png` | Depth map across V1 / visual space | [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) / [`figure_receptive_fields.ipynb`](../v1_depth_map/figures/figure_receptive_fields.ipynb) | `v1_map_vrange_0.1_2.0_a0.3.svg`<br>`rf_position_corrected.svg` | 🎨 In Progress | - Map cortical depth preference distributions and retinotopic alignments |
 
 ---
 
@@ -30,15 +31,10 @@ This document tracks the assembly status of all Main and Supplementary figures f
 | **Fig S5** | `\label{sup:openloop}`<br>`figures/fig_supp_openloop.png` | Optic flow and running speed tuning on open-loop trials | [`figsupp_openloop.ipynb`](../v1_depth_map/figures/figsupp_openloop.ipynb) | `fig_supp_openloop.svg` | 🎨 In Progress | Panels A–D (closed-loop vs open-loop tuning & speed correlations) |
 | **Fig S6** | `\label{sup:v1map_uncorrected}`<br>`figures/fig_supp_v1map_uncorrected.png` | Distribution of depth preferences across visual field (uncorrected) | [`figsupp_rf.ipynb`](../v1_depth_map/figures/figsupp_rf.ipynb) | `rf_supp/pairwise_distance_all_sessions.svg` | 🎨 In Progress | Panels A–E (pairwise distance analysis & uncorrected RF gradients) |
 
----
-
-### Additional / Candidate Figures (Referenced in Text or Under Development)
-
-| Candidate Figure | Text Reference in `v1_depth_map.tex` | Description | Generating Notebook / Script | Status | Action Items |
-| :--- | :--- | :--- | :--- | :---: | :--- |
-| **Multi-day Stability** | Line 172: *(Figure 1O-P / Supp)* | Longitudinal tracking of depth selectivity across consecutive days | [`revisions/multi_days.ipynb`](../v1_depth_map/revisions/multi_days.ipynb) | 🎨 In Progress | Single-cell exemplars tracked over multiple days. Needs promoting to a `figures/figsupp_*` notebook |
-| **Simulation Control** | Line 211: *"(FIG SUP)"* (tri-modal distribution absent in synthetic data) | Synthetic neural response model validation & simulation fitting | [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | ✅ Ready | Simulation reruns completed (`decay_tau=2`, area-norm) |
-| **Motorized Wheel & History Blur** | Line 207: *"(Figure SUP)"* (residual co-fluctuations along iso-depth lines) | Motorized wheel constant speed periods & stimulus history control | [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb) / `treadmill.ipynb` | 🎨 In Progress | Motorized vs free locomotion comparison |
+| **Fig S7** | `\label{sup:simulation}`<br>`figures/fig_supp_simulation.png` | Simulation control: synthetic neural response validation & absence of tri-modal distribution | [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | `fig_supp_simulation_control.svg` | ✅ Ready / Assembled | Simulation reruns completed (`decay_tau=2`, area-norm) |
+| **Supp Fig** | `\label{sup:prop_depth}` | Distribution of proportion of depth-tuned cells across sessions/layers | [`figure_depth_selectivity.ipynb`](../v1_depth_map/figures/figure_depth_selectivity.ipynb) | `depth_tuned_proportion.svg` | 🎨 In Progress | Moved out of Main Fig 1 into dedicated supplementary figure |
+| **Supp Fig** | `\label{sup:prop_sig_rf}` | Distribution of proportion of cells with significant receptive fields | [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) / [`figsupp_single_depth_receptive_fields.ipynb`](../v1_depth_map/figures/figsupp_single_depth_receptive_fields.ipynb) | `prop_sig_rf_hist.svg` | 🎨 In Progress | Session-wise histograms & ipsi vs contra significant RF proportions |
+| **Supp Fig** | `\label{sup:best_model_amp}` | Fraction / proportion of best RS × OF model fit per dF/F amplitude bin | [`figsupp_rsof.ipynb`](../v1_depth_map/figures/figsupp_rsof.ipynb) / [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb) | `best_model_vs_amplitude.svg` | 🎨 In Progress | Evaluate whether best model distribution varies with response magnitude / signal-to-noise |
 
 ---
 

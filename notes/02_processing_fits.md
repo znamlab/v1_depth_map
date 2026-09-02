@@ -256,7 +256,59 @@ the pad is there.
 
 **What was re-run**: the three `gaussian_2d` configs of the `treadmill` target under `--method plateau`
 — `(None, k1)`, `("even", k1)`, `(None, k5)` — overwriting the `_treadmill_trial_average_plateau` family
-in place.
+in place. All 12 fits complete 2026-08-28 (k1 ≈ 3–4 min, crossval k1 ≈ 5–6 min, k5 16–91 min; k5 cost
+tracks sample count, not ROI count). Merged with `--conflicts overwrite`, then
+`migrate_treadmill_columns.py --apply` to collapse the `rsof_minSigma_*_x`/`_y` pairs the merge recreates;
+`--check` passes on all four.
+
+Verified: exactly **19 g2d columns changed per session, 65 unchanged, no non-g2d drift** in all four; no ROI
+remains pinned at the old bounds; `g2d_preferred_RS` now spans exactly 2.31–100.6 cm/s and
+`g2d_preferred_OF` exactly 0.61–1688 °/s (i.e. the new bounds are active);
+`add_trial_average_rsof_columns` runs clean and resolves `min_sigma=0.25`.
+
+> [!WARNING]
+> **The fraction of boundary-limited fits went UP, not down** — distinct ROIs whose preferred RS or OF sits
+> on a bound:
+>
+> | Session | n | old bounds | new bounds |
+> | :--- | ---: | ---: | ---: |
+> | `PZAG16.3b_S20250401` | 717 | 44.2% | 53.7% |
+> | `PZAG16.3c_S20250401` | 639 | 39.6% | 48.4% |
+> | `PZAG17.3a_S20250402` | 784 | 40.2% | 47.4% |
+> | `PZAH17.1e_S20250403` | 714 | 51.7% | 58.5% |
+>
+> Mechanically expected: bounds closer to the data are reached more often. The substantive point is that
+> **roughly half of these ROIs have no interior optimum** — their best 2D Gaussian is a monotonic ramp. The
+> old bounds hid this by being far away, letting a fit park at an unpinned but meaningless value like
+> 500 cm/s; the new bounds make the degeneracy visible and place the pile-up at an interpretable edge
+> ("preference at or beyond the sampled range"). Consequence for the figures: `g2d_preferred_RS` /
+> `g2d_preferred_OF` must **not** be read as an estimate for ~half the population. Either filter
+> boundary-limited fits or state the caveat. `g2d_eccentricity` median 0.96 (max 1.0) is the same story seen
+> from the shape side.
+
+**But the figure's conclusions are unchanged — this is a robustness fix, not a results change.** Checked by
+rebuilding the old-bounds population from the pre-refit `neurons_df` backups (swapping the 23 g2d
+`{TA}` columns and re-deriving the geometry — no refitting) and re-running
+`figure_depth_cells.ipynb`'s own selection and von Mises block:
+
+| quantity | old bounds | new bounds |
+| :--- | ---: | ---: |
+| significant g2d test R² | 456 | 461 |
+| `ndf_polar` (sig & `is_depth_neuron`) | 286 | 285 |
+| eccentricity > 0.6 → orientation fit | 275 | 273 |
+| median eccentricity | 0.951 | 0.937 |
+| von Mises components (min BIC) | **k=3** | **k=3** |
+| component means / weights | 3.1° (14.5%), 41.3° (73.7%), 90.3° (11.8%) | 3.1° (14.0%), 43.4° (75.2%), 90.1° (10.8%) |
+| within ±22.5° of 45° | 47.3% | 46.9% |
+
+Paired per-neuron orientation shift over the 270 neurons in both selections: median 0.02°, mean 1.54°, only
+3.0% shift by more than 10°, none by more than 30°.
+
+Why the insensitivity: neither selection criterion depends on where the Gaussian centre parks. Test R²
+measures fit quality *over the sampled data*, which is nearly identical whether a ramp is truncated at
+500 cm/s or 100 cm/s; and eccentricity is a ratio of sigmas, which `param_range` does not bound at all. So
+the change fixes the *meaning* of `preferred_RS`/`preferred_OF` without moving the orientation and
+elongation results the figure is built on.
 
 > [!CAUTION]
 > `fit_rs_of_tuning` records `min_sigma` in its output but **not** `param_range`, so an overwritten pickle
@@ -266,7 +318,9 @@ in place.
 > a `param_range_backup.json`; `neurons_df` is backed up to
 > `neurons_df.pickle.pre_g2d_treadmill_trial_average_plateau_paramrange_refit_20260828_backup`. A subfolder
 > rather than a renamed file because the merge glob is non-recursive, so the backups are structurally
-> invisible to it; restoring is a plain move back.
+> invisible to it; restoring is a plain move back. The pre-existing
+> `neurons_df.pickle.pre_treadmill_migration_backup` (from the 2026-08-24 migration) was preserved as
+> `...pre_treadmill_migration_backup.orig_20260824` before `--apply` refreshed it.
 
 > [!IMPORTANT]
 > `add_trial_average_rsof_columns` builds `best_model` and the per-model significance flags from
@@ -276,6 +330,34 @@ in place.
 > family is no longer apples-to-apples. To restore it, re-run the remaining eight configs by dropping
 > `--configs` — the per-target `param_range` already covers every model.
 
+### 6.3 PZAG16.3c's pickles were out of sync with its `neurons_df` (found and fixed 2026-08-28)
+
+The §6.2 merge exposed a pre-existing inconsistency, unique to `PZAG16.3c_S20250401`: its `neurons_df`
+non-g2d `_treadmill_trial_average_plateau` columns did **not** come from the fit pickles sitting beside them.
+
+Established by checking nemo directly:
+
+- the pre-merge `neurons_df` matched a **nemo run dated 2026-08-22** exactly
+  (`/nemo/lab/znamenskiyp/home/shared/projects/colasa_3d-vision_revisions/PZAG16.3c/S20250401`);
+- the local pickles were an **independent 2026-08-07 run** — identical filenames and byte sizes, different
+  md5;
+- the two runs used the **same traces**: 705 ROIs both sides, identical NaN pattern, r = 0.9988, median
+  |Δ| = 1.2e-8, p90 = 1.1e-6. Only 13 cells differ by >0.01 (worst 0.121, a `gadd` R²). So this is
+  `curve_fit` reaching different local optima on a handful of ROIs, **not** a re-extraction difference.
+
+Because `merge_fit_dataframes` rebuilds columns from whatever pickles are on disk, a `--conflicts overwrite`
+merge silently swapped the nemo-derived values for the older local ones. That would have recurred on every
+future overwrite merge.
+
+**Fixed** by copying the 8 nemo 08-22 non-g2d plateau pickles over the local ones (md5-verified) and
+re-merging, so the pickles and `neurons_df` now agree and match the documented nemo lineage. The displaced
+local files are in `local_0807_nong2d_backup_20260828/` with a `README.txt` recording all of the above.
+Only `PZAG16.3c` was affected — the other three sessions showed no non-g2d drift at any point.
+
+> [!NOTE]
+> nemo has **no** `gaussian_2d_crossval_k1` trial-average plateau pickle (its set is 5 models × {k1, k5}),
+> so the `("even", k1)` g2d fit exists only locally. Nothing to sync for it.
+
 Naming: `HALVES` in `fit_revision_treadmill.py` was renamed to `FIT_TARGETS` (`half_config` →
 `target_config`, `fit_session_half` → `fit_session_target`). "Halves" was literal when the script had one
 entry per recording, but `treadmill_frames` is not a third half of the session — it is a second way of
@@ -284,7 +366,32 @@ same convention in "half" language; only the script changed.
 
 ---
 
-## 7. Execution Commands
+## 7. Backups & superseded data
+
+Complete inventory of what was displaced by the reruns above and where it went. **Nothing here was
+deleted** — every entry is a real file or folder still on disk. Paths are relative to the session folder
+under `/Volumes/BlackPasspo/v1_depth_map/processed/<project>/<mouse>/<session>/` unless stated.
+
+| What | Where | Displaced by |
+| :--- | :--- | :--- |
+| Pre-fix 2P traces, `PZAG16.3c_S20250401` | `suite2p_rois_annotated_0/plane0/stale_pre_20260824/` | the re-extraction on post-fix middle-frame offsets (2026-08-24 sync) |
+| `neurons_df`, 2026-08-14, 570 columns | `neurons_df.pickle.pre_nemo_refit_backup` | the nemo refit's merged 337-column file |
+| `neurons_df` before the plateau depth refit | `neurons_df.pickle.pre_plateau_depthfit_backup` | [`rerun_depth_fit.py`](../v1_depth_map/precompute_data/rerun_depth_fit.py) `plateau_single_frames` |
+| `neurons_df` before the column migration | `neurons_df.pickle.pre_treadmill_migration_backup` | [`migrate_treadmill_columns.py --apply`](../v1_depth_map/revisions/migrate_treadmill_columns.py) (§6) |
+| `neurons_df` before the g2d bounds refit | `neurons_df.pickle.pre_g2d_treadmill_trial_average_plateau_paramrange_refit_20260828_backup` | the tightened `param_range` refit (§6.2) |
+| Wide-`param_range` fit pickles, 4 motor sessions | `paramrange_backup_wide_range_20260828/` (+ `param_range_backup.json`) | same refit — subfolder because `merge_fit_dataframes`' glob is non-recursive, so restoring is a plain move back |
+| Pre-2026-08-20 size-control outputs, 3 hey2 sessions | `stale_pre_20260820/` | the ast:False size-control reruns. Moving these is what made the merge step raise `FileNotFoundError` — benign, see §5 |
+
+Not backups, but worth knowing: `data.bin` (200 GB/session) was **deliberately never synced** from nemo, so
+the local copies cannot be re-extracted from — only nemo can. Each `param_range` refit writes
+`param_range_current.json` into the session folder to record the bounds it used, because
+`fit_rs_of_tuning` stores `min_sigma` in its output but not `param_range` (§6.2). Helper artefacts left on
+nemo from the 3c refit: `~/fit_revision_treadmill.py`, `~/inspect_neurons_df_cols.py`, `~/merge_ta_plateau/`
+(sbatch + logs).
+
+---
+
+## 8. Execution Commands
 
 ```bash
 # Batch analysis pipeline (in v1_depth_map/batch_analysis/batch_analysis/)
@@ -316,8 +423,4 @@ python v1_depth_map/precompute_data/fit_revision_treadmill.py \
     --site local --only treadmill --method plateau --merge --conflicts overwrite
 ```
 
-Helper artefacts left on nemo from the 3c refit: `~/fit_revision_treadmill.py`,
-`~/inspect_neurons_df_cols.py`, `~/merge_ta_plateau/` (sbatch + logs).
-
-Slurm job IDs, timings and failure post-mortems for the completed runs were moved to
-[`archive/02_slurm_job_history_pre20260827.md`](archive/02_slurm_job_history_pre20260827.md).
+Backup and superseded-data locations for all of the above: §7.
