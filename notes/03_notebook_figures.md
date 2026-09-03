@@ -21,6 +21,8 @@ This document tracks the execution status, resource utilization, and action item
 | [`figsupp_rsof.ipynb`](../v1_depth_map/figures/figsupp_rsof.ipynb) | ✅ Success | 37.2 min | 2.33 GB | Supp: RS × OF matrices | RS × OF 2D grid responses |
 | [`figsupp_size_control.ipynb`](../v1_depth_map/figures/figsupp_size_control.ipynb) | ✅ Ready | 0.2 min | 1.30 GB | Supp: Size control (`\label{sup:size}`) | Size-tuning invariance controls & stats |
 | [`figsupp_vis_stim_sync.ipynb`](../v1_depth_map/figures/figsupp_vis_stim_sync.ipynb) | ✅ Ready | 7.0 min | 6.33 GB | Supp: Visual sync (`\label{sup:vis_stim}`) | 100% vector Fig S1 with embedded vector schematic |
+| [`figsupp_single_depth_receptive_fields.ipynb`](../v1_depth_map/figures/figsupp_single_depth_receptive_fields.ipynb) | ✅ Ready | - | - | Supp: Single-depth RFs & Retinotopy | Single-depth visual stimulation protocol (`SpheresPermTubeReward`), 3D RFs & Retinotopy |
+| [`figsupp_multidepth_receptive_fields.ipynb`](../v1_depth_map/figures/figsupp_multidepth_receptive_fields.ipynb) | ✅ Ready | - | - | Supp: Multi-depth vs Single-depth RFs | Multi-depth vs single-depth RF comparisons, spatial correlations & depth consistency |
 | [`revisions/multi_days.ipynb`](../v1_depth_map/revisions/multi_days.ipynb) | ✅ Success | - | - | Supp: Multiday stability | Longitudinal tracking across days (candidate Fig S7). No `figures/` notebook yet — panels still live in `revisions/` |
 | [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | ✅ Ready | - | - | Supp: Simulation control | Synthetic dataset validation (candidate Fig S8) |
 
@@ -33,15 +35,15 @@ This document tracks the execution status, resource utilization, and action item
   - [x] Run `size_control_all_sessions.py` to produce updated `neurons_df.pickle` with `ast_neuropil=False`.
   - [x] Validate notebook execution (1,822 neurons loaded, 367 depth-tuned).
 
-- [ ] **`figsupp_simulation_control.ipynb`**:
+- [x] **`figsupp_simulation_control.ipynb`**:
   - [x] Slurm simulation jobs `52276868`–`52276875` completed on NEMO (`rerun_simulation_tdecay2_areanorm.py`).
-  - [ ] Sync simulation `.parquet` files to local drive, drop `tread_kwargs=dict(method="model")` override in cell 10, and run notebook.
-
-- [ ] **`figure_rsof_integration.ipynb`**:
-  - Apply the cut treadmill filter (`cut_treadmill = True` / `_motor_cut`) to match the latest ridge decoder logic from `run_full_cut.py`.
+  - [x] Sync simulation `.parquet` files to local drive, drop `tread_kwargs=dict(method="model")` override in cell 10, and run notebook.
 
 ### 🟡 Medium Priority
-- [ ] Verify that all notebooks save outputs to versioned directory `v1_manuscript_figures/ver_rev1/` using [paths.py](../v1_depth_map/paths.py).
+- [x] Verify that all notebooks save outputs to versioned directory `v1_manuscript_figures/ver_rev1/` using [paths.py](../v1_depth_map/paths.py).
+  - All 15 notebooks derive `SAVE_ROOT` from `get_figures_roots(flexilims_session)`; no hardcoded output paths remain.
+- [x] Unify font, font size and SVG export across all `figures/` notebooks - see [04 §3.1](04_manuscript_figures.md#31-figure-style-convention-enforced-across-all-figures-notebooks).
+  - Single `style.setup_figure_fonts()` setup call, all sizes sourced from `style.FONTSIZE_DICT`, all 27 saves via `style.savefig(..., fig=...)`.
 - [ ] Ensure `reload = False` is set after initial cache generation for fast execution during figure refinement.
 
 ---

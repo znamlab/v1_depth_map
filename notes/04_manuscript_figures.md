@@ -34,6 +34,7 @@ This document tracks the assembly status of all Main and Supplementary figures f
 | **Fig S7** | `\label{sup:simulation}`<br>`figures/fig_supp_simulation.png` | Simulation control: synthetic neural response validation & absence of tri-modal distribution | [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb) | `fig_supp_simulation_control.svg` | ✅ Ready / Assembled | Simulation reruns completed (`decay_tau=2`, area-norm) |
 | **Supp Fig** | `\label{sup:prop_depth}` | Distribution of proportion of depth-tuned cells across sessions/layers | [`figure_depth_selectivity.ipynb`](../v1_depth_map/figures/figure_depth_selectivity.ipynb) | `depth_tuned_proportion.svg` | 🎨 In Progress | Moved out of Main Fig 1 into dedicated supplementary figure |
 | **Supp Fig** | `\label{sup:prop_sig_rf}` | Distribution of proportion of cells with significant receptive fields | [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) / [`figsupp_single_depth_receptive_fields.ipynb`](../v1_depth_map/figures/figsupp_single_depth_receptive_fields.ipynb) | `prop_sig_rf_hist.svg` | 🎨 In Progress | Session-wise histograms & ipsi vs contra significant RF proportions |
+| **Supp Fig** | `\label{sup:multidepth_rf}` | Multi-depth vs. single-depth receptive fields and preferred depth consistency | [`figsupp_multidepth_receptive_fields.ipynb`](../v1_depth_map/figures/figsupp_multidepth_receptive_fields.ipynb) | `fig_supp_multidepth_rf/` | 🎨 In Progress | Single-depth vs multi-depth 2D RF comparisons, correlation distributions & depth consistency |
 | **Supp Fig** | `\label{sup:best_model_amp}` | Fraction / proportion of best RS × OF model fit per dF/F amplitude bin | [`figsupp_rsof.ipynb`](../v1_depth_map/figures/figsupp_rsof.ipynb) / [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb) | `best_model_vs_amplitude.svg` | 🎨 In Progress | Evaluate whether best model distribution varies with response magnitude / signal-to-noise |
 
 ---
@@ -45,3 +46,96 @@ This document tracks the assembly status of all Main and Supplementary figures f
 - **Export Standards**:
   - Export vector graphics as `.svg` with editable text.
   - Final manuscript assembly compiled to vectorized multi-page `.pdf`.
+
+### 3.1 Figure style convention (enforced across all `figures/` notebooks)
+
+Everything below lives in `cottage_analysis.plotting.style`. Do not re-implement any
+of it in a notebook.
+
+**Setup** - one call, as the notebook's second cell. It replaces the old
+`arial_font_path` boilerplate, and no notebook should set `pdf.fonttype`,
+`svg.fonttype`, `font.family` or `mathtext.default` itself:
+
+```python
+from cottage_analysis.plotting import style
+from cottage_analysis.plotting.style import CM, FONTSIZE_DICT
+
+style.setup_figure_fonts()
+```
+
+It registers **every** Arial face from the fonts directory (regular, **bold**, italic,
+plus Arial Narrow), applies the rcParams, and sets `font.family = "Arial"` - a single
+family name, which is what Illustrator resolves most reliably. Registering the bold
+face matters: `findfont` does not fail when asked for a weight it cannot supply, it
+silently returns the closest match, so registering `arial.ttf` alone made
+`fontweight="bold"` produce non-bold panel letters on any machine without a system
+Arial Bold (NEMO, most Linux runners). The fonts directory is looked up in
+`style.FONT_SEARCH_DIRS` (external drive, then NEMO); a missing one warns rather than
+raising, so an unmounted drive cannot break a run.
+
+**Font sizes** - the canonical dict is `style.FONTSIZE_DICT`:
+
+| key | pt | used for |
+| :--- | :---: | :--- |
+| `panel` | 10 | panel letters (always bold) |
+| `title` | 7 | axes titles |
+| `label` | 7 | axis labels |
+| `tick` | 5 | tick labels |
+| `legend` | 5 | legend text |
+
+Use it as-is. A figure that genuinely needs to deviate must say so as an explicit
+merge, so the deviation stays reviewable - never re-type the whole dict:
+
+```python
+fontsize_dict = FONTSIZE_DICT | {"title": 8}   # and say why, in a comment
+```
+
+Note that an override only reaches text drawn by a `fontsize_dict`-aware plotting
+helper. Anything drawn by plain matplotlib in the same figure still takes its size
+from the rcParams, so an override can make a figure internally inconsistent rather
+than uniformly larger - check which helper actually reads the key before adding one.
+
+**Current state: one override exists in the whole repo** -
+`figsupp_openloop.ipynb` c7 uses `{"title": 5}` for the panel titles drawn by
+`rsof_plots.plot_RS_OF_matrix`, and is under review. Everything else resolves to the
+shared dict. The previous `tick: 6` (7 sites across the RF notebooks), `title: 8`
+(3 sites) and `legend: 5.5` (1 site) overrides were removed as unjustified.
+
+**Panel letters and cm layout** - use the shared helpers, so panel letters cannot
+drift from `FONTSIZE_DICT["panel"]`:
+
+```python
+from cottage_analysis.plotting.style import rect_cm, panel_letter
+
+ax = fig.add_axes(rect_cm(fig, x_cm, y_cm, w_cm, h_cm))
+panel_letter(fig, "A", 0.1, 5.8)   # bold, at FONTSIZE_DICT["panel"]
+```
+
+**Saving** - `style.savefig` is the only permitted save path, and the figure is always
+passed explicitly (a bare `plt.gcf()` is brittle when notebook cells are re-run out of
+order):
+
+```python
+style.savefig(SAVE_ROOT / "fig.svg", fig=fig, bbox_inches="tight", dpi=300)
+```
+
+For `.svg` it rewrites matplotlib's CSS `font` shorthand
+(`font: 700 10px 'Arial'`) into longhand
+(`font-family: 'Arial'; font-size: 10px; font-weight: 700`). Illustrator parses the
+two-token `<size> <family>` form but discards the three-token
+`<weight> <size> <family>` form and falls back to 12 pt - so **bold text opens at
+12 pt regardless of the real size**, which in practice means the panel letters. Other
+formats pass straight through. The call is idempotent, and `style.fix_svg_fonts(path)`
+applies the same fix to an SVG written by other means (as `figsupp_vis_stim_sync`
+does after splicing in its vector schematic with `ElementTree`).
+
+Only matplotlib < 3.10 emits the shorthand; 3.10 writes longhand itself. The figure
+kernel is currently on 3.9.2, so the fix is load-bearing.
+
+**Checking an export:**
+
+```bash
+grep -l 'style="font:' *.svg                      # must return nothing
+grep -o "font-family: '[^']*'" fig.svg | sort -u  # must be 'Arial' only
+grep -o "font-weight: [0-9]*" fig.svg | sort -u   # 700 present for panel letters
+```
