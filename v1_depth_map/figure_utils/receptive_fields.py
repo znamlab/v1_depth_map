@@ -36,6 +36,8 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from scipy.ndimage import zoom
 from skimage import measure
 
+from cottage_analysis.plotting.style import FONTSIZE_DICT
+
 # Displayed window of the cube: azimuth (deg), depth (index), elevation (deg)
 AZI_LIM = (20, 120)
 DEPTH_LIM = (0, 7)
@@ -63,8 +65,6 @@ MARGINAL_PEAK_SIZE = 4  # dot marking the peak on each wall, as matplotlib's `s`
 # fit, so no extra smoothing is applied; the zoom sets the triangle /
 # contour-vertex count, and so the weight of the vector output.
 VOLUME_ZOOM = (4, 3, 3)
-
-FONTSIZE_DICT = {"title": 7, "label": 7, "tick": 6, "legend": 5}
 
 
 def rf_upsampled(volume, zoom_factors=VOLUME_ZOOM):
@@ -397,7 +397,8 @@ def style_rf_3d_axes(
         ax (Axes3D): 3D axes to style.
         depths_arr (np.ndarray): Virtual depths in metres, used for the depth
             tick labels (converted to cm).
-        fontsize_dict (dict, optional): Font sizes; defaults to FONTSIZE_DICT.
+        fontsize_dict (dict, optional): Font sizes; defaults to the shared
+            `cottage_analysis.plotting.style.FONTSIZE_DICT`.
         azi_lim, depth_lim, ele_lim (tuple): Displayed window of the cube.
         elev, azim (float): View angle, matching the original plotly camera
             eye=(1.75, 1.75, 1.75).
