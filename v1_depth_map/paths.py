@@ -12,7 +12,6 @@ FIGURES_VERSION: str = "_rev1"  # e.g. "_rev1", "_rev2", "10"
 # ────────────────────────────────────────────────────────────────────────────
 
 # Internal directory constants - rarely need to change
-_MANUSCRIPT_DIR = "v1_manuscript_2023"  # used by precompute scripts
 _FIGURES_SUBDIR = "v1_manuscript_figures"  # used by figure notebooks
 
 
@@ -48,29 +47,3 @@ def get_figures_roots(
         read_root = read_root / fig_subdir
         save_root = save_root / fig_subdir
     return read_root, save_root
-
-
-def get_precompute_root(flexilims_session, version=None, fig_subdir="fig1"):
-    """Return SAVE_ROOT Path for precompute scripts.
-
-    Used by make_depth_tuning_raster.py and calculate_rs_stats.py.
-
-    Args:
-        flexilims_session: A flexiznam session object.
-        version: Override the version (defaults to FIGURES_VERSION).
-        fig_subdir: Subdirectory under the versioned root (e.g. "fig1", "supp").
-
-    Returns:
-        Path: The SAVE_ROOT directory path (not yet created).
-
-    Example::
-
-        from v1_depth_map.paths import get_precompute_root
-        SAVE_ROOT = get_precompute_root(flexilims_session, fig_subdir="fig1")
-        SAVE_ROOT.mkdir(parents=True, exist_ok=True)
-    """
-    import flexiznam as flz
-
-    v = version if version is not None else FIGURES_VERSION
-    base = flz.get_data_root("processed", flexilims_session=flexilims_session)
-    return base / _MANUSCRIPT_DIR / f"ver{v}" / fig_subdir
