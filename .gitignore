@@ -20,3 +20,4 @@ dist/
 *.png
 *.pickle
 .venv/
+antigravity_output/
