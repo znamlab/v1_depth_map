@@ -57,3 +57,8 @@ local_scheme = "no-local-version"
 
 [tool.uv.sources]
 cottage_analysis = { path = "../cottage_analysis", editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]

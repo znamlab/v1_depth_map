@@ -10,6 +10,7 @@ Welcome to the analysis tracking hub for the `v1_depth_map` project. These docum
 | **02** | [**02_processing_fits.md**](./02_processing_fits.md) | Fitting pipelines (RF, depth selectivity, RS/OF, ridge decoders), `neurons_df` generation & lineage |
 | **03** | [**03_notebook_figures.md**](./03_notebook_figures.md) | Figures Jupyter notebooks execution status, runtimes, memory, errors, and notebook-level tasks |
 | **04** | [**04_manuscript_figures.md**](./04_manuscript_figures.md) | Final figure assembly status (Main Figures 1–5, Supplementary Figures S1–S8), SVGs/PDFs, vector layout |
+| **05** | [**05_manuscript_statistics.md**](./05_manuscript_statistics.md) | Manuscript numbers & statistics pipeline: notebook emission, YAML manifests, LaTeX macros |
 
 ---
 
@@ -21,6 +22,7 @@ flowchart LR
     B --> C[02. Processing & Fits\nneurons_df & Decoder Models]
     C --> D[03. Notebook Figures\nPlotting panels & cache]
     D --> E[04. Manuscript Figures\nSVG / PDF Assembly]
+    D --> F[05. Manuscript Stats\nYAML -> TeX Macros]
 ```
 
 ---
