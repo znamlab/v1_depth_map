@@ -1,3 +1,33 @@
+"""Batch-execute the figure notebooks under memory supervision, then compile the stats.
+
+Running `v1_depth_map/figures/*.ipynb` by hand is impractical: several need many GB of
+RAM and tens of minutes each, so running them together exhausts system memory. This
+script runs them one at a time, waits for enough free RAM before starting each, watches
+the peak usage of the whole process tree, and gives up on anything that overruns its
+timeout instead of hanging the batch.
+
+What a run does:
+  1. Selects the notebooks (`--notebooks` by name, otherwise every .ipynb in
+     `v1_depth_map/figures/`, sorted).
+  2. Executes each with `uv run jupyter nbconvert --execute`, in project environment.
+     A copy with a `kernelspec` patched in is written to a temp dir first, because
+     several notebooks in this repo carry incomplete kernel metadata.
+  3. Records status, wall time and peak RAM per notebook in `FIGURES_README.md`,
+     updated after every notebook so the table is useful while the batch is running.
+  4. Compiles the manuscript statistics the notebooks emitted (see
+     `notes/05_manuscript_statistics.md`) into `manuscript_stats.tex`, and deploys it
+     to Overleaf. Nothing is written if validation fails.
+
+Note that **the executed notebooks are discarded**: nbconvert writes to a temp dir, so
+the source .ipynb files keep their existing outputs and are never modified. The durable
+results of a run are whatever the notebooks themselves save - figure SVGs/PDFs, cached
+pickles, and the per-notebook `stats_*.yaml` files - not the notebooks.
+
+Usage:
+    python run_figures_pipeline.py
+    python run_figures_pipeline.py --notebooks figure_rf.ipynb --timeout 1800
+"""
+
 import argparse
 import asyncio
 import sys
@@ -290,6 +320,19 @@ async def main():
         await execute_notebook(nb_path, readme_agent, resource_manager)
 
     print("Pipeline execution finished. Summary report updated in FIGURES_README.md")
+    try:
+        from v1_depth_map.stats import compile_manuscript_stats
+
+        # Validates first and writes nothing if a macro is duplicated or a formatted
+        # value would leave LaTeX math mode open, so a bad number is caught here
+        # rather than in Overleaf.
+        if compile_manuscript_stats() != 0:
+            print(
+                "WARNING: manuscript stats validation failed - "
+                "manuscript_stats.tex was NOT updated (see errors above)."
+            )
+    except Exception as e:
+        print(f"Notice: Could not compile manuscript stats: {e}")
 
 
 if __name__ == "__main__":
