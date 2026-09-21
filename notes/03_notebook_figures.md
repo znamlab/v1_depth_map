@@ -12,7 +12,7 @@ This document tracks the execution status, resource utilization, and action item
 | :--- | :---: | :---: | :---: | :--- | :--- |
 | [`figure_depth_selectivity.ipynb`](../v1_depth_map/figures/figure_depth_selectivity.ipynb) | ✅ Ready | 49.7 min | 5.14 GB | Fig 1 (Panels A–P full assembly), Fig 2 panels | Full multi-panel publication assembly cell included |
 | [`figure_rf.ipynb`](../v1_depth_map/figures/figure_rf.ipynb) | ✅ Success | 7.9 min | 2.31 GB | Fig 4 & Fig 5 / RF panels | Receptive field mapping & 3D RF profiles |
-| [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb) | ✅ Ready | 13.3 min | 4.98 GB | Fig 2 (Panels A–E: RS × OF integration models) | Closed-loop integration models (motorized wheel moved to Fig 3; open loop in figure_openloop.ipynb) |
+| [`figure2_rsof_integration.ipynb`](../v1_depth_map/figures/figure2_rsof_integration.ipynb) | ✅ Ready | 13.3 min | 4.98 GB | Fig 2 (Panels A–E: RS × OF integration models) | Closed-loop integration models (motorized wheel moved to Fig 3; open loop in figure_openloop.ipynb) |
 | [`figure_openloop.ipynb`](../v1_depth_map/figures/figure_openloop.ipynb) | ✅ Success | 11.2 min | 5.08 GB | Open-loop responses | Open-loop vs closed-loop comparison |
 | [`figure_depth_cells.ipynb`](../v1_depth_map/figures/figure_depth_cells.ipynb) | ✅ Success | - | - | Fig 3 (Panels A–L: Motorized wheel & depth cells) | Full multi-panel publication assembly cell included (saves fig_depth_cells.svg) |
 | [`figsupp_speed.ipynb`](../v1_depth_map/figures/figsupp_speed.ipynb) | ✅ Ready | 1.8 min | 2.50 GB | Supp: Speed & Eye tracking | Running speed, optic flow speed, & pupil/gaze tracking (Panels A–L) |

@@ -8,6 +8,7 @@ TypeError and leaves the previous (possibly hand-entered) YAML silently in place
 """
 
 import ast
+import itertools
 import json
 import re
 import sys
@@ -65,6 +66,7 @@ def _stubs(name):
     if name == "figure_openloop":
         return dict(
             neurons_df_sig_openloop=_neurons(1229),
+            neurons_df_sig_openloop_depth_selective=_neurons(9429),
             decoder_results=_neurons(34),
             pval_amp=np.float64(5.5e-07),
             r_rs=np.array([0.5512674]),
@@ -72,8 +74,44 @@ def _stubs(name):
             r_of=np.array([0.7101559]),
             pval_of=np.float64(0.002),
         )
-    if name == "figure_rsof_integration":
-        return dict(neurons_df_sig=_neurons(12000))
+    if name == "figure2_rsof_integration":
+        models = ["grs", "gof", "gratio", "gadd", "g2d"]
+        model_labels = {
+            "grs": "Running speed",
+            "gof": "Optic flow",
+            "gratio": "RS/OF",
+            "gadd": "Additive",
+            "g2d": "Conjunctive",
+        }
+        # The bootstrap p-values the STATS cell hands over. The mix is deliberate:
+        # an exactly-0.0 p (what calculate_pval_from_bootstrap really returns, and
+        # what the 1/n_boots floor has to catch), one already at the floor, and two
+        # non-significant ones, so both _fmt_pval branches run.
+        explicit = {("gadd", "g2d"): 0.155, ("gof", "gratio"): 0.0423}
+        model_comparison_pvals = {}
+        for i, pair in enumerate(itertools.combinations(models, 2)):
+            pval = explicit.get(pair, 0.0 if i % 2 else 5e-5)
+            model_comparison_pvals[pair] = {
+                "pval": pval,
+                "pval_floored": max(pval, 1 / 20000),
+                "median_diff": 0.3,
+                "ci_low": 0.2,
+                "ci_high": 0.4,
+            }
+        return dict(
+            neurons_df_sig=_neurons(12000),
+            results_all=_neurons(
+                25000,
+                extra={
+                    "iscell": 1,
+                    "rsof_test_rsq_closedloop_g2d_sig": lambda n: np.arange(n) % 2 == 0,
+                },
+            ),
+            models=models,
+            model_labels=model_labels,
+            model_comparison_pvals=model_comparison_pvals,
+            n_boots=20000,
+        )
     if name == "figure_depth_cells":
         return dict(
             n_pop_k=271,
@@ -112,7 +150,28 @@ def _stubs(name):
         return dict(all_data=_neurons(5000))
     if name == "figsupp4_size_control":
         return dict(
-            df=_neurons(314), select_neurons=pd.Series(np.ones(314, dtype=bool))
+            df=_neurons(314),
+            select_neurons=pd.Series(np.ones(314, dtype=bool)),
+            pairwise_stats=[
+                {
+                    "median_ratio": 1.05,
+                    "pval_ratio": 0.588,
+                    "r_corr": 0.769,
+                    "pval_corr": 1.8e-62,
+                },
+                {
+                    "median_ratio": 1.00,
+                    "pval_ratio": 0.812,
+                    "r_corr": 0.754,
+                    "pval_corr": 5.5e-59,
+                },
+                {
+                    "median_ratio": 1.00,
+                    "pval_ratio": 0.951,
+                    "r_corr": 0.766,
+                    "pval_corr": 8.4e-62,
+                },
+            ],
         )
     if name == "figsupp5_rsof":
         return dict(
@@ -137,7 +196,7 @@ def _stubs(name):
 OWNERS = {
     "figure1_depth_selectivity": "fig1",
     "figure_openloop": "fig2",
-    "figure_rsof_integration": "fig2",
+    "figure2_rsof_integration": "fig2",
     "figure_depth_cells": "fig3",
     "figure_rf": "fig4_5",
     "figsupp1_vis_stim_sync": "supp",

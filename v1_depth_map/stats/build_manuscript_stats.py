@@ -14,7 +14,7 @@ manuscript is a deliberate manual step: once the dashboard has been checked, cop
 Overleaf, so a compile can never surprise a co-author mid-edit.
 
 One YAML file per *notebook*, not per figure: a figure can have several producing
-notebooks (Fig. 2 panels A-E come from `figure_rsof_integration`, F-L from
+notebooks (Fig. 2 panels A-E come from `figure2_rsof_integration`, F-L from
 `figure_openloop`), and keying by figure made them overwrite each other. Each file
 carries a `_meta` block recording which notebook wrote it, when, and whether the
 numbers came from a notebook run or were entered by hand.

@@ -1,0 +1,100 @@
+_meta:
+  notebook: figure2_rsof_integration
+  figure: fig2
+  generated_at: '2026-09-21T14:05:39'
+  source: notebook
+metrics:
+  model_comparison_n_sessions:
+    raw: 84
+    formatted: '84'
+    latex_macro: statFigTwoModelSessions
+    description: Sessions included in model comparison analysis (Fig 2E)
+  model_comparison_n_neurons:
+    raw: 21318
+    formatted: 21,318
+    latex_macro: statFigTwoModelNeurons
+    description: Depth-tuned neurons with at least one significant RS/OF model fit
+      (Fig 2E)
+  closed_loop_conjunctive_n_neurons:
+    raw: 17953
+    formatted: 17,953
+    latex_macro: statFigTwoClosedLoopConjunctiveNeurons
+    description: Depth-tuned neurons with significant conjunctive model fit in closed
+      loop (Methods L621)
+  model_comparison_pval_grs_vs_gof:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalRunningSpeedVsOpticFlow
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Running speed vs Optic flow: median difference -0.057, 95% CI [-0.089, -0.027],
+      20,000 resamples (Fig 2E)'
+  model_comparison_pval_grs_vs_gratio:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalRunningSpeedVsRsOfRatio
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Running speed vs RS/OF: median difference -0.072, 95% CI [-0.121, -0.037], 20,000
+      resamples (Fig 2E)'
+  model_comparison_pval_grs_vs_gadd:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalRunningSpeedVsAdditive
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Running speed vs Additive: median difference -0.317, 95% CI [-0.369, -0.280],
+      20,000 resamples (Fig 2E)'
+  model_comparison_pval_grs_vs_g2d:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalRunningSpeedVsConjunctive
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Running speed vs Conjunctive: median difference -0.363, 95% CI [-0.437, -0.327],
+      20,000 resamples (Fig 2E)'
+  model_comparison_pval_gof_vs_gratio:
+    raw: 0.3718
+    formatted: $p = 0.372$
+    latex_macro: statFigTwoPvalOpticFlowVsRsOfRatio
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Optic flow vs RS/OF: median difference -0.014, 95% CI [-0.054, 0.014], 20,000
+      resamples (Fig 2E)'
+  model_comparison_pval_gof_vs_gadd:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalOpticFlowVsAdditive
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Optic flow vs Additive: median difference -0.261, 95% CI [-0.326, -0.198], 20,000
+      resamples (Fig 2E)'
+  model_comparison_pval_gof_vs_g2d:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalOpticFlowVsConjunctive
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Optic flow vs Conjunctive: median difference -0.302, 95% CI [-0.398, -0.266],
+      20,000 resamples (Fig 2E)'
+  model_comparison_pval_gratio_vs_gadd:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalRsOfRatioVsAdditive
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      RS/OF vs Additive: median difference -0.248, 95% CI [-0.318, -0.176], 20,000
+      resamples (Fig 2E)'
+  model_comparison_pval_gratio_vs_g2d:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoPvalRsOfRatioVsConjunctive
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      RS/OF vs Conjunctive: median difference -0.290, 95% CI [-0.367, -0.239], 20,000
+      resamples (Fig 2E)'
+  model_comparison_pval_gadd_vs_g2d:
+    raw: 0.1554
+    formatted: $p = 0.155$
+    latex_macro: statFigTwoPvalAdditiveVsConjunctive
+    description: 'Hierarchical bootstrap on the proportion of neurons best fit by
+      Additive vs Conjunctive: median difference -0.047, 95% CI [-0.126, 0.026], 20,000
+      resamples (Fig 2E)'
+  model_comparison_max_pval:
+    raw: 5.0e-05
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoModelComparisonPval
+    description: 'Additive and Conjunctive models outperforming isolated speed and
+      ratio models (Fig 2E): the largest of the 6 hierarchical-bootstrap p-values
+      that claim rests on, floored at the 1/20,000 resolution limit'

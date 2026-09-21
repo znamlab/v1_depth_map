@@ -40,7 +40,7 @@ DEPTH_COLUMN_KEYS = (
 # The onset method is always explicit in the output name. `_treadmill` IS the plateau
 # family -- it is read at ~240 hardcoded sites across the figures and keeps its name -- and
 # `_treadmill_plateau` is maintained alongside it as a self-documenting twin (which is what
-# figure_rsof_integration.ipynb reads as `depth_sfx`). `mirror_suffix` keeps the twin in
+# figure2_rsof_integration.ipynb reads as `depth_sfx`). `mirror_suffix` keeps the twin in
 # lockstep so it can never drift from the family it names.
 # See revisions/migrate_treadmill_columns.py for the full convention.
 VARIANTS = [

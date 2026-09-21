@@ -11,7 +11,7 @@ This document describes how statistics and sample sizes are generated, tracked, 
 2. **Notebooks Own Their Numbers, By Reference**:
    Every number cited in the text or captions must be bound to the exact runtime variables used to generate the corresponding axes, histograms, scatter plots, or model fits. An export cell **reads** variables the panel cells already computed; it never re-runs a test. Re-running a bootstrap with a different `n_boots`, or substituting a different test, reintroduces exactly the drift this pipeline exists to prevent.
 3. **One YAML Per Notebook**:
-   The emission unit is the *notebook*, not the figure. A figure can have several producing notebooks (Fig. 2 panels A-E come from `figure_rsof_integration.ipynb`, F-L from `figure_openloop.ipynb`), and keying the file by figure made them overwrite each other. Each file records which notebook wrote it, when, and whether the numbers came from a notebook run or were entered by hand.
+   The emission unit is the *notebook*, not the figure. A figure can have several producing notebooks (Fig. 2 panels A-E come from `figure2_rsof_integration.ipynb`, F-L from `figure_openloop.ipynb`), and keying the file by figure made them overwrite each other. Each file records which notebook wrote it, when, and whether the numbers came from a notebook run or were entered by hand.
 4. **Pure Aggregator Compiler**:
    The compiler script ([`build_manuscript_stats.py`](../v1_depth_map/stats/build_manuscript_stats.py)) has zero domain or statistical logic. It reads the YAML files emitted by the notebooks, validates them, formats a human-readable audit dashboard ([`MANUSCRIPT_STATS.md`](../v1_depth_map/stats/MANUSCRIPT_STATS.md)), and compiles standard LaTeX macros ([`manuscript_stats.tex`](../v1_depth_map/stats/manuscript_stats.tex)).
 5. **Journal Compatibility & Co-Author Friendliness**:
@@ -29,7 +29,7 @@ flowchart TD
 
     subgraph Notebooks["2. Figure Notebooks (Jupyter)"]
         N1["figure1_depth_selectivity.ipynb"]
-        N2["figure_rsof_integration.ipynb"]
+        N2["figure2_rsof_integration.ipynb"]
         N3["figure_openloop.ipynb"]
         N4["figure_depth_cells.ipynb"]
         N5["figure_rf.ipynb"]
@@ -37,7 +37,7 @@ flowchart TD
         RAW --> N1 & N2 & N3 & N4 & N5 & NS
 
         N1 -->|"export_figure_stats(..., figure='fig1')"| Y1["stats_figure1_depth_selectivity.yaml"]
-        N2 -->|"export_figure_stats(..., figure='fig2')"| Y2["stats_figure_rsof_integration.yaml"]
+        N2 -->|"export_figure_stats(..., figure='fig2')"| Y2["stats_figure2_rsof_integration.yaml"]
         N3 -->|"export_figure_stats(..., figure='fig2')"| Y3["stats_figure_openloop.yaml"]
         N4 -->|"export_figure_stats(..., figure='fig3')"| Y4["stats_figure_depth_cells.yaml"]
         N5 -->|"export_figure_stats(..., figure='fig4_5')"| Y5["stats_figure_rf.yaml"]
@@ -118,7 +118,7 @@ metrics:
 | Notebook | `figure` | Macro prefix | Covers |
 | :--- | :--- | :--- | :--- |
 | `figure1_depth_selectivity.ipynb` | `fig1` | `statFigOne*` | Depth selectivity population, 5- vs 8-depth cohort splits, multiday tracking |
-| `figure_rsof_integration.ipynb` | `fig2` | `statFigTwoModel*` | RS/OF model comparison (Fig 2A-E) |
+| `figure2_rsof_integration.ipynb` | `fig2` | `statFigTwoModel*`, `statFigTwoPval*` | RS/OF model comparison, all 10 pairwise bootstrap p-values (Fig 2A-E) |
 | `figure_openloop.ipynb` | `fig2` | `statFigTwo*` | Closed vs open loop, bootstrap correlations, decoder sessions (Fig 2F-L) |
 | `figure_depth_cells.ipynb` | `fig3` | `statFigThree*` | Motorized wheel, elongation ratios, axial von Mises mixture |
 | `figure_rf.ipynb` | `fig4_5` | `statFigFour*`, `statFigFive*` | 3D receptive field counts, visual space gradient p-values, retinotopic correlations |
