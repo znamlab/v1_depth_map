@@ -1,4 +1,4 @@
-"""Copy the data needed to run `v1_depth_map/figures/figsupp_multidays.ipynb`.
+"""Copy the data needed to run the multiday-tracking panels of `v1_depth_map/figures/figure1_depth_selectivity.ipynb`.
 
 The notebook reads from the `colasa_3d-vision_revisions` project: per-day
 `neurons_df.pickle` for every mouse/day sphere-tube session, the manual ROICat
@@ -249,7 +249,7 @@ def resolve_src_and_target(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Copy data needed by figsupp_multidays.ipynb to a local drive."
+        description="Copy multiday-tracking data needed by figure1_depth_selectivity.ipynb to a local drive."
     )
     parser.add_argument(
         "dest",

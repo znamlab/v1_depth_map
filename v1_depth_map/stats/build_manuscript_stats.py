@@ -15,7 +15,7 @@ Overleaf, so a compile can never surprise a co-author mid-edit.
 
 One YAML file per *notebook*, not per figure: a figure can have several producing
 notebooks (Fig. 2 panels A-E come from `figure2_rsof_integration`, F-L from
-`figure_openloop`), and keying by figure made them overwrite each other. Each file
+`figure2_openloop`), and keying by figure made them overwrite each other. Each file
 carries a `_meta` block recording which notebook wrote it, when, and whether the
 numbers came from a notebook run or were entered by hand.
 """
@@ -33,13 +33,13 @@ GENERATED_DIR = STATS_DIR / "generated"
 NOTEBOOKS_DIR = STATS_DIR.parent / "figures"
 
 # Section order in the dashboard and in the .tex. Anything not listed is appended.
-FIGURE_ORDER = ["fig1", "fig2", "fig3", "fig4_5", "supp"]
+FIGURE_ORDER = ["fig1", "fig2", "fig3", "fig4", "supp"]
 
 FIGURE_TITLES = {
     "fig1": "Figure 1: Virtual Depth Selectivity & Experience Independence",
     "fig2": "Figure 2: Visuomotor Integration Models & Open-Loop Replay",
     "fig3": "Figure 3: Motorized Wheel & Visuomotor Gain Modulation",
-    "fig4_5": "Figures 4 & 5: Three-Dimensional Receptive Fields & V1 Depth Map",
+    "fig4": "Figure 4: Three-Dimensional Receptive Fields",
     "supp": "Supplementary Figures & Methods: Controls & Experimental Specs",
 }
 
@@ -47,7 +47,7 @@ FIGURE_TITLES_TEX = {
     "fig1": "Figure 1: Depth Selectivity & Stability",
     "fig2": "Figure 2: Visuomotor Integration Models & Open Loop",
     "fig3": "Figure 3: Motorized Wheel & Gain Modulation",
-    "fig4_5": "Figures 4 & 5: 3D Receptive Fields & V1 Depth Map",
+    "fig4": "Figure 4: 3D Receptive Fields",
     "supp": "Supplementary Figures & Controls",
 }
 
@@ -82,7 +82,7 @@ def export_figure_stats(
     Called at the end of a figure notebook:
 
         from v1_depth_map.stats import export_figure_stats
-        export_figure_stats("figure_openloop", stats_dict, figure="fig2")
+        export_figure_stats("figure2_openloop", stats_dict, figure="fig2")
 
     `name` identifies the producing notebook (its stem) and decides the file name, so two
     notebooks feeding the same manuscript figure never overwrite each other. `figure` is

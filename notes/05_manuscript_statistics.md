@@ -11,7 +11,7 @@ This document describes how statistics and sample sizes are generated, tracked, 
 2. **Notebooks Own Their Numbers, By Reference**:
    Every number cited in the text or captions must be bound to the exact runtime variables used to generate the corresponding axes, histograms, scatter plots, or model fits. An export cell **reads** variables the panel cells already computed; it never re-runs a test. Re-running a bootstrap with a different `n_boots`, or substituting a different test, reintroduces exactly the drift this pipeline exists to prevent.
 3. **One YAML Per Notebook**:
-   The emission unit is the *notebook*, not the figure. A figure can have several producing notebooks (Fig. 2 panels A-E come from `figure2_rsof_integration.ipynb`, F-L from `figure_openloop.ipynb`), and keying the file by figure made them overwrite each other. Each file records which notebook wrote it, when, and whether the numbers came from a notebook run or were entered by hand.
+   The emission unit is the *notebook*, not the figure. A figure can have several producing notebooks (Fig. 2 panels A-E come from `figure2_rsof_integration.ipynb`, F-L from `figure2_openloop.ipynb`), and keying the file by figure made them overwrite each other. Each file records which notebook wrote it, when, and whether the numbers came from a notebook run or were entered by hand.
 4. **Pure Aggregator Compiler**:
    The compiler script ([`build_manuscript_stats.py`](../v1_depth_map/stats/build_manuscript_stats.py)) has zero domain or statistical logic. It reads the YAML files emitted by the notebooks, validates them, formats a human-readable audit dashboard ([`MANUSCRIPT_STATS.md`](../v1_depth_map/stats/MANUSCRIPT_STATS.md)), and compiles standard LaTeX macros ([`manuscript_stats.tex`](../v1_depth_map/stats/manuscript_stats.tex)).
 5. **Journal Compatibility & Co-Author Friendliness**:
@@ -30,17 +30,17 @@ flowchart TD
     subgraph Notebooks["2. Figure Notebooks (Jupyter)"]
         N1["figure1_depth_selectivity.ipynb"]
         N2["figure2_rsof_integration.ipynb"]
-        N3["figure_openloop.ipynb"]
-        N4["figure_depth_cells.ipynb"]
-        N5["figure_rf.ipynb"]
+        N3["figure2_openloop.ipynb"]
+        N4["figure3_depth_cells.ipynb"]
+        N5["figsupp9_v1_depth_map.ipynb"]
         NS["figsupp1_vis_stim_sync.ipynb\nfigsupp2_speed.ipynb\nfigsupp4_size_control.ipynb"]
         RAW --> N1 & N2 & N3 & N4 & N5 & NS
 
         N1 -->|"export_figure_stats(..., figure='fig1')"| Y1["stats_figure1_depth_selectivity.yaml"]
         N2 -->|"export_figure_stats(..., figure='fig2')"| Y2["stats_figure2_rsof_integration.yaml"]
-        N3 -->|"export_figure_stats(..., figure='fig2')"| Y3["stats_figure_openloop.yaml"]
-        N4 -->|"export_figure_stats(..., figure='fig3')"| Y4["stats_figure_depth_cells.yaml"]
-        N5 -->|"export_figure_stats(..., figure='fig4_5')"| Y5["stats_figure_rf.yaml"]
+        N3 -->|"export_figure_stats(..., figure='fig2')"| Y3["stats_figure2_openloop.yaml"]
+        N4 -->|"export_figure_stats(..., figure='fig3')"| Y4["stats_figure3_depth_cells.yaml"]
+        N5 -->|"export_figure_stats(..., figure='supp')"| Y5["stats_figsupp9_v1_depth_map.yaml"]
         NS -->|"export_figure_stats(..., figure='supp')"| YS["stats_figsupp*.yaml"]
     end
 
@@ -85,7 +85,7 @@ export_figure_stats("<notebook_stem>", stats_data, figure="<figure_key>")
 ```
 
 - **First argument**: the notebook's own file stem. It decides the YAML file name, so each notebook owns exactly one file and cannot clobber another's.
-- **`figure`**: the manuscript figure the metrics belong to (`fig1`, `fig2`, `fig3`, `fig4_5`, `supp`). It only decides how the metrics are grouped in the dashboard and in the `.tex`.
+- **`figure`**: the manuscript figure the metrics belong to (`fig1`, `fig2`, `fig3`, `fig4`, `supp`). It only decides how the metrics are grouped in the dashboard and in the `.tex`.
 
 #### Field Schema
 - `raw`: The raw unrounded number (integer, float) for programmatic comparison.
@@ -99,7 +99,7 @@ Each file in `v1_depth_map/stats/generated/` carries a `_meta` block written by 
 
 ```yaml
 _meta:
-  notebook: figure_openloop
+  notebook: figure2_openloop
   figure: fig2
   generated_at: '2026-09-19T14:03:11'
   source: notebook        # 'manual' if the numbers were typed in by hand
@@ -119,9 +119,9 @@ metrics:
 | :--- | :--- | :--- | :--- |
 | `figure1_depth_selectivity.ipynb` | `fig1` | `statFigOne*` | Depth selectivity population, 5- vs 8-depth cohort splits, multiday tracking |
 | `figure2_rsof_integration.ipynb` | `fig2` | `statFigTwoModel*`, `statFigTwoPval*` | RS/OF model comparison, all 10 pairwise bootstrap p-values (Fig 2A-E) |
-| `figure_openloop.ipynb` | `fig2` | `statFigTwo*` | Closed vs open loop, bootstrap correlations, decoder sessions (Fig 2F-L) |
-| `figure_depth_cells.ipynb` | `fig3` | `statFigThree*` | Motorized wheel, elongation ratios, axial von Mises mixture |
-| `figure_rf.ipynb` | `fig4_5` | `statFigFour*`, `statFigFive*` | 3D receptive field counts, visual space gradient p-values, retinotopic correlations |
+| `figure2_openloop.ipynb` | `fig2` | `statFigTwo*` | Closed vs open loop, bootstrap correlations, decoder sessions (Fig 2F-L) |
+| `figure3_depth_cells.ipynb` | `fig3` | `statFigThree*` | Motorized wheel, elongation ratios, axial von Mises mixture |
+| `figsupp9_v1_depth_map.ipynb` | `supp` | `statSuppNine*` | RF neuron/session totals, near-mid-far counts, visual space gradient p-values, retinotopic correlations (Fig S9) |
 | `figsupp1_vis_stim_sync.ipynb` | `supp` | `statSuppDisplay*`, `statSuppFrame*` | Photodiode sync lag and display frame rates |
 | `figsupp2_speed.ipynb` | `supp` | `statSuppEye*` | Pupil / gaze tracking sessions and mice |
 | `figsupp4_size_control.ipynb` | `supp` | `statSuppSizeControl*` | Stimulus size invariance |
@@ -222,19 +222,19 @@ Three suites, all of which run in seconds with no 2P data:
 
 ### Adding a New Statistic
 When adding a new analysis or panel to an existing figure:
-1. Open the corresponding figure notebook (e.g., `figure_rf.ipynb`).
+1. Open the corresponding figure notebook (e.g., `figsupp9_v1_depth_map.ipynb`).
 2. Find the cell that already computes the statistic for the panel, and make sure the value is held in a named variable that survives to the export cell.
 3. Add the metric to the `stats_<name>` dictionary before `export_figure_stats()`, reading that variable:
    ```python
-   stats_rf["my_new_metric"] = {
+   stats_supp9["my_new_metric"] = {
        "raw": float(my_val),
        "formatted": f"{my_val:.2f}",
-       "latex_macro": "statFigFiveMyNewMetric",
+       "latex_macro": "statSuppNineMyNewMetric",
        "description": "Short explanation of the metric and where it appears",
    }
    ```
 4. Run the notebook (or `python -m v1_depth_map.stats.build_manuscript_stats` if the YAML was already updated).
-5. The macro `\statFigFiveMyNewMetric{}` is immediately available in LaTeX.
+5. The macro `\statSuppNineMyNewMetric{}` is immediately available in LaTeX.
 
 ### Adding a New Producing Notebook
 1. Call `export_figure_stats("<notebook_stem>", stats, figure="<figure_key>")` at the end of the cell that computes the numbers.

@@ -8,7 +8,7 @@ timeout instead of hanging the batch.
 
 What a run does:
   1. Selects the notebooks (`--notebooks` by name, otherwise every .ipynb in
-     `v1_depth_map/figures/`, sorted).
+     `v1_depth_map/figures/` except `unused_*.ipynb`, sorted).
   2. Executes each with `uv run jupyter nbconvert --execute`, in project environment.
      A copy with a `kernelspec` patched in is written to a temp dir first, because
      several notebooks in this repo carry incomplete kernel metadata.
@@ -26,7 +26,7 @@ pickles, and the per-notebook `stats_*.yaml` files - not the notebooks.
 
 Usage:
     python run_figures_pipeline.py
-    python run_figures_pipeline.py --notebooks figure_rf.ipynb --timeout 1800
+    python run_figures_pipeline.py --notebooks figsupp9_v1_depth_map.ipynb --timeout 1800
 """
 
 import argparse
@@ -282,7 +282,7 @@ async def main():
         "--notebooks",
         nargs="+",
         default=None,
-        help="Names of specific notebooks (e.g. figure_rf.ipynb) to run. Defaults to all notebooks in the figures directory.",
+        help="Names of specific notebooks (e.g. figsupp9_v1_depth_map.ipynb) to run. Defaults to every notebook in the figures directory except unused_*.ipynb.",
     )
     parser.add_argument(
         "--timeout",
@@ -304,7 +304,11 @@ async def main():
             print(f"Error: notebook(s) not found: {[str(m) for m in missing]}")
             sys.exit(1)
     else:
-        notebooks = sorted([p for p in NOTEBOOKS_DIR.glob("*.ipynb")])
+        # `unused_*.ipynb` are kept for reference but produce no manuscript figure,
+        # so a default batch skips them. Name one with --notebooks to run it anyway.
+        notebooks = sorted(
+            p for p in NOTEBOOKS_DIR.glob("*.ipynb") if not p.stem.startswith("unused_")
+        )
     if not notebooks:
         print("No notebooks found.")
         sys.exit(0)

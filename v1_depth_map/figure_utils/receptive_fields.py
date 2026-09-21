@@ -8,7 +8,7 @@ envelope to a darker core, both transparent enough to see the peak marker
 inside. Marginal projections are added on the floor and the two back walls of
 the cube.
 
-Typical use, once per example neuron (see `figures/figure_receptive_fields.ipynb`)::
+Typical use, once per example neuron (see `figures/figure4_receptive_fields.ipynb`)::
 
     from v1_depth_map.figure_utils import receptive_fields as rf_utils
 

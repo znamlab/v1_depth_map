@@ -749,7 +749,7 @@ def main():
                 allowed_filenames.add("RotaryEncoder.csv")
             # eye-tracking calibration session also needs camera timestamps
             # and, for the right eye camera, the actual video + metadata
-            # (needed by figsupp_eye_tracking.ipynb).
+            # (needed by figsupp2_speed.ipynb).
             if sess_name == "PZAG3.4f_S20220421":
                 allowed_filenames |= {
                     "left_eye_camera_timestamps.csv",

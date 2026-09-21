@@ -33,7 +33,7 @@ flowchart TD
 
 - **Model Fitting Status**: ✅ **100% Complete** across all sessions.
 - **Figure Notebook Execution**:
-  - [`figure_depth_cells.ipynb`](../v1_depth_map/figures/figure_depth_cells.ipynb): ✅ Re-executed with updated trial-average plateau g2d fits and elongation criteria (`fig_depth_cells.svg` generated).
+  - [`figure3_depth_cells.ipynb`](../v1_depth_map/figures/figure3_depth_cells.ipynb): ✅ Re-executed with updated trial-average plateau g2d fits and elongation criteria (`fig_depth_cells.svg` generated).
   - [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb): ✅ Re-executed with `_treadmill_trial_average_plateau` fits (`fig2.svg` and `fig2.pdf` generated).
   - [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb): ✅ Updated to use plateau simulation data (`fig_supp_simulation_control.svg` generated).
 - `presentations/` notebooks remain frozen reference artifacts reading historical column suffixes.

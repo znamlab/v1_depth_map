@@ -25,7 +25,7 @@ This directory contains the pipeline for tracking and formatting manuscript numb
   ```python
   from v1_depth_map.stats import export_figure_stats
 
-  export_figure_stats("figure_openloop", stats_dict, figure="fig2")
+  export_figure_stats("figure2_openloop", stats_dict, figure="fig2")
   ```
   The first argument is the notebook's own file stem, so each notebook owns one YAML
   file and two notebooks feeding the same figure never overwrite each other. `figure`

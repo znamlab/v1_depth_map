@@ -1,6 +1,6 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-09-21 14:18:52.*
+*Compiled from figure notebook outputs at 2026-09-21 16:23:47.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
@@ -30,6 +30,20 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-09-
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
+Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-09-20T13:02:10)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statFigTwoOpenLoopTotalDepthNeurons` | `9,429` | 9429 | notebook | Total depth-selective neurons in open-loop sessions (Methods L624) |
+| `\statFigTwoOpenLoopNeurons` | `1,233` | 1233 | notebook | Depth-selective neurons compared between closed and open loop (Fig 2H-J) |
+| `\statFigTwoAmpRatioPval` | `$p = 0.651$` | 0.6514 | notebook | Hierarchical bootstrap p-value of peak response closed vs open loop ratio |
+| `\statFigTwoRSCorrR` | `$r = 0.552$` | 0.5520813429666219 | notebook | Correlation r of preferred running speed (closed vs open loop) |
+| `\statFigTwoRSCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Correlation p-value of preferred running speed (closed vs open loop) |
+| `\statFigTwoOFCorrR` | `$r = 0.711$` | 0.710987617320202 | notebook | Correlation r of preferred optic flow speed (closed vs open loop) |
+| `\statFigTwoOFCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Correlation p-value of preferred optic flow speed (closed vs open loop) |
+| `\statFigTwoDecoderTotalSessions` | `34` | 34 | notebook | Sessions for closed vs open loop SVM decoding (Fig 2K) |
+| `\statFigTwoDecoderEightDepthSessions` | `27` | 27 | notebook | Sessions with 8 depths for confusion matrices (Fig 2L) |
+
 Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-09-21T14:10:26)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
@@ -49,23 +63,9 @@ Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-09-2
 | `\statFigTwoPvalAdditiveVsConjunctive` | `$p = 0.155$` | 0.1554 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Additive vs Conjunctive: median difference -0.047, 95% CI [-0.126, 0.026], 20,000 resamples (Fig 2E) |
 | `\statFigTwoModelComparisonPval` | `$p < 0.0001$` | 5e-05 | notebook | Additive and Conjunctive models outperforming isolated speed and ratio models (Fig 2E): the largest of the 6 hierarchical-bootstrap p-values that claim rests on, floored at the 1/20,000 resolution limit |
 
-Source notebook: `figure_openloop.ipynb` (notebook, generated 2026-09-20T13:02:10)
-
-| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
-| :--- | :---: | :---: | :---: | :--- |
-| `\statFigTwoOpenLoopTotalDepthNeurons` | `9,429` | 9429 | notebook | Total depth-selective neurons in open-loop sessions (Methods L624) |
-| `\statFigTwoOpenLoopNeurons` | `1,233` | 1233 | notebook | Depth-selective neurons compared between closed and open loop (Fig 2H-J) |
-| `\statFigTwoAmpRatioPval` | `$p = 0.651$` | 0.6514 | notebook | Hierarchical bootstrap p-value of peak response closed vs open loop ratio |
-| `\statFigTwoRSCorrR` | `$r = 0.552$` | 0.5520813429666219 | notebook | Correlation r of preferred running speed (closed vs open loop) |
-| `\statFigTwoRSCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Correlation p-value of preferred running speed (closed vs open loop) |
-| `\statFigTwoOFCorrR` | `$r = 0.711$` | 0.710987617320202 | notebook | Correlation r of preferred optic flow speed (closed vs open loop) |
-| `\statFigTwoOFCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Correlation p-value of preferred optic flow speed (closed vs open loop) |
-| `\statFigTwoDecoderTotalSessions` | `34` | 34 | notebook | Sessions for closed vs open loop SVM decoding (Fig 2K) |
-| `\statFigTwoDecoderEightDepthSessions` | `27` | 27 | notebook | Sessions with 8 depths for confusion matrices (Fig 2L) |
-
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
-Source notebook: `figure_depth_cells.ipynb` (notebook, generated 2026-09-19T17:39:50)
+Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-09-19T17:39:50)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -77,24 +77,6 @@ Source notebook: `figure_depth_cells.ipynb` (notebook, generated 2026-09-19T17:3
 | `\statFigThreeElongatedNeurons` | `266` | 266 | notebook | Neurons with elongated ellipses for orientation distribution (Fig 3L) |
 | `\statFigThreeVonMisesK` | `3` | 3 | notebook | Best axial von Mises mixture number of components (Fig 3L) |
 | `\statFigThreeVonMisesComponents` | `$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)` | $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%) | notebook | Component centers and mixture weights for orientation distribution (Fig 3L) |
-
-## Figures 4 & 5: Three-Dimensional Receptive Fields & V1 Depth Map
-
-Source notebook: `figure_rf.ipynb` (notebook, generated 2026-09-20T12:44:28)
-
-| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
-| :--- | :---: | :---: | :---: | :--- |
-| `\statFigFourRFNeuronsTotal` | `14,173` | 14173 | notebook | Total depth-selective neurons with significant receptive fields |
-| `\statFigFourRFSessionsTotal` | `84` | 84 | notebook | Total sessions contributing to RF mapping |
-| `\statFigFiveNearUncorrected` | `3,078` | 3078 | notebook | Neurons preferring near depths (<20 cm) uncorrected |
-| `\statFigFiveMidUncorrected` | `6,744` | 6744 | notebook | Neurons preferring intermediate depths (20-100 cm) uncorrected |
-| `\statFigFiveFarUncorrected` | `4,351` | 4351 | notebook | Neurons preferring far depths (>100 cm) uncorrected |
-| `\statFigFiveNearCorrected` | `2,476` | 2476 | notebook | Neurons preferring near depths (<20 cm) corrected for viewing angle |
-| `\statFigFiveMidCorrected` | `5,832` | 5832 | notebook | Neurons preferring intermediate depths (20-100 cm) corrected for viewing angle |
-| `\statFigFiveFarCorrected` | `5,865` | 5865 | notebook | Neurons preferring far depths (>100 cm) corrected for viewing angle |
-| `\statFigFiveGradientPvalCorrected` | `$p = 7.40e-09$` | 7.403750800566618e-09 | notebook | Significance of 3D RF depth gradient across visual space (corrected) |
-| `\statFigFiveGradientPvalUncorrected` | `$p = 0.0175$` | 0.01752264341898344 | notebook | Significance of depth gradient across visual space (uncorrected) |
-| `\statFigFiveAPCorrR` | `$r = -0.166$` | -0.16571200832758723 | notebook | Correlation between preferred depth and anterior-posterior location in V1 |
 
 ## Supplementary Figures & Methods: Controls & Experimental Specs
 
@@ -160,6 +142,22 @@ Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-0
 | `\statSuppSimulMotorElongatedPct` | `7\%` | 6.779661016949152 | notebook | Motorized wheel simulated neurons with elongation > 1.4 percentage |
 | `\statSuppSimulSessions` | `4` | 4 | notebook | Sessions included in simulation control (Fig S7) |
 | `\statSuppSimulMice` | `4` | 4 | notebook | Mice included in simulation control (Fig S7) |
+
+Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-09-20T12:44:28)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statSuppNineRFNeuronsTotal` | `14,173` | 14173 | notebook | Total depth-selective neurons with significant receptive fields |
+| `\statSuppNineRFSessionsTotal` | `84` | 84 | notebook | Total sessions contributing to RF mapping |
+| `\statSuppNineNearUncorrected` | `3,078` | 3078 | notebook | Neurons preferring near depths (<20 cm) uncorrected |
+| `\statSuppNineMidUncorrected` | `6,744` | 6744 | notebook | Neurons preferring intermediate depths (20-100 cm) uncorrected |
+| `\statSuppNineFarUncorrected` | `4,351` | 4351 | notebook | Neurons preferring far depths (>100 cm) uncorrected |
+| `\statSuppNineNearCorrected` | `2,476` | 2476 | notebook | Neurons preferring near depths (<20 cm) corrected for viewing angle |
+| `\statSuppNineMidCorrected` | `5,832` | 5832 | notebook | Neurons preferring intermediate depths (20-100 cm) corrected for viewing angle |
+| `\statSuppNineFarCorrected` | `5,865` | 5865 | notebook | Neurons preferring far depths (>100 cm) corrected for viewing angle |
+| `\statSuppNineGradientPvalCorrected` | `$p = 7.40e-09$` | 7.403750800566618e-09 | notebook | Significance of 3D RF depth gradient across visual space (corrected) |
+| `\statSuppNineGradientPvalUncorrected` | `$p = 0.0175$` | 0.01752264341898344 | notebook | Significance of depth gradient across visual space (uncorrected) |
+| `\statSuppNineAPCorrR` | `$r = -0.166$` | -0.16571200832758723 | notebook | Correlation between preferred depth and anterior-posterior location in V1 |
 
 ---
 

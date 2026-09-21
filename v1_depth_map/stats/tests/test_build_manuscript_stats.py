@@ -41,10 +41,10 @@ def _write(tmp_path, name, metrics, figure=None, source="notebook"):
 
 
 def test_roundtrip_preserves_metrics_and_meta(tmp_path):
-    _write(tmp_path, "figure_rf", {"a": _metric("statA")}, figure="fig4_5")
+    _write(tmp_path, "figsupp9_v1_depth_map", {"a": _metric("statA")}, figure="supp")
     (record,) = load_all_figure_yamls(tmp_path)
-    assert record["name"] == "figure_rf"
-    assert record["figure"] == "fig4_5"
+    assert record["name"] == "figsupp9_v1_depth_map"
+    assert record["figure"] == "supp"
     assert record["meta"]["source"] == "notebook"
     assert record["metrics"]["a"]["latex_macro"] == "statA"
 
@@ -60,27 +60,30 @@ def test_legacy_flat_file_still_loads(tmp_path):
 
 def test_two_notebooks_share_one_figure_section(tmp_path):
     """The whole point of keying by notebook: Fig 2 has two producers, neither clobbers."""
-    _write(tmp_path, "figure_openloop", {"a": _metric("statA")}, figure="fig2")
-    _write(tmp_path, "figure_rsof_integration", {"b": _metric("statB")}, figure="fig2")
+    _write(tmp_path, "figure2_openloop", {"a": _metric("statA")}, figure="fig2")
+    _write(tmp_path, "figure2_rsof_integration", {"b": _metric("statB")}, figure="fig2")
     records = load_all_figure_yamls(tmp_path)
     assert len(records) == 2
     groups = group_by_figure(records)
     assert len(groups) == 1
     figure, group = groups[0]
     assert figure == "fig2"
-    assert {r["name"] for r in group} == {"figure_openloop", "figure_rsof_integration"}
+    assert {r["name"] for r in group} == {
+        "figure2_openloop",
+        "figure2_rsof_integration",
+    }
 
 
 def test_figure_sections_follow_figure_order(tmp_path):
-    for name, figure in [("d", "supp"), ("a", "fig1"), ("c", "fig4_5"), ("b", "fig2")]:
+    for name, figure in [("d", "supp"), ("a", "fig1"), ("c", "fig4"), ("b", "fig2")]:
         _write(tmp_path, name, {name: _metric(f"stat{name.upper()}")}, figure=figure)
     order = [figure for figure, _ in group_by_figure(load_all_figure_yamls(tmp_path))]
-    assert order == ["fig1", "fig2", "fig4_5", "supp"]
+    assert order == ["fig1", "fig2", "fig4", "supp"]
 
 
 def test_duplicate_macro_is_an_error(tmp_path):
-    _write(tmp_path, "figure_openloop", {"a": _metric("statDup")}, figure="fig2")
-    _write(tmp_path, "figure_rf", {"b": _metric("statDup")}, figure="fig4_5")
+    _write(tmp_path, "figure2_openloop", {"a": _metric("statDup")}, figure="fig2")
+    _write(tmp_path, "figsupp9_v1_depth_map", {"b": _metric("statDup")}, figure="supp")
     errors, _ = validate(load_all_figure_yamls(tmp_path))
     assert any("statDup" in e and "already defined" in e for e in errors)
 
@@ -89,7 +92,7 @@ def test_unbalanced_dollar_is_an_error(tmp_path):
     """The real defect: ' < 0.0001$' leaves math mode open and breaks the manuscript."""
     _write(
         tmp_path,
-        "figure_openloop",
+        "figure2_openloop",
         {"p": _metric("statP", formatted=" < 0.0001$")},
         figure="fig2",
     )
@@ -100,7 +103,7 @@ def test_unbalanced_dollar_is_an_error(tmp_path):
 def test_balanced_and_escaped_dollars_are_accepted(tmp_path):
     _write(
         tmp_path,
-        "figure_openloop",
+        "figure2_openloop",
         {
             "p": _metric("statP", formatted="$p < 0.0001$"),
             "pct": _metric("statPct", formatted=r"41.3\%"),
@@ -140,14 +143,19 @@ def test_builtin_math_commands_are_accepted(tmp_path):
 
 
 def test_macro_name_must_be_letters_only(tmp_path):
-    _write(tmp_path, "figure_rf", {"a": _metric("statFig4RF")}, figure="fig4_5")
+    _write(
+        tmp_path, "figsupp9_v1_depth_map", {"a": _metric("statFig4RF")}, figure="supp"
+    )
     errors, _ = validate(load_all_figure_yamls(tmp_path))
     assert any("not a valid LaTeX control word" in e for e in errors)
 
 
 def test_missing_description_is_only_a_warning(tmp_path):
     _write(
-        tmp_path, "figure_rf", {"a": _metric("statA", description="")}, figure="fig4_5"
+        tmp_path,
+        "figsupp9_v1_depth_map",
+        {"a": _metric("statA", description="")},
+        figure="supp",
     )
     errors, warnings = validate(load_all_figure_yamls(tmp_path))
     assert errors == []
@@ -155,7 +163,7 @@ def test_missing_description_is_only_a_warning(tmp_path):
 
 
 def test_manual_source_is_counted_and_warned(tmp_path):
-    _write(tmp_path, "figure_rf", {"a": _metric("statA")}, figure="fig4_5")
+    _write(tmp_path, "figsupp9_v1_depth_map", {"a": _metric("statA")}, figure="supp")
     _write(
         tmp_path,
         "figsupp2_speed",
@@ -175,11 +183,13 @@ def test_stale_yaml_is_warned(tmp_path, monkeypatch=None):
 
     notebooks = tmp_path / "figures"
     notebooks.mkdir()
-    (notebooks / "figure_rf.ipynb").write_text("{}")
+    (notebooks / "figsupp9_v1_depth_map.ipynb").write_text("{}")
     original = bms.NOTEBOOKS_DIR
     bms.NOTEBOOKS_DIR = notebooks
     try:
-        path = _write(tmp_path, "figure_rf", {"a": _metric("statA")}, figure="fig4_5")
+        path = _write(
+            tmp_path, "figsupp9_v1_depth_map", {"a": _metric("statA")}, figure="supp"
+        )
         doc = yaml.safe_load(path.read_text())
         doc["_meta"]["generated_at"] = "2000-01-01T00:00:00"
         path.write_text(yaml.dump(doc))
@@ -191,7 +201,11 @@ def test_stale_yaml_is_warned(tmp_path, monkeypatch=None):
 
 def test_outputs_mention_provenance(tmp_path):
     _write(
-        tmp_path, "figure_rf", {"a": _metric("statA")}, figure="fig4_5", source="manual"
+        tmp_path,
+        "figsupp9_v1_depth_map",
+        {"a": _metric("statA")},
+        figure="supp",
+        source="manual",
     )
     records = load_all_figure_yamls(tmp_path)
 
@@ -210,7 +224,7 @@ def test_outputs_mention_provenance(tmp_path):
 
 
 def test_all_notebook_source_reports_clean(tmp_path):
-    _write(tmp_path, "figure_rf", {"a": _metric("statA")}, figure="fig4_5")
+    _write(tmp_path, "figsupp9_v1_depth_map", {"a": _metric("statA")}, figure="supp")
     md = tmp_path / "out.md"
     generate_markdown_dashboard(load_all_figure_yamls(tmp_path), md)
     assert "All 1 values were written by a notebook run" in md.read_text()

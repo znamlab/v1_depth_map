@@ -63,7 +63,7 @@ def _stubs(name):
             df_pivot_multiday=pd.DataFrame(day_values, columns=[1, 2, 3, 4, 5]),
             x_vals=list(range(345)),
         )
-    if name == "figure_openloop":
+    if name == "figure2_openloop":
         return dict(
             neurons_df_sig_openloop=_neurons(1229),
             neurons_df_sig_openloop_depth_selective=_neurons(9429),
@@ -112,7 +112,7 @@ def _stubs(name):
             model_comparison_pvals=model_comparison_pvals,
             n_boots=20000,
         )
-    if name == "figure_depth_cells":
+    if name == "figure3_depth_cells":
         return dict(
             n_pop_k=271,
             n_pop=285,
@@ -122,7 +122,7 @@ def _stubs(name):
             k_vm=3,
             components=r"$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)",
         )
-    if name == "figure_rf":
+    if name == "figsupp9_v1_depth_map":
         from scipy.stats import spearmanr
 
         df = _neurons(
@@ -195,15 +195,15 @@ def _stubs(name):
 # notebook stem -> the manuscript figure it must declare
 OWNERS = {
     "figure1_depth_selectivity": "fig1",
-    "figure_openloop": "fig2",
+    "figure2_openloop": "fig2",
     "figure2_rsof_integration": "fig2",
-    "figure_depth_cells": "fig3",
-    "figure_rf": "fig4_5",
+    "figure3_depth_cells": "fig3",
     "figsupp1_vis_stim_sync": "supp",
     "figsupp2_speed": "supp",
     "figsupp4_size_control": "supp",
     "figsupp5_rsof": "supp",
     "figsupp7_simulation_control": "supp",
+    "figsupp9_v1_depth_map": "supp",
 }
 
 

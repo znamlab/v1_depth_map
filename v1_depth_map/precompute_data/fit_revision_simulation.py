@@ -21,7 +21,7 @@ their elongation/orientation distributions are not directly comparable. This scr
 produces a second set of simulated fits that mirror the real ones exactly, seeded from the
 same fit family, and writes them to their own parquet. Nothing existing is touched: the
 April `simulated_responses_fit_treadmill_2_0.15_circular.parquet` files (and the
-`method="model"` override in `figsupp_simulation_control.ipynb` cell 10 that goes with
+`method="model"` override in `figsupp7_simulation_control.ipynb` cell 10 that goes with
 them) are left alone.
 
 How the config is kept in sync
@@ -47,7 +47,7 @@ Outputs, per session, beside `neurons_df.pickle`:
 The simulated dF/F trace is kept in its own file rather than in the fit parquet: it is
 ~100 MB per session against a few hundred kB for the fits, and the loader reads the fit
 parquet for every session on every call. `--traces` regenerates it (plateau-cut, from the
-trial-average plateau seed), which is what lets `figsupp_simulation_control.ipynb` drop the
+trial-average plateau seed), which is what lets `figsupp7_simulation_control.ipynb` drop the
 `tread_kwargs=dict(method="model")` override its example-cell panels needed for the April
 artifacts.
 
@@ -98,7 +98,7 @@ TARGET, METHOD = "treadmill", "plateau"
 GROUNDTRUTH_COL = "rsof_popt_closedloop_g2d_treadmill_trial_average_plateau"
 
 # Simulation constants, matching rerun_simulation_tdecay2_areanorm.py (and the TDECAY/TRISE
-# that figsupp_simulation_control.ipynb passes to the loader).
+# that figsupp7_simulation_control.ipynb passes to the loader).
 DECAY_TAU = 2
 RISE_TAU = 0.15
 MAKE_CIRCULAR = True

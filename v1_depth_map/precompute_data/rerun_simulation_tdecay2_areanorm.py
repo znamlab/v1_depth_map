@@ -1,5 +1,5 @@
 """Re-run the RS/OF simulated-response pipeline with the area-normalized kernel
-and decay_tau=2 (aligned with `figsupp_simulation_control.ipynb`'s TDECAY).
+and decay_tau=2 (aligned with `figsupp7_simulation_control.ipynb`'s TDECAY).
 
 `cottage_analysis.analysis.spheres.simulation.make_biexponential_kernel` (and
 `make_exponential_kernel`) take a `normalization` flag: "area" normalizes the kernel's
@@ -24,7 +24,7 @@ normalization, so this overwrites whatever `_2_0.15_circular.parquet` is already
 Note also that `simulate_and_fit_session` cuts trials with the *current* default
 onset detector ("plateau"), whereas the April-2026 artifacts were cut with "model".
 After running this, the `tread_kwargs=dict(method="model")` override in
-`figsupp_simulation_control.ipynb` (cell 10) must be dropped, or its frame-count
+`figsupp7_simulation_control.ipynb` (cell 10) must be dropped, or its frame-count
 assert will fire.
 """
 
@@ -38,7 +38,7 @@ from cottage_analysis.analysis.spheres import spheres
 from v1_depth_map.revisions.revision_sessions import sessions
 
 PROJECT = "colasa_3d-vision_revisions"
-DECAY_TAU = 2  # matches figsupp_simulation_control.ipynb's TDECAY
+DECAY_TAU = 2  # matches figsupp7_simulation_control.ipynb's TDECAY
 RISE_TAU = 0.15
 MAKE_CIRCULAR = True
 KERNEL_NORMALIZATION = "area"  # the default; passed explicitly for clarity
