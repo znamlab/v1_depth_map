@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-09-20 17:23:22.*
+*Compiled from figure notebook outputs at 2026-09-21 14:18:52.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 81 values were written by a notebook run.
+> ✅ All 91 values were written by a notebook run.
 
 ---
 
@@ -30,6 +30,25 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-09-
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
+Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-09-21T14:10:26)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statFigTwoModelSessions` | `84` | 84 | notebook | Sessions included in model comparison analysis (Fig 2E) |
+| `\statFigTwoModelNeurons` | `21,318` | 21318 | notebook | Depth-tuned neurons with at least one significant RS/OF model fit (Fig 2E) |
+| `\statFigTwoClosedLoopConjunctiveNeurons` | `17,953` | 17953 | notebook | Depth-tuned neurons with significant conjunctive model fit in closed loop (Methods L621) |
+| `\statFigTwoPvalRunningSpeedVsOpticFlow` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Running speed vs Optic flow: median difference -0.057, 95% CI [-0.089, -0.027], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalRunningSpeedVsRsOfRatio` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Running speed vs RS/OF: median difference -0.072, 95% CI [-0.121, -0.037], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalRunningSpeedVsAdditive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Running speed vs Additive: median difference -0.317, 95% CI [-0.369, -0.280], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalRunningSpeedVsConjunctive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Running speed vs Conjunctive: median difference -0.363, 95% CI [-0.437, -0.327], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalOpticFlowVsRsOfRatio` | `$p = 0.372$` | 0.3718 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Optic flow vs RS/OF: median difference -0.014, 95% CI [-0.054, 0.014], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalOpticFlowVsAdditive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Optic flow vs Additive: median difference -0.261, 95% CI [-0.326, -0.198], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalOpticFlowVsConjunctive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Optic flow vs Conjunctive: median difference -0.302, 95% CI [-0.398, -0.266], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalRsOfRatioVsAdditive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by RS/OF vs Additive: median difference -0.248, 95% CI [-0.318, -0.176], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalRsOfRatioVsConjunctive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by RS/OF vs Conjunctive: median difference -0.290, 95% CI [-0.367, -0.239], 20,000 resamples (Fig 2E) |
+| `\statFigTwoPvalAdditiveVsConjunctive` | `$p = 0.155$` | 0.1554 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Additive vs Conjunctive: median difference -0.047, 95% CI [-0.126, 0.026], 20,000 resamples (Fig 2E) |
+| `\statFigTwoModelComparisonPval` | `$p < 0.0001$` | 5e-05 | notebook | Additive and Conjunctive models outperforming isolated speed and ratio models (Fig 2E): the largest of the 6 hierarchical-bootstrap p-values that claim rests on, floored at the 1/20,000 resolution limit |
+
 Source notebook: `figure_openloop.ipynb` (notebook, generated 2026-09-20T13:02:10)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
@@ -43,15 +62,6 @@ Source notebook: `figure_openloop.ipynb` (notebook, generated 2026-09-20T13:02:1
 | `\statFigTwoOFCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Correlation p-value of preferred optic flow speed (closed vs open loop) |
 | `\statFigTwoDecoderTotalSessions` | `34` | 34 | notebook | Sessions for closed vs open loop SVM decoding (Fig 2K) |
 | `\statFigTwoDecoderEightDepthSessions` | `27` | 27 | notebook | Sessions with 8 depths for confusion matrices (Fig 2L) |
-
-Source notebook: `figure_rsof_integration.ipynb` (notebook, generated 2026-09-20T12:49:21)
-
-| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
-| :--- | :---: | :---: | :---: | :--- |
-| `\statFigTwoModelSessions` | `84` | 84 | notebook | Sessions included in model comparison analysis (Fig 2E) |
-| `\statFigTwoModelNeurons` | `21,318` | 21318 | notebook | Depth-tuned neurons with at least one significant RS/OF model fit (Fig 2E) |
-| `\statFigTwoClosedLoopConjunctiveNeurons` | `17,953` | 17953 | notebook | Depth-tuned neurons with significant conjunctive model fit in closed loop (Methods L621) |
-| `\statFigTwoModelComparisonPval` | `$p < 0.0001$` | 0.0001 | notebook | Additive and Conjunctive models outperforming isolated speed and ratio models (Fig 2E) |
 
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
