@@ -1,0 +1,81 @@
+_meta:
+  notebook: figsupp4_size_control
+  figure: supp
+  generated_at: '2026-09-20T12:45:41'
+  source: notebook
+metrics:
+  size_control_n_neurons:
+    raw: 314
+    formatted: '314'
+    latex_macro: statSuppSizeControlNeurons
+    description: Neurons tested across sphere sizes (5, 10, 20 deg) in Fig S3
+  size_control_n_sessions:
+    raw: 3
+    formatted: '3'
+    latex_macro: statSuppSizeControlSessions
+    description: Sessions for stimulus size invariance experiment
+  size_control_n_mice:
+    raw: 2
+    formatted: '2'
+    latex_macro: statSuppSizeControlMice
+    description: Mice tested for stimulus size invariance
+  size_control_ratio_five_ten:
+    raw: 1.0520057180209808
+    formatted: '1.05'
+    latex_macro: statSuppSizeControlRatioFiveTen
+    description: 'Preferred depth median ratio: 5 vs 10 deg spheres'
+  size_control_ratio_pval_five_ten:
+    raw: 0.5877
+    formatted: $p_{ratio} = 0.588$
+    latex_macro: statSuppSizeControlRatioPvalFiveTen
+    description: 'Bootstrap p-value for ratio: 5 vs 10 deg spheres'
+  size_control_corr_r_five_ten:
+    raw: 0.7685199631136754
+    formatted: $r = 0.769$
+    latex_macro: statSuppSizeControlCorrRFiveTen
+    description: 'Spearman correlation r: 5 vs 10 deg spheres'
+  size_control_corr_pval_five_ten:
+    raw: 1.8162415814020279e-62
+    formatted: $p_{correlation} < 0.0001$
+    latex_macro: statSuppSizeControlCorrPvalFiveTen
+    description: 'Spearman correlation p-value: 5 vs 10 deg spheres'
+  size_control_ratio_five_twenty:
+    raw: 0.9999999998197141
+    formatted: '1.00'
+    latex_macro: statSuppSizeControlRatioFiveTwenty
+    description: 'Preferred depth median ratio: 5 vs 20 deg spheres'
+  size_control_ratio_pval_five_twenty:
+    raw: 0.8123
+    formatted: $p_{ratio} = 0.812$
+    latex_macro: statSuppSizeControlRatioPvalFiveTwenty
+    description: 'Bootstrap p-value for ratio: 5 vs 20 deg spheres'
+  size_control_corr_r_five_twenty:
+    raw: 0.7543691238996617
+    formatted: $r = 0.754$
+    latex_macro: statSuppSizeControlCorrRFiveTwenty
+    description: 'Spearman correlation r: 5 vs 20 deg spheres'
+  size_control_corr_pval_five_twenty:
+    raw: 5.532267866321184e-59
+    formatted: $p_{correlation} < 0.0001$
+    latex_macro: statSuppSizeControlCorrPvalFiveTwenty
+    description: 'Spearman correlation p-value: 5 vs 20 deg spheres'
+  size_control_ratio_ten_twenty:
+    raw: 0.99682570846561
+    formatted: '1.00'
+    latex_macro: statSuppSizeControlRatioTenTwenty
+    description: 'Preferred depth median ratio: 10 vs 20 deg spheres'
+  size_control_ratio_pval_ten_twenty:
+    raw: 0.9507
+    formatted: $p_{ratio} = 0.951$
+    latex_macro: statSuppSizeControlRatioPvalTenTwenty
+    description: 'Bootstrap p-value for ratio: 10 vs 20 deg spheres'
+  size_control_corr_r_ten_twenty:
+    raw: 0.7659021899666625
+    formatted: $r = 0.766$
+    latex_macro: statSuppSizeControlCorrRTenTwenty
+    description: 'Spearman correlation r: 10 vs 20 deg spheres'
+  size_control_corr_pval_ten_twenty:
+    raw: 8.359022898283888e-62
+    formatted: $p_{correlation} < 0.0001$
+    latex_macro: statSuppSizeControlCorrPvalTenTwenty
+    description: 'Spearman correlation p-value: 10 vs 20 deg spheres'

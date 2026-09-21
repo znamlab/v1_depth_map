@@ -7,7 +7,11 @@ that figures, captions, and text numbers remain 100% in sync without drift.
 this module aggregates them and compiles:
 1. `MANUSCRIPT_STATS.md`: A comprehensive, human-readable audit dashboard.
 2. `manuscript_stats.tex`: LaTeX macros (\\providecommand & \\renewcommand) ready to be cited.
-3. Deploys `manuscript_stats.tex` to the Overleaf project folder (v1_depth_map.tex untouched).
+
+Both are written into this directory and nowhere else. Getting the macros into the
+manuscript is a deliberate manual step: once the dashboard has been checked, copy
+`manuscript_stats.tex` into the Overleaf project folder by hand. Nothing here writes to
+Overleaf, so a compile can never surprise a co-author mid-edit.
 
 One YAML file per *notebook*, not per figure: a figure can have several producing
 notebooks (Fig. 2 panels A-E come from `figure_rsof_integration`, F-L from

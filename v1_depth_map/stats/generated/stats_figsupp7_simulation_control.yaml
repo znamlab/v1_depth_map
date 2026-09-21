@@ -1,0 +1,46 @@
+_meta:
+  notebook: figsupp7_simulation_control
+  figure: supp
+  generated_at: '2026-09-20T12:46:44'
+  source: notebook
+metrics:
+  simul_free_n_neurons:
+    raw: 316
+    formatted: '316'
+    latex_macro: statSuppSimulFreeNeurons
+    description: Free locomotion simulated neurons (Fig S7C)
+  simul_free_elongated_ratio:
+    raw: 297/316
+    formatted: 297/316
+    latex_macro: statSuppSimulFreeElongatedRatio
+    description: Free locomotion simulated neurons with elongation > 1.4 ratio
+  simul_free_elongated_pct:
+    raw: 93.9873417721519
+    formatted: 94\%
+    latex_macro: statSuppSimulFreeElongatedPct
+    description: Free locomotion simulated neurons with elongation > 1.4 percentage
+  simul_motor_n_neurons:
+    raw: 295
+    formatted: '295'
+    latex_macro: statSuppSimulMotorNeurons
+    description: Motorized wheel simulated neurons (Fig S7D)
+  simul_motor_elongated_ratio:
+    raw: 20/295
+    formatted: 20/295
+    latex_macro: statSuppSimulMotorElongatedRatio
+    description: Motorized wheel simulated neurons with elongation > 1.4 ratio
+  simul_motor_elongated_pct:
+    raw: 6.779661016949152
+    formatted: 7\%
+    latex_macro: statSuppSimulMotorElongatedPct
+    description: Motorized wheel simulated neurons with elongation > 1.4 percentage
+  simul_n_sessions:
+    raw: 4
+    formatted: '4'
+    latex_macro: statSuppSimulSessions
+    description: Sessions included in simulation control (Fig S7)
+  simul_n_mice:
+    raw: 4
+    formatted: '4'
+    latex_macro: statSuppSimulMice
+    description: Mice included in simulation control (Fig S7)

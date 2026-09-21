@@ -45,13 +45,22 @@ def _describe(values):
 def _stubs(name):
     rng = np.random.default_rng(0)
     if name == "figure1_depth_selectivity":
+        # 19 sessions across 4 mice, matching the multi-day cohort the export counts
+        sessions_md = [f"MOUSE{m}_S{s}" for m in range(4) for s in range(5)][:19]
+        neurons_df_multiday = pd.DataFrame({"session": sessions_md})
+        neurons_df_multiday["mouse"] = (
+            neurons_df_multiday["session"].str.split("_").str[0]
+        )
+        # one row per tracked neuron, one column per day; NaN where it was not tracked,
+        # so the export's dropna() pairing is actually exercised
+        day_values = rng.normal(size=(300, 5))
+        day_values[rng.random((300, 5)) < 0.3] = np.nan
         return dict(
             results_all=_neurons(400),
             neurons_df_all=_neurons(59937),
-            n_sessions_md=19,
-            n_mice_md=4,
+            neurons_df_multiday=neurons_df_multiday,
+            df_pivot_multiday=pd.DataFrame(day_values, columns=[1, 2, 3, 4, 5]),
             x_vals=list(range(345)),
-            tracked_uids_md=set(range(216)),
         )
     if name == "figure_openloop":
         return dict(
@@ -82,6 +91,7 @@ def _stubs(name):
             15697,
             extra={
                 "preferred_depth_closedloop": lambda n: rng.uniform(0.02, 6, n),
+                "preferred_depth_corrected": lambda n: rng.uniform(0.02, 6, n),
                 "overview_y_aligned": lambda n: rng.normal(size=n),
                 "log_preferred_depth_corrected": lambda n: rng.normal(size=n),
             },
@@ -104,6 +114,22 @@ def _stubs(name):
         return dict(
             df=_neurons(314), select_neurons=pd.Series(np.ones(314, dtype=bool))
         )
+    if name == "figsupp5_rsof":
+        return dict(
+            r_of_boot=np.array([-0.728]),
+            pval_of_boot=0.0,
+            r_rs_all_boot=np.array([0.013]),
+            pval_rs_all_boot=0.715,
+            bin_corrs=[0.617, 0.568, 0.489],
+            bin_pvals=[0.0, 0.0, 0.0],
+        )
+    if name == "figsupp7_simulation_control":
+        return dict(
+            free={"n": 316, "n_ok": 297, "pct": 94.0},
+            motor={"n": 295, "n_ok": 20, "pct": 7.0},
+            n_sessions=4,
+            n_mice=4,
+        )
     raise KeyError(name)
 
 
@@ -117,6 +143,8 @@ OWNERS = {
     "figsupp1_vis_stim_sync": "supp",
     "figsupp2_speed": "supp",
     "figsupp4_size_control": "supp",
+    "figsupp5_rsof": "supp",
+    "figsupp7_simulation_control": "supp",
 }
 
 

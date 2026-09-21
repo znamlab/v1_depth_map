@@ -1,0 +1,16 @@
+_meta:
+  notebook: figsupp2_speed
+  figure: supp
+  generated_at: '2026-09-19T17:45:59'
+  source: notebook
+metrics:
+  eye_tracking_n_sessions:
+    raw: 16
+    formatted: '16'
+    latex_macro: statSuppEyeSessions
+    description: Sessions with pupil/gaze tracking in Fig S2
+  eye_tracking_n_mice:
+    raw: 2
+    formatted: '2'
+    latex_macro: statSuppEyeMice
+    description: Mice with pupil/gaze tracking in Fig S2

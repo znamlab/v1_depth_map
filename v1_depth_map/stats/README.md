@@ -1,6 +1,7 @@
 # Manuscript Statistics Tracking (`v1_depth_map.stats`)
 
-This directory contains the pipeline for tracking, formatting, and deploying manuscript numbers to LaTeX.
+This directory contains the pipeline for tracking and formatting manuscript numbers as LaTeX macros.
+
 
 ## Quick Reference
 - **Detailed Documentation**: See [`notes/05_manuscript_statistics.md`](../../notes/05_manuscript_statistics.md) for full architecture, design principles, and guidelines for adding new metrics.

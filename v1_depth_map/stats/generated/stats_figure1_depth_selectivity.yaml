@@ -1,0 +1,61 @@
+_meta:
+  notebook: figure1_depth_selectivity
+  figure: fig1
+  generated_at: '2026-09-19T16:41:49'
+  source: notebook
+metrics:
+  n_sessions_total:
+    raw: 84
+    formatted: '84'
+    latex_macro: statFigOneTotalSessions
+    description: Total two-photon imaging sessions for virtual depth experiment
+  n_sessions_5depth:
+    raw: 25
+    formatted: '25'
+    latex_macro: statFigOneFiveDepthSessions
+    description: Sessions with 5 virtual depths (6 cm to 600 cm)
+  n_sessions_8depth:
+    raw: 59
+    formatted: '59'
+    latex_macro: statFigOneEightDepthSessions
+    description: Sessions with 8 virtual depths (5 cm to 640 cm)
+  n_mice_total:
+    raw: 7
+    formatted: '7'
+    latex_macro: statFigOneTotalMice
+    description: Total mice recorded in layer 2/3 of V1
+  n_neurons_total:
+    raw: 59937
+    formatted: 59,937
+    latex_macro: statFigOneTotalNeurons
+    description: Total layer 2/3 excitatory neurons recorded
+  n_depth_neurons:
+    raw: 27094
+    formatted: 27,094
+    latex_macro: statFigOneDepthNeurons
+    description: Neurons exhibiting significant depth selectivity
+  pct_depth_neurons:
+    raw: 45.2041310042211
+    formatted: 45.2\%
+    latex_macro: statFigOnePctDepthNeurons
+    description: Percentage of layer 2/3 neurons with depth selectivity
+  multiday_n_mice:
+    raw: 4
+    formatted: '4'
+    latex_macro: statFigOneMultidayMice
+    description: Number of mice in multiday tracking experiment
+  multiday_n_sessions:
+    raw: 19
+    formatted: '19'
+    latex_macro: statFigOneMultidaySessions
+    description: Number of sessions across consecutive days
+  multiday_n_pairs:
+    raw: 374
+    formatted: '374'
+    latex_macro: statFigOneMultidayPairs
+    description: Consecutive day neuron pairs tracked
+  multiday_n_tracked_neurons:
+    raw: 234
+    formatted: '234'
+    latex_macro: statFigOneMultidayTrackedNeurons
+    description: Unique neurons tracked across consecutive days

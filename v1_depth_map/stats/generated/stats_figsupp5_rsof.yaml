@@ -1,0 +1,60 @@
+_meta:
+  notebook: figsupp5_rsof
+  figure: supp
+  generated_at: '2026-09-20T17:23:15'
+  source: notebook
+metrics:
+  rsof_corr_of_depth_r:
+    raw: -0.5947295645149252
+    formatted: $r = -0.595$
+    latex_macro: statSuppRSOFCorrOFDepthR
+    description: Correlation between preferred depth and optic flow speed (Fig S5I)
+  rsof_corr_of_depth_pval:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statSuppRSOFCorrOFDepthPval
+    description: P-value of correlation between preferred depth and optic flow speed
+  rsof_corr_rs_depth_all_r:
+    raw: -0.055057358507232014
+    formatted: $r = -0.055$
+    latex_macro: statSuppRSOFCorrRSDepthAllR
+    description: Correlation between preferred depth and running speed for all neurons
+      (Fig S5J)
+  rsof_corr_rs_depth_all_pval:
+    raw: 0.5534
+    formatted: $p = 0.553$
+    latex_macro: statSuppRSOFCorrRSDepthAllPval
+    description: P-value of correlation between preferred depth and running speed
+      for all neurons
+  rsof_corr_rs_depth_bin1_r:
+    raw: 0.5065385736128153
+    formatted: $r = 0.507$
+    latex_macro: statSuppRSOFCorrRSDepthBinOneR
+    description: Correlation between preferred depth and running speed (OF 1-10 deg/s)
+  rsof_corr_rs_depth_bin1_pval:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statSuppRSOFCorrRSDepthBinOnePval
+    description: P-value of correlation (OF 1-10 deg/s)
+  rsof_corr_rs_depth_bin2_r:
+    raw: 0.395974503563562
+    formatted: $r = 0.396$
+    latex_macro: statSuppRSOFCorrRSDepthBinTwoR
+    description: Correlation between preferred depth and running speed (OF 10-100
+      deg/s)
+  rsof_corr_rs_depth_bin2_pval:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statSuppRSOFCorrRSDepthBinTwoPval
+    description: P-value of correlation (OF 10-100 deg/s)
+  rsof_corr_rs_depth_bin3_r:
+    raw: 0.363561848340317
+    formatted: $r = 0.364$
+    latex_macro: statSuppRSOFCorrRSDepthBinThreeR
+    description: Correlation between preferred depth and running speed (OF 100-1000
+      deg/s)
+  rsof_corr_rs_depth_bin3_pval:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statSuppRSOFCorrRSDepthBinThreePval
+    description: P-value of correlation (OF 100-1000 deg/s)

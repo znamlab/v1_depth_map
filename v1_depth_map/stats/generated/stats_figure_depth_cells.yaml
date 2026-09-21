@@ -1,0 +1,50 @@
+_meta:
+  notebook: figure_depth_cells
+  figure: fig3
+  generated_at: '2026-09-19T17:39:50'
+  source: notebook
+metrics:
+  motorized_depth_tuned_neurons:
+    raw: 285
+    formatted: '285'
+    latex_macro: statFigThreeMotorizedDepthNeurons
+    description: Depth-tuned neurons compared between free locomotion and motorized
+      wheel (Fig 3F)
+  polar_n_neurons:
+    raw: 285
+    formatted: '285'
+    latex_macro: statFigThreePolarNeurons
+    description: Neurons with significant 2D-Gaussian fit on motorized wheel (Fig
+      3K)
+  polar_n_sessions:
+    raw: 4
+    formatted: '4'
+    latex_macro: statFigThreePolarSessions
+    description: Sessions in motorized wheel elongation analysis (Fig 3K)
+  polar_n_mice:
+    raw: 4
+    formatted: '4'
+    latex_macro: statFigThreePolarMice
+    description: Mice in motorized wheel elongation analysis (Fig 3K)
+  elongation_cutoff_ratio:
+    raw: 266/285
+    formatted: 266/285
+    latex_macro: statFigThreeElongationCutoffRatio
+    description: Fraction of neurons with elongation ratio > 1.4 (Fig 3K)
+  elongation_n_neurons:
+    raw: 266
+    formatted: '266'
+    latex_macro: statFigThreeElongatedNeurons
+    description: Neurons with elongated ellipses for orientation distribution (Fig
+      3L)
+  von_mises_k:
+    raw: 3
+    formatted: '3'
+    latex_macro: statFigThreeVonMisesK
+    description: Best axial von Mises mixture number of components (Fig 3L)
+  von_mises_components:
+    raw: $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)
+    formatted: $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)
+    latex_macro: statFigThreeVonMisesComponents
+    description: Component centers and mixture weights for orientation distribution
+      (Fig 3L)

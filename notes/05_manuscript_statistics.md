@@ -56,7 +56,7 @@ flowchart TD
     end
 
     subgraph Overleaf["5. Manuscript (Overleaf)"]
-        TEX -->|Auto-deployed| OL_TEX["Overleaf/manuscript_stats.tex"]
+        TEX -->|"Copied by hand, once checked"| OL_TEX["Overleaf/manuscript_stats.tex"]
         OL_TEX -->|\\input{manuscript_stats.tex}| MANUSCRIPT["v1_depth_map.tex\n(Cites \\statMacro{})"]
     end
 ```
@@ -153,7 +153,12 @@ It then generates two artifacts:
    \renewcommand{\statFigOnePctDepthNeurons}{41.3\%}
    ```
    - Using both `\providecommand` and `\renewcommand` ensures definitions can be safely included in multiple sub-files without collisions.
-   - Deploys automatically to the local repo and the Overleaf manuscript folder (`/Users/blota/Library/CloudStorage/Dropbox-TheFrancisCrick/Antonin Blot/Apps/Overleaf/v1_depth_map Science re-submission/manuscript_stats.tex`). A failed copy (the CloudStorage path can stat fine and still refuse a write) prints a notice and does not fail the compile.
+   - **Written to the repo only.** The compiler does not touch Overleaf. Once you have checked the dashboard (in particular that no value is still flagged `manual`), copy the file across by hand:
+     ```bash
+     cp v1_depth_map/stats/manuscript_stats.tex \
+        "/Users/blota/Library/CloudStorage/Dropbox-TheFrancisCrick/Antonin Blot/Apps/Overleaf/v1_depth_map Science re-submission/manuscript_stats.tex"
+     ```
+     Keeping this manual means a routine figure re-run can never push half-checked numbers into a manuscript co-authors are editing.
 
 ---
 
@@ -188,7 +193,8 @@ python run_figures_pipeline.py
 ```
 1. Each notebook executes and writes its updated `stats_<notebook>.yaml`.
 2. At the conclusion of all notebook runs, `run_figures_pipeline.py` automatically calls `compile_manuscript_stats()`.
-3. `MANUSCRIPT_STATS.md` and `manuscript_stats.tex` are refreshed and deployed to Overleaf. If validation fails, nothing is written and the pipeline prints a warning naming each offending metric.
+3. `MANUSCRIPT_STATS.md` and `manuscript_stats.tex` are refreshed **in the repo**. If validation fails, nothing is written and the pipeline prints a warning naming each offending metric.
+4. Copying `manuscript_stats.tex` to Overleaf stays manual - see Step 2.
 
 ### Manual / Fast Compilation
 To re-compile the Markdown dashboard and LaTeX macros from existing YAML outputs (sub-second runtime, zero dependencies on 2P data or external drives):

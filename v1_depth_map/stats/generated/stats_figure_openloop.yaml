@@ -1,0 +1,54 @@
+_meta:
+  notebook: figure_openloop
+  figure: fig2
+  generated_at: '2026-09-20T13:02:10'
+  source: notebook
+metrics:
+  openloop_n_depth_neurons_total:
+    raw: 9429
+    formatted: 9,429
+    latex_macro: statFigTwoOpenLoopTotalDepthNeurons
+    description: Total depth-selective neurons in open-loop sessions (Methods L624)
+  openloop_n_neurons:
+    raw: 1233
+    formatted: 1,233
+    latex_macro: statFigTwoOpenLoopNeurons
+    description: Depth-selective neurons compared between closed and open loop (Fig
+      2H-J)
+  amplitude_ratio_pval:
+    raw: 0.6514
+    formatted: $p = 0.651$
+    latex_macro: statFigTwoAmpRatioPval
+    description: Hierarchical bootstrap p-value of peak response closed vs open loop
+      ratio
+  rs_correlation_r:
+    raw: 0.5520813429666219
+    formatted: $r = 0.552$
+    latex_macro: statFigTwoRSCorrR
+    description: Correlation r of preferred running speed (closed vs open loop)
+  rs_correlation_pval:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoRSCorrPval
+    description: Correlation p-value of preferred running speed (closed vs open loop)
+  of_correlation_r:
+    raw: 0.710987617320202
+    formatted: $r = 0.711$
+    latex_macro: statFigTwoOFCorrR
+    description: Correlation r of preferred optic flow speed (closed vs open loop)
+  of_correlation_pval:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statFigTwoOFCorrPval
+    description: Correlation p-value of preferred optic flow speed (closed vs open
+      loop)
+  decoder_n_sessions_total:
+    raw: 34
+    formatted: '34'
+    latex_macro: statFigTwoDecoderTotalSessions
+    description: Sessions for closed vs open loop SVM decoding (Fig 2K)
+  decoder_n_sessions_8depth:
+    raw: 27
+    formatted: '27'
+    latex_macro: statFigTwoDecoderEightDepthSessions
+    description: Sessions with 8 depths for confusion matrices (Fig 2L)

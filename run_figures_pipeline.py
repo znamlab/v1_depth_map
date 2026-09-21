@@ -15,8 +15,9 @@ What a run does:
   3. Records status, wall time and peak RAM per notebook in `FIGURES_README.md`,
      updated after every notebook so the table is useful while the batch is running.
   4. Compiles the manuscript statistics the notebooks emitted (see
-     `notes/05_manuscript_statistics.md`) into `manuscript_stats.tex`, and deploys it
-     to Overleaf. Nothing is written if validation fails.
+     `notes/05_manuscript_statistics.md`) into `v1_depth_map/stats/manuscript_stats.tex`.
+     Nothing is written if validation fails. Overleaf is never touched: copying that
+     file across is a manual step, taken once the dashboard has been checked.
 
 Note that **the executed notebooks are discarded**: nbconvert writes to a temp dir, so
 the source .ipynb files keep their existing outputs and are never modified. The durable

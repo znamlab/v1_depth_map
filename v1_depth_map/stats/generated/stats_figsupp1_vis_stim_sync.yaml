@@ -1,0 +1,24 @@
+_meta:
+  notebook: figsupp1_vis_stim_sync
+  figure: supp
+  generated_at: '2026-09-19T23:53:49'
+  source: notebook
+metrics:
+  display_lag_mean_ms:
+    raw: 26.631505885895553
+    formatted: $26.6 \pm 1.4~\mathrm{ms}$
+    latex_macro: statSuppDisplayLag
+    description: Average display lag between wheel movement and monitor update (5-colour
+      photodiode cohort)
+  display_frame_rate_hz:
+    raw: 127.03871492644178
+    formatted: $127 \pm 2~\mathrm{Hz}$
+    latex_macro: statSuppFrameRate
+    description: Average effective display refresh rate across sessions (2-colour
+      photodiode cohort)
+  frame_rate_target_pct:
+    raw: 91.46000966969683
+    formatted: $91.5 \pm 0.9\%$
+    latex_macro: statSuppFrameTargetPct
+    description: Percentage of frames displayed at full nominal 144 Hz rate (2-colour
+      photodiode cohort)

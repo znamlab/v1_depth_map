@@ -1,0 +1,63 @@
+_meta:
+  notebook: figure_rf
+  figure: fig4_5
+  generated_at: '2026-09-20T12:44:28'
+  source: notebook
+metrics:
+  rf_n_neurons_total:
+    raw: 14173
+    formatted: 14,173
+    latex_macro: statFigFourRFNeuronsTotal
+    description: Total depth-selective neurons with significant receptive fields
+  rf_n_sessions_total:
+    raw: 84
+    formatted: '84'
+    latex_macro: statFigFourRFSessionsTotal
+    description: Total sessions contributing to RF mapping
+  rf_near_uncorrected:
+    raw: 3078
+    formatted: 3,078
+    latex_macro: statFigFiveNearUncorrected
+    description: Neurons preferring near depths (<20 cm) uncorrected
+  rf_mid_uncorrected:
+    raw: 6744
+    formatted: 6,744
+    latex_macro: statFigFiveMidUncorrected
+    description: Neurons preferring intermediate depths (20-100 cm) uncorrected
+  rf_far_uncorrected:
+    raw: 4351
+    formatted: 4,351
+    latex_macro: statFigFiveFarUncorrected
+    description: Neurons preferring far depths (>100 cm) uncorrected
+  rf_near_corrected:
+    raw: 2476
+    formatted: 2,476
+    latex_macro: statFigFiveNearCorrected
+    description: Neurons preferring near depths (<20 cm) corrected for viewing angle
+  rf_mid_corrected:
+    raw: 5832
+    formatted: 5,832
+    latex_macro: statFigFiveMidCorrected
+    description: Neurons preferring intermediate depths (20-100 cm) corrected for
+      viewing angle
+  rf_far_corrected:
+    raw: 5865
+    formatted: 5,865
+    latex_macro: statFigFiveFarCorrected
+    description: Neurons preferring far depths (>100 cm) corrected for viewing angle
+  gradient_pval_corrected:
+    raw: 7.403750800566618e-09
+    formatted: $p = 7.40e-09$
+    latex_macro: statFigFiveGradientPvalCorrected
+    description: Significance of 3D RF depth gradient across visual space (corrected)
+  gradient_pval_uncorrected:
+    raw: 0.01752264341898344
+    formatted: $p = 0.0175$
+    latex_macro: statFigFiveGradientPvalUncorrected
+    description: Significance of depth gradient across visual space (uncorrected)
+  ap_correlation_r:
+    raw: -0.16571200832758723
+    formatted: $r = -0.166$
+    latex_macro: statFigFiveAPCorrR
+    description: Correlation between preferred depth and anterior-posterior location
+      in V1
