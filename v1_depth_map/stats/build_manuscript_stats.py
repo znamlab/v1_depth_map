@@ -269,8 +269,8 @@ def generate_markdown_dashboard(
         "",
         f"*Compiled from figure notebook outputs at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.*",
         "",
-        "This document is compiled directly from statistics generated inside the figure notebooks. ",
-        "Because each number is written by the exact code cell that generates the corresponding figure panel, ",
+        "This document is compiled directly from statistics generated inside the figure notebooks.",
+        "Because each number is written by the exact code cell that generates the corresponding figure panel,",
         "these values cannot drift out of sync with the figures.",
         "",
     ]
@@ -278,9 +278,9 @@ def generate_markdown_dashboard(
     if manual:
         lines.extend(
             [
-                f"> ⚠️ **{manual} of {total} values are hand-entered, not notebook-derived.** ",
-                "> They are marked `manual` in the Source column below and are provisional until the ",
-                "> owning notebook is executed and overwrites them. ",
+                f"> ⚠️ **{manual} of {total} values are hand-entered, not notebook-derived.**",
+                "> They are marked `manual` in the Source column below and are provisional until the",
+                "> owning notebook is executed and overwrites them.",
                 "",
             ]
         )
