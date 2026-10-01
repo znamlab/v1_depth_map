@@ -65,12 +65,20 @@ def _stubs(name):
         )
     if name == "figure2_openloop":
         return dict(
-            neurons_df_sig_openloop=_neurons(1229),
+            neurons_df_sig_openloop=_neurons(3948),
             neurons_df_sig_openloop_depth_selective=_neurons(9429),
-            decoder_results=_neurons(34),
+            # the export splits the decoder sessions by ndepths, so both counts have to
+            # come back non-zero for the split to be exercised
+            decoder_results=_neurons(
+                34, {"ndepths": lambda n: np.where(np.arange(n) < 7, 5, 8)}
+            ),
+            ratios=pd.Series(rng.lognormal(0, 0.3, 3948)),
             pval_amp=np.float64(5.5e-07),
             r_rs=np.array([0.5512674]),
             pval_rs=np.float64(0.0),
+            # the preferred-RS ratio test, whose r is an ndarray like all the others
+            r=np.array([1.00004]),
+            pval=np.float64(0.6238),
             r_of=np.array([0.7101559]),
             pval_of=np.float64(0.002),
         )
@@ -148,6 +156,20 @@ def _stubs(name):
         )
     if name == "figsupp2_speed":
         return dict(all_data=_neurons(5000))
+    if name == "figsupp3_depth_pop":
+        df = _neurons(
+            5000,
+            {
+                "depth_tuned": lambda n: np.arange(n) % 3 == 0,
+                "preferred_depth_closedloop": lambda n: rng.uniform(0.02, 6, n),
+            },
+        )
+        df["indicator"] = np.where(
+            df["mouse"].str.startswith("PZAG"), "GCaMP6s", "GCaMP6f"
+        )
+        # both cohorts must be non-empty for the K/L split and the KS test
+        df["ndepths"] = np.where(df["mouse"].isin(["PZAH6.4b", "PZAG3.4f"]), 5, 8)
+        return dict(neurons_df_all=df)
     if name == "figsupp4_size_control":
         return dict(
             df=_neurons(314),
@@ -200,6 +222,7 @@ OWNERS = {
     "figure3_depth_cells": "fig3",
     "figsupp1_vis_stim_sync": "supp",
     "figsupp2_speed": "supp",
+    "figsupp3_depth_pop": "supp",
     "figsupp4_size_control": "supp",
     "figsupp5_rsof": "supp",
     "figsupp7_simulation_control": "supp",

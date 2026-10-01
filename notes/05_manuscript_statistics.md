@@ -124,6 +124,7 @@ metrics:
 | `figsupp9_v1_depth_map.ipynb` | `supp` | `statSuppNine*` | RF neuron/session totals, near-mid-far counts, visual space gradient p-values, retinotopic correlations (Fig S9) |
 | `figsupp1_vis_stim_sync.ipynb` | `supp` | `statSuppDisplay*`, `statSuppFrame*` | Photodiode sync lag and display frame rates |
 | `figsupp2_speed.ipynb` | `supp` | `statSuppEye*` | Pupil / gaze tracking sessions and mice |
+| `figsupp3_depth_pop.ipynb` | `supp` | `statSuppDepthPop*` | Mice, sessions and median % depth-tuned neurons per genotype (Fig S3J); per-cohort n, preferred-depth median/IQR and 5- vs 8-depth KS test (Fig S3K-L) |
 | `figsupp4_size_control.ipynb` | `supp` | `statSuppSizeControl*` | Stimulus size invariance |
 
 ---

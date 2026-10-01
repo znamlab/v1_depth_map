@@ -17,7 +17,7 @@ This document tracks the execution status, resource utilization, and action item
 | [`figure4_receptive_fields.ipynb`](../v1_depth_map/figures/figure4_receptive_fields.ipynb) | ✅ Ready | - | - | Fig 4 (Panels A–H: 3D receptive fields) | Multi-depth protocol (`SpheresPermTubeReward_multidepth`); 3D RF isosurfaces & FOV retinotopy |
 | [`figsupp1_vis_stim_sync.ipynb`](../v1_depth_map/figures/figsupp1_vis_stim_sync.ipynb) | ✅ Ready | 7.0 min | 6.33 GB | Fig S1 (`\label{sup:vis_stim}`) | 100% vector figure with embedded vector schematic |
 | [`figsupp2_speed.ipynb`](../v1_depth_map/figures/figsupp2_speed.ipynb) | ✅ Ready | 1.8 min | 2.50 GB | Fig S2 (Panels A–L: speeds & eye tracking) | Running speed, optic flow speed & pupil/gaze tracking |
-| [`figsupp3_depth_pop.ipynb`](../v1_depth_map/figures/figsupp3_depth_pop.ipynb) | ✅ Ready | - | - | Fig S3 (Panels A–L: depth tuning & population) | Reuses `fig1/neurons_df_all.pickle`; emits no stats |
+| [`figsupp3_depth_pop.ipynb`](../v1_depth_map/figures/figsupp3_depth_pop.ipynb) | ✅ Ready | - | - | Fig S3 (Panels A–L: depth tuning & population) | Reuses `fig1/neurons_df_all.pickle`; emits `statSuppDepthPop*` |
 | [`figsupp4_size_control.ipynb`](../v1_depth_map/figures/figsupp4_size_control.ipynb) | ✅ Ready | 0.2 min | 1.30 GB | Fig S4 (`\label{sup:size}`) | Size-tuning invariance controls & stats |
 | [`figsupp5_rsof.ipynb`](../v1_depth_map/figures/figsupp5_rsof.ipynb) | ✅ Success | 37.2 min | 2.33 GB | Fig S5 (Panels A–O: RS × OF matrices) | RS × OF 2D grid responses and the five model fits |
 | [`figsupp6_openloop.ipynb`](../v1_depth_map/figures/figsupp6_openloop.ipynb) | ✅ Success | 1.5 min | 3.59 GB | Fig S6 (Panels A–D: open loop) | Playback comparisons |

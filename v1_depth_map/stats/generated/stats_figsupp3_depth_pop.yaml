@@ -1,0 +1,104 @@
+_meta:
+  notebook: figsupp3_depth_pop
+  figure: supp
+  generated_at: '2026-10-01T16:59:04'
+  source: notebook
+metrics:
+  GCaMP6f_n_mice:
+    raw: 6
+    formatted: '6'
+    latex_macro: statSuppDepthPopSixfMice
+    description: GCaMP6f mice in Fig S3J
+  GCaMP6f_n_sessions:
+    raw: 70
+    formatted: '70'
+    latex_macro: statSuppDepthPopSixfSessions
+    description: GCaMP6f sessions in Fig S3J
+  GCaMP6f_median_pct_depth_tuned:
+    raw: 24.592213531823337
+    formatted: 24.6\%
+    latex_macro: statSuppDepthPopSixfMedianPctDepthTuned
+    description: Median across GCaMP6f sessions of the percentage of depth-tuned neurons
+      (Fig S3J)
+  GCaMP6s_n_mice:
+    raw: 1
+    formatted: '1'
+    latex_macro: statSuppDepthPopSixsMice
+    description: GCaMP6s mice in Fig S3J
+  GCaMP6s_n_sessions:
+    raw: 14
+    formatted: '14'
+    latex_macro: statSuppDepthPopSixsSessions
+    description: GCaMP6s sessions in Fig S3J
+  GCaMP6s_median_pct_depth_tuned:
+    raw: 80.25822204351573
+    formatted: 80.3\%
+    latex_macro: statSuppDepthPopSixsMedianPctDepthTuned
+    description: Median across GCaMP6s sessions of the percentage of depth-tuned neurons
+      (Fig S3J)
+  ndepths5_n_sessions:
+    raw: 25
+    formatted: '25'
+    latex_macro: statSuppDepthPopFiveDepthSessions
+    description: Sessions with 5 virtual depths in Fig S3K
+  ndepths5_n_mice:
+    raw: 2
+    formatted: '2'
+    latex_macro: statSuppDepthPopFiveDepthMice
+    description: Mice with 5 virtual depths in Fig S3K
+  ndepths5_n_neurons:
+    raw: 19762
+    formatted: 19,762
+    latex_macro: statSuppDepthPopFiveDepthNeurons
+    description: Depth-tuned neurons from 5-depth sessions in Fig S3K
+  ndepths5_median_pref_depth_cm:
+    raw: 40.909627113949725
+    formatted: '40.9'
+    latex_macro: statSuppDepthPopFiveDepthMedianPrefDepth
+    description: Median preferred depth (cm) of depth-tuned neurons, 5-depth sessions
+      (Fig S3K)
+  ndepths5_pref_depth_iqr_cm:
+    raw: 18.656769490288298-99.58611036461171
+    formatted: 18.7--99.6
+    latex_macro: statSuppDepthPopFiveDepthPrefDepthIQR
+    description: Interquartile range of preferred depth (cm), 5-depth sessions (Fig
+      S3K)
+  ndepths8_n_sessions:
+    raw: 59
+    formatted: '59'
+    latex_macro: statSuppDepthPopEightDepthSessions
+    description: Sessions with 8 virtual depths in Fig S3L
+  ndepths8_n_mice:
+    raw: 5
+    formatted: '5'
+    latex_macro: statSuppDepthPopEightDepthMice
+    description: Mice with 8 virtual depths in Fig S3L
+  ndepths8_n_neurons:
+    raw: 7332
+    formatted: 7,332
+    latex_macro: statSuppDepthPopEightDepthNeurons
+    description: Depth-tuned neurons from 8-depth sessions in Fig S3L
+  ndepths8_median_pref_depth_cm:
+    raw: 50.99836974229177
+    formatted: '51.0'
+    latex_macro: statSuppDepthPopEightDepthMedianPrefDepth
+    description: Median preferred depth (cm) of depth-tuned neurons, 8-depth sessions
+      (Fig S3L)
+  ndepths8_pref_depth_iqr_cm:
+    raw: 11.756201639994341-239.30110554619944
+    formatted: 11.8--239.3
+    latex_macro: statSuppDepthPopEightDepthPrefDepthIQR
+    description: Interquartile range of preferred depth (cm), 8-depth sessions (Fig
+      S3L)
+  ks_stat_5_vs_8:
+    raw: 0.15884279334335005
+    formatted: $D = 0.159$
+    latex_macro: statSuppDepthPopKsStat
+    description: KS statistic, log preferred depth of 5- vs 8-depth sessions (Fig
+      S3K-L)
+  ks_pval_5_vs_8:
+    raw: 2.454273634222957e-118
+    formatted: $p < 0.0001$
+    latex_macro: statSuppDepthPopKsPval
+    description: KS test p-value, log preferred depth of 5- vs 8-depth sessions (Fig
+      S3K-L)
