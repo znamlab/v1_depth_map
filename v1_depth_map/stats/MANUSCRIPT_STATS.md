@@ -1,18 +1,18 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-09-21 16:23:47.*
+*Compiled from figure notebook outputs at 2026-10-01 18:16:07.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 91 values were written by a notebook run.
+> ✅ All 115 values were written by a notebook run.
 
 ---
 
 ## Figure 1: Virtual Depth Selectivity & Experience Independence
 
-Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-09-19T16:41:49)
+Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-09-29T15:03:59)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -30,18 +30,24 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-09-
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
-Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-09-20T13:02:10)
+Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-10-01T18:06:58)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
 | `\statFigTwoOpenLoopTotalDepthNeurons` | `9,429` | 9429 | notebook | Total depth-selective neurons in open-loop sessions (Methods L624) |
-| `\statFigTwoOpenLoopNeurons` | `1,233` | 1233 | notebook | Depth-selective neurons compared between closed and open loop (Fig 2H-J) |
-| `\statFigTwoAmpRatioPval` | `$p = 0.651$` | 0.6514 | notebook | Hierarchical bootstrap p-value of peak response closed vs open loop ratio |
-| `\statFigTwoRSCorrR` | `$r = 0.552$` | 0.5520813429666219 | notebook | Correlation r of preferred running speed (closed vs open loop) |
+| `\statFigTwoOpenLoopNeurons` | `3,948` | 3948 | notebook | Depth-selective neurons compared between closed and open loop (Fig 2H-J) |
+| `\statFigTwoOpenLoopSessions` | `34` | 34 | notebook | Sessions contributing to the closed vs open loop comparison (Fig 2H-J) |
+| `\statFigTwoOpenLoopMice` | `7` | 7 | notebook | Mice contributing to the closed vs open loop comparison (Fig 2H-J) |
+| `\statFigTwoAmpRatioMedian` | `0.98` | 0.9844723486949924 | notebook | Median ratio of peak response closed vs open loop, the triangle in Fig 2H |
+| `\statFigTwoAmpRatioPval` | `$p = 0.743$` | 0.7427 | notebook | Hierarchical bootstrap p-value of peak response closed vs open loop ratio |
+| `\statFigTwoRSCorrR` | `$r = 0.469$` | 0.46908924802504137 | notebook | Correlation r of preferred running speed (closed vs open loop) |
 | `\statFigTwoRSCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Correlation p-value of preferred running speed (closed vs open loop) |
-| `\statFigTwoOFCorrR` | `$r = 0.711$` | 0.710987617320202 | notebook | Correlation r of preferred optic flow speed (closed vs open loop) |
+| `\statFigTwoRSRatioMedian` | `1.0456` | 1.0456273579463469 | notebook | Hierarchical bootstrap median of preferred running speed closed vs open loop ratio |
+| `\statFigTwoRSRatioPval` | `$p = 0.214$` | 0.2143 | notebook | Hierarchical bootstrap p-value of preferred running speed closed vs open loop ratio |
+| `\statFigTwoOFCorrR` | `$r = 0.535$` | 0.5349328735076935 | notebook | Correlation r of preferred optic flow speed (closed vs open loop) |
 | `\statFigTwoOFCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Correlation p-value of preferred optic flow speed (closed vs open loop) |
 | `\statFigTwoDecoderTotalSessions` | `34` | 34 | notebook | Sessions for closed vs open loop SVM decoding (Fig 2K) |
+| `\statFigTwoDecoderFiveDepthSessions` | `7` | 7 | notebook | Sessions with 5 depths in the decoder comparison (Fig 2K) |
 | `\statFigTwoDecoderEightDepthSessions` | `27` | 27 | notebook | Sessions with 8 depths for confusion matrices (Fig 2L) |
 
 Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-09-21T14:10:26)
@@ -95,6 +101,29 @@ Source notebook: `figsupp2_speed.ipynb` (notebook, generated 2026-09-19T17:45:59
 | `\statSuppEyeSessions` | `16` | 16 | notebook | Sessions with pupil/gaze tracking in Fig S2 |
 | `\statSuppEyeMice` | `2` | 2 | notebook | Mice with pupil/gaze tracking in Fig S2 |
 
+Source notebook: `figsupp3_depth_pop.ipynb` (notebook, generated 2026-10-01T16:59:04)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statSuppDepthPopSixfMice` | `6` | 6 | notebook | GCaMP6f mice in Fig S3J |
+| `\statSuppDepthPopSixfSessions` | `70` | 70 | notebook | GCaMP6f sessions in Fig S3J |
+| `\statSuppDepthPopSixfMedianPctDepthTuned` | `24.6\%` | 24.592213531823337 | notebook | Median across GCaMP6f sessions of the percentage of depth-tuned neurons (Fig S3J) |
+| `\statSuppDepthPopSixsMice` | `1` | 1 | notebook | GCaMP6s mice in Fig S3J |
+| `\statSuppDepthPopSixsSessions` | `14` | 14 | notebook | GCaMP6s sessions in Fig S3J |
+| `\statSuppDepthPopSixsMedianPctDepthTuned` | `80.3\%` | 80.25822204351573 | notebook | Median across GCaMP6s sessions of the percentage of depth-tuned neurons (Fig S3J) |
+| `\statSuppDepthPopFiveDepthSessions` | `25` | 25 | notebook | Sessions with 5 virtual depths in Fig S3K |
+| `\statSuppDepthPopFiveDepthMice` | `2` | 2 | notebook | Mice with 5 virtual depths in Fig S3K |
+| `\statSuppDepthPopFiveDepthNeurons` | `19,762` | 19762 | notebook | Depth-tuned neurons from 5-depth sessions in Fig S3K |
+| `\statSuppDepthPopFiveDepthMedianPrefDepth` | `40.9` | 40.909627113949725 | notebook | Median preferred depth (cm) of depth-tuned neurons, 5-depth sessions (Fig S3K) |
+| `\statSuppDepthPopFiveDepthPrefDepthIQR` | `18.7--99.6` | 18.656769490288298-99.58611036461171 | notebook | Interquartile range of preferred depth (cm), 5-depth sessions (Fig S3K) |
+| `\statSuppDepthPopEightDepthSessions` | `59` | 59 | notebook | Sessions with 8 virtual depths in Fig S3L |
+| `\statSuppDepthPopEightDepthMice` | `5` | 5 | notebook | Mice with 8 virtual depths in Fig S3L |
+| `\statSuppDepthPopEightDepthNeurons` | `7,332` | 7332 | notebook | Depth-tuned neurons from 8-depth sessions in Fig S3L |
+| `\statSuppDepthPopEightDepthMedianPrefDepth` | `51.0` | 50.99836974229177 | notebook | Median preferred depth (cm) of depth-tuned neurons, 8-depth sessions (Fig S3L) |
+| `\statSuppDepthPopEightDepthPrefDepthIQR` | `11.8--239.3` | 11.756201639994341-239.30110554619944 | notebook | Interquartile range of preferred depth (cm), 8-depth sessions (Fig S3L) |
+| `\statSuppDepthPopKsStat` | `$D = 0.159$` | 0.15884279334335005 | notebook | KS statistic, log preferred depth of 5- vs 8-depth sessions (Fig S3K-L) |
+| `\statSuppDepthPopKsPval` | `$p < 0.0001$` | 2.454273634222957e-118 | notebook | KS test p-value, log preferred depth of 5- vs 8-depth sessions (Fig S3K-L) |
+
 Source notebook: `figsupp4_size_control.ipynb` (notebook, generated 2026-09-20T12:45:41)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
@@ -115,7 +144,7 @@ Source notebook: `figsupp4_size_control.ipynb` (notebook, generated 2026-09-20T1
 | `\statSuppSizeControlCorrRTenTwenty` | `$r = 0.766$` | 0.7659021899666625 | notebook | Spearman correlation r: 10 vs 20 deg spheres |
 | `\statSuppSizeControlCorrPvalTenTwenty` | `$p_{correlation} < 0.0001$` | 8.359022898283888e-62 | notebook | Spearman correlation p-value: 10 vs 20 deg spheres |
 
-Source notebook: `figsupp5_rsof.ipynb` (notebook, generated 2026-09-20T17:23:15)
+Source notebook: `figsupp5_rsof.ipynb` (notebook, generated 2026-10-01T18:07:52)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
