@@ -258,6 +258,17 @@ def count_provenance(records: List[Dict[str, Any]]) -> Tuple[int, int]:
     return manual, total
 
 
+def _write_lines(output_path: Path, lines: List[str]) -> None:
+    """Write lines with no trailing whitespace and a single final newline.
+
+    Matches the trailing-whitespace and end-of-file-fixer pre-commit hooks, so a
+    regenerated file does not differ from the committed one by whitespace alone.
+    """
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    text = "\n".join(line.rstrip() for line in lines).rstrip("\n")
+    output_path.write_text(text + "\n", encoding="utf-8")
+
+
 def generate_markdown_dashboard(
     records: List[Dict[str, Any]], output_path: Path
 ) -> None:
@@ -323,22 +334,21 @@ def generate_markdown_dashboard(
             "",
             "## Usage in LaTeX (`v1_depth_map.tex`)",
             "",
-            "To cite any statistic in the LaTeX manuscript, include `\\input{manuscript_stats.tex}` in the preamble, ",
-            "then use the macro with empty braces to preserve following spaces: ",
+            "To cite any statistic in the LaTeX manuscript, include `\\input{manuscript_stats.tex}` in the preamble,",
+            "then use the macro with empty braces to preserve following spaces:",
             "",
             "```latex",
             "\\input{manuscript_stats.tex}",
             "",
             "% In text:",
-            "Across the population, \\statFigOnePctDepthNeurons{} of cells ",
+            "Across the population, \\statFigOnePctDepthNeurons{} of cells",
             "(\\statFigOneDepthNeurons{} of \\statFigOneTotalNeurons{} neurons) exhibited significant depth selectivity...",
             "```",
             "",
         ]
     )
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _write_lines(output_path, lines)
 
 
 def generate_latex_macros(records: List[Dict[str, Any]], output_path: Path) -> None:
@@ -382,8 +392,7 @@ def generate_latex_macros(records: List[Dict[str, Any]], output_path: Path) -> N
                 lines.append(f"\\renewcommand{{\\{macro_name}}}{{{val}}}")
         lines.append("")
 
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    _write_lines(output_path, lines)
 
 
 def compile_manuscript_stats(
