@@ -121,6 +121,8 @@ metrics:
 | `figure2_rsof_integration.ipynb` | `fig2` | `statFigTwoModel*`, `statFigTwoPval*` | RS/OF model comparison, all 10 pairwise bootstrap p-values (Fig 2A-E) |
 | `figure2_openloop.ipynb` | `fig2` | `statFigTwo*` | Closed vs open loop, bootstrap correlations, decoder sessions (Fig 2F-L) |
 | `figure3_depth_cells.ipynb` | `fig3` | `statFigThree*` | Motorized wheel, elongation ratios, axial von Mises mixture |
+| `figure4_receptive_fields.ipynb` | `fig4` | `statFigFour*` | Multi-depth RF population (Fig 4E) and pairwise RF distance counts (Fig 4I-K); spike RF fits only |
+| `figsupp8_multidepth_receptive_fields.ipynb` | `supp` | `statSuppEight*` | Sessions and median proportion of depth-tuned neurons with significant RFs, for single-depth, multi-depth and all sessions (Fig S8E); spike RF fits only |
 | `figsupp9_v1_depth_map.ipynb` | `supp` | `statSuppNine*` | RF neuron/session totals, near-mid-far counts, visual space gradient p-values, retinotopic correlations (Fig S9) |
 | `figsupp1_vis_stim_sync.ipynb` | `supp` | `statSuppDisplay*`, `statSuppFrame*` | Photodiode sync lag and display frame rates |
 | `figsupp2_speed.ipynb` | `supp` | `statSuppEye*` | Pupil / gaze tracking sessions and mice |

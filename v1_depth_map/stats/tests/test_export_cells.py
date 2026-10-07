@@ -147,6 +147,89 @@ def _stubs(name):
             spearmanr=spearmanr,
             p_val_corrected=7.4e-09,
             p_val_uncorrected=0.0175,
+            OUT_SFX="_spks",
+        )
+    if name == "figure4_receptive_fields":
+        from v1_depth_map.figure_utils import rf_distance
+
+        # k neurons in a session give k(k-1)/2 pairs, which count_neurons inverts
+        n_neurons = {"PZAH6.4b_S1": 40, "PZAG3.4f_S2": 25, "PZAH8.2h_S3": 2}
+        pairwise_df = pd.DataFrame(
+            {
+                "session": [
+                    s for s, k in n_neurons.items() for _ in range(k * (k - 1) // 2)
+                ],
+            }
+        )
+        pairwise_df["roi_distance"] = rng.uniform(0, 900, len(pairwise_df))
+        # panel E: two sessions from one mouse plus one from another
+        depth_neurons = pd.DataFrame(
+            {
+                "session": ["PZAH17.1e_S1"] * 5
+                + ["PZAH17.1e_S2"] * 3
+                + ["PZAG16.3c_S1"] * 4
+            }
+        )
+        return dict(
+            depth_neurons=depth_neurons,
+            rf_distance=rf_distance,
+            pairwise_df=pairwise_df,
+            rf_dist_counts=dict(n_sessions=3, n_mice=3, n_pairs=1080),
+            OUT_SFX="_spks",
+        )
+    if name == "figsupp8_multidepth_receptive_fields":
+        # per-neuron tables whose per-session proportions are all_sig / all_sig_m,
+        # so the export's consistency check is exercised
+        n = 400
+        neurons_df_single = _neurons(
+            n,
+            {
+                "iscell": lambda n: (np.arange(n) % 4 != 0).astype(float),
+                "rf_sig": lambda n: rng.random(n) < 0.5,
+                "depth_tuning_test_spearmanr_rval_closedloop": lambda n: rng.uniform(
+                    -1, 1, n
+                ),
+                "depth_tuning_test_spearmanr_pval_closedloop": lambda n: rng.uniform(
+                    0, 0.2, n
+                ),
+            },
+        )
+        neurons_df = pd.DataFrame(
+            {
+                "session": ["PZAH17.1e_S1"] * 30 + ["PZAG16.3c_S1"] * 20,
+                "is_depth_tuned": np.arange(50) % 2 == 0,
+                "rf_sig": rng.random(50) < 0.5,
+            }
+        )
+        from cottage_analysis.analysis import common_utils
+
+        selected = neurons_df_single[
+            (neurons_df_single["iscell"] == 1)
+            & (
+                common_utils.one_sided_pval_from_spearman(
+                    neurons_df_single["depth_tuning_test_spearmanr_rval_closedloop"],
+                    neurons_df_single["depth_tuning_test_spearmanr_pval_closedloop"],
+                )
+                < 0.05
+            )
+        ]
+        multi = neurons_df[neurons_df["is_depth_tuned"]]
+        return dict(
+            all_sig=list(selected.groupby("session", sort=False)["rf_sig"].mean()),
+            all_sig_m=list(multi.groupby("session", sort=False)["rf_sig"].mean()),
+            neurons_df_single=neurons_df_single,
+            neurons_df=neurons_df,
+            # panel F: RF peak depths (m) of the plotted neurons, returned by the panel
+            peak_depth_df=pd.DataFrame(
+                {
+                    "rf_preferred_depth_closedloop": rng.uniform(0.02, 20, 603),
+                    "rf_preferred_depth_closedloop_multidepth": rng.uniform(
+                        0.02, 20, 603
+                    ),
+                }
+            ),
+            stats=__import__("scipy").stats,
+            OUT_SFX="_spks",
         )
     if name == "figsupp1_vis_stim_sync":
         return dict(
@@ -220,12 +303,14 @@ OWNERS = {
     "figure2_openloop": "fig2",
     "figure2_rsof_integration": "fig2",
     "figure3_depth_cells": "fig3",
+    "figure4_receptive_fields": "fig4",
     "figsupp1_vis_stim_sync": "supp",
     "figsupp2_speed": "supp",
     "figsupp3_depth_pop": "supp",
     "figsupp4_size_control": "supp",
     "figsupp5_rsof": "supp",
     "figsupp7_simulation_control": "supp",
+    "figsupp8_multidepth_receptive_fields": "supp",
     "figsupp9_v1_depth_map": "supp",
 }
 

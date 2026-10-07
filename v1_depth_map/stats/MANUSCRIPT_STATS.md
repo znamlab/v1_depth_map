@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-10-01 18:16:07.*
+*Compiled from figure notebook outputs at 2026-10-07 17:11:39.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 115 values were written by a notebook run.
+> ✅ All 136 values were written by a notebook run.
 
 ---
 
@@ -83,6 +83,20 @@ Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-09-19T17:
 | `\statFigThreeElongatedNeurons` | `266` | 266 | notebook | Neurons with elongated ellipses for orientation distribution (Fig 3L) |
 | `\statFigThreeVonMisesK` | `3` | 3 | notebook | Best axial von Mises mixture number of components (Fig 3L) |
 | `\statFigThreeVonMisesComponents` | `$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)` | $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%) | notebook | Component centers and mixture weights for orientation distribution (Fig 3L) |
+
+## Figure 4: Three-Dimensional Receptive Fields
+
+Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-10-06T14:23:56)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statFigFourPopNeurons` | `1,009` | 1009 | notebook | Depth-tuned neurons with significant multi-depth RFs (Fig 4E) |
+| `\statFigFourPopSessions` | `5` | 5 | notebook | Multi-depth sessions contributing neurons (Fig 4E) |
+| `\statFigFourPopMice` | `4` | 4 | notebook | Mice contributing neurons (Fig 4E) |
+| `\statFigFourRFDistNeurons` | `16,945` | 16945 | notebook | Depth-tuned neurons with significant RFs in pairwise distance analysis (Fig 4I-K) |
+| `\statFigFourRFDistSessions` | `84` | 84 | notebook | Sessions in pairwise distance analysis (Fig 4I-K) |
+| `\statFigFourRFDistMice` | `7` | 7 | notebook | Mice in pairwise distance analysis (Fig 4I-K) |
+| `\statFigFourRFDistPairs` | `6,536,044` | 6536044 | notebook | Neuron pairs more than 10 um apart, within the binned range (Fig 4I-K) |
 
 ## Supplementary Figures & Methods: Controls & Experimental Specs
 
@@ -172,21 +186,40 @@ Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-0
 | `\statSuppSimulSessions` | `4` | 4 | notebook | Sessions included in simulation control (Fig S7) |
 | `\statSuppSimulMice` | `4` | 4 | notebook | Mice included in simulation control (Fig S7) |
 
-Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-09-20T12:44:28)
+Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generated 2026-10-07T17:10:52)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
-| `\statSuppNineRFNeuronsTotal` | `14,173` | 14173 | notebook | Total depth-selective neurons with significant receptive fields |
+| `\statSuppEightSigRFSessionsSingle` | `84` | 84 | notebook | Number of single-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFMedianSingle` | `46.4\%` | 0.464367816091954 | notebook | Median proportion of depth-tuned neurons with significant RFs across single-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFSessionsMulti` | `5` | 5 | notebook | Number of multi-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFMedianMulti` | `44.9\%` | 0.4492307692307692 | notebook | Median proportion of depth-tuned neurons with significant RFs across multi-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFSessionsTotal` | `89` | 89 | notebook | Number of single- and multi-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFMedianTotal` | `46.2\%` | 0.46195652173913043 | notebook | Median proportion of depth-tuned neurons with significant RFs across single- and multi-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFMiceTotal` | `11` | 11 | notebook | Number of mice, single- and multi-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFNeuronsTotal` | `28,966` | 28966 | notebook | Depth-tuned neurons, single- and multi-depth sessions (Fig S8E) |
+| `\statSuppEightSigRFSigNeuronsTotal` | `17,954` | 17954 | notebook | Depth-tuned neurons with significant RFs, single- and multi-depth sessions (Fig S8E) |
+| `\statSuppEightPeakDepthNeurons` | `1,009` | 1009 | notebook | Depth-tuned neurons with significant multi-depth RFs in the peak depth comparison (Fig S8F) |
+| `\statSuppEightPeakDepthR` | `$r = 0.561$` | 0.5606615682902318 | notebook | Spearman correlation of multi- vs single-depth RF peak depth (Fig S8F) |
+| `\statSuppEightPeakDepthPval` | `$p = 1.35 \times 10^{-84}$` | 1.3521543842892003e-84 | notebook | p-value of the Spearman correlation of multi- vs single-depth RF peak depth (Fig S8F) |
+| `\statSuppEightPeakDepthMedianRatio` | `0.939` | 0.9392100406025342 | notebook | Median ratio of multi- to single-depth RF peak depth (Fig S8F) |
+| `\statSuppEightPeakDepthRatioIQR` | `0.669--1.506` | [0.6687090402716057, 1.5061576016632765] | notebook | Interquartile range of the multi- to single-depth RF peak depth ratio (Fig S8F) |
+
+Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-10-06T18:20:48)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statSuppNineRFNeuronsTotal` | `16,945` | 16945 | notebook | Total depth-selective neurons with significant receptive fields |
 | `\statSuppNineRFSessionsTotal` | `84` | 84 | notebook | Total sessions contributing to RF mapping |
-| `\statSuppNineNearUncorrected` | `3,078` | 3078 | notebook | Neurons preferring near depths (<20 cm) uncorrected |
-| `\statSuppNineMidUncorrected` | `6,744` | 6744 | notebook | Neurons preferring intermediate depths (20-100 cm) uncorrected |
-| `\statSuppNineFarUncorrected` | `4,351` | 4351 | notebook | Neurons preferring far depths (>100 cm) uncorrected |
-| `\statSuppNineNearCorrected` | `2,476` | 2476 | notebook | Neurons preferring near depths (<20 cm) corrected for viewing angle |
-| `\statSuppNineMidCorrected` | `5,832` | 5832 | notebook | Neurons preferring intermediate depths (20-100 cm) corrected for viewing angle |
-| `\statSuppNineFarCorrected` | `5,865` | 5865 | notebook | Neurons preferring far depths (>100 cm) corrected for viewing angle |
-| `\statSuppNineGradientPvalCorrected` | `$p = 7.40e-09$` | 7.403750800566618e-09 | notebook | Significance of 3D RF depth gradient across visual space (corrected) |
-| `\statSuppNineGradientPvalUncorrected` | `$p = 0.0175$` | 0.01752264341898344 | notebook | Significance of depth gradient across visual space (uncorrected) |
-| `\statSuppNineAPCorrR` | `$r = -0.166$` | -0.16571200832758723 | notebook | Correlation between preferred depth and anterior-posterior location in V1 |
+| `\statSuppNineNearUncorrected` | `4,125` | 4125 | notebook | Neurons preferring near depths (<20 cm) uncorrected |
+| `\statSuppNineMidUncorrected` | `8,088` | 8088 | notebook | Neurons preferring intermediate depths (20-100 cm) uncorrected |
+| `\statSuppNineFarUncorrected` | `4,732` | 4732 | notebook | Neurons preferring far depths (>100 cm) uncorrected |
+| `\statSuppNineNearCorrected` | `3,313` | 3313 | notebook | Neurons preferring near depths (<20 cm) corrected for viewing angle |
+| `\statSuppNineMidCorrected` | `7,275` | 7275 | notebook | Neurons preferring intermediate depths (20-100 cm) corrected for viewing angle |
+| `\statSuppNineFarCorrected` | `6,357` | 6357 | notebook | Neurons preferring far depths (>100 cm) corrected for viewing angle |
+| `\statSuppNineGradientPvalCorrected` | `$p = 3.95e-09$` | 3.953748301453364e-09 | notebook | Significance of 3D RF depth gradient across visual space (corrected) |
+| `\statSuppNineGradientPvalUncorrected` | `$p = 0.0393$` | 0.039301936675758216 | notebook | Significance of depth gradient across visual space (uncorrected) |
+| `\statSuppNineAPCorrR` | `$r = -0.140$` | -0.1398648425132868 | notebook | Correlation between preferred depth and anterior-posterior location in V1 |
 
 ---
 

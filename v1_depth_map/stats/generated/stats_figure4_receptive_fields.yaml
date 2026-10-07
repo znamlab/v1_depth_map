@@ -1,0 +1,43 @@
+_meta:
+  notebook: figure4_receptive_fields
+  figure: fig4
+  generated_at: '2026-10-06T14:23:56'
+  source: notebook
+metrics:
+  pop_n_neurons:
+    raw: 1009
+    formatted: 1,009
+    latex_macro: statFigFourPopNeurons
+    description: Depth-tuned neurons with significant multi-depth RFs (Fig 4E)
+  pop_n_sessions:
+    raw: 5
+    formatted: '5'
+    latex_macro: statFigFourPopSessions
+    description: Multi-depth sessions contributing neurons (Fig 4E)
+  pop_n_mice:
+    raw: 4
+    formatted: '4'
+    latex_macro: statFigFourPopMice
+    description: Mice contributing neurons (Fig 4E)
+  rf_dist_n_neurons:
+    raw: 16945
+    formatted: 16,945
+    latex_macro: statFigFourRFDistNeurons
+    description: Depth-tuned neurons with significant RFs in pairwise distance analysis
+      (Fig 4I-K)
+  rf_dist_n_sessions:
+    raw: 84
+    formatted: '84'
+    latex_macro: statFigFourRFDistSessions
+    description: Sessions in pairwise distance analysis (Fig 4I-K)
+  rf_dist_n_mice:
+    raw: 7
+    formatted: '7'
+    latex_macro: statFigFourRFDistMice
+    description: Mice in pairwise distance analysis (Fig 4I-K)
+  rf_dist_n_pairs:
+    raw: 6536044
+    formatted: 6,536,044
+    latex_macro: statFigFourRFDistPairs
+    description: Neuron pairs more than 10 um apart, within the binned range (Fig
+      4I-K)

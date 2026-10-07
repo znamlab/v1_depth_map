@@ -1,0 +1,86 @@
+_meta:
+  notebook: figsupp8_multidepth_receptive_fields
+  figure: supp
+  generated_at: '2026-10-07T17:10:52'
+  source: notebook
+metrics:
+  sig_rf_n_sessions_single:
+    raw: 84
+    formatted: '84'
+    latex_macro: statSuppEightSigRFSessionsSingle
+    description: Number of single-depth sessions (Fig S8E)
+  sig_rf_median_single:
+    raw: 0.464367816091954
+    formatted: 46.4\%
+    latex_macro: statSuppEightSigRFMedianSingle
+    description: Median proportion of depth-tuned neurons with significant RFs across
+      single-depth sessions (Fig S8E)
+  sig_rf_n_sessions_multi:
+    raw: 5
+    formatted: '5'
+    latex_macro: statSuppEightSigRFSessionsMulti
+    description: Number of multi-depth sessions (Fig S8E)
+  sig_rf_median_multi:
+    raw: 0.4492307692307692
+    formatted: 44.9\%
+    latex_macro: statSuppEightSigRFMedianMulti
+    description: Median proportion of depth-tuned neurons with significant RFs across
+      multi-depth sessions (Fig S8E)
+  sig_rf_n_sessions_total:
+    raw: 89
+    formatted: '89'
+    latex_macro: statSuppEightSigRFSessionsTotal
+    description: Number of single- and multi-depth sessions (Fig S8E)
+  sig_rf_median_total:
+    raw: 0.46195652173913043
+    formatted: 46.2\%
+    latex_macro: statSuppEightSigRFMedianTotal
+    description: Median proportion of depth-tuned neurons with significant RFs across
+      single- and multi-depth sessions (Fig S8E)
+  sig_rf_n_mice_total:
+    raw: 11
+    formatted: '11'
+    latex_macro: statSuppEightSigRFMiceTotal
+    description: Number of mice, single- and multi-depth sessions (Fig S8E)
+  sig_rf_n_neurons_total:
+    raw: 28966
+    formatted: 28,966
+    latex_macro: statSuppEightSigRFNeuronsTotal
+    description: Depth-tuned neurons, single- and multi-depth sessions (Fig S8E)
+  sig_rf_n_sig_neurons_total:
+    raw: 17954
+    formatted: 17,954
+    latex_macro: statSuppEightSigRFSigNeuronsTotal
+    description: Depth-tuned neurons with significant RFs, single- and multi-depth
+      sessions (Fig S8E)
+  peak_depth_n_neurons:
+    raw: 1009
+    formatted: 1,009
+    latex_macro: statSuppEightPeakDepthNeurons
+    description: Depth-tuned neurons with significant multi-depth RFs in the peak
+      depth comparison (Fig S8F)
+  peak_depth_spearman_r:
+    raw: 0.5606615682902318
+    formatted: $r = 0.561$
+    latex_macro: statSuppEightPeakDepthR
+    description: Spearman correlation of multi- vs single-depth RF peak depth (Fig
+      S8F)
+  peak_depth_spearman_p:
+    raw: 1.3521543842892003e-84
+    formatted: $p = 1.35 \times 10^{-84}$
+    latex_macro: statSuppEightPeakDepthPval
+    description: p-value of the Spearman correlation of multi- vs single-depth RF
+      peak depth (Fig S8F)
+  peak_depth_median_ratio:
+    raw: 0.9392100406025342
+    formatted: '0.939'
+    latex_macro: statSuppEightPeakDepthMedianRatio
+    description: Median ratio of multi- to single-depth RF peak depth (Fig S8F)
+  peak_depth_ratio_iqr:
+    raw:
+    - 0.6687090402716057
+    - 1.5061576016632765
+    formatted: 0.669--1.506
+    latex_macro: statSuppEightPeakDepthRatioIQR
+    description: Interquartile range of the multi- to single-depth RF peak depth ratio
+      (Fig S8F)
