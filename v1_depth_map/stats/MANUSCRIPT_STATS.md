@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-10-07 17:11:39.*
+*Compiled from figure notebook outputs at 2026-10-07 17:54:09.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 136 values were written by a notebook run.
+> ✅ All 142 values were written by a notebook run.
 
 ---
 
@@ -186,10 +186,16 @@ Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-0
 | `\statSuppSimulSessions` | `4` | 4 | notebook | Sessions included in simulation control (Fig S7) |
 | `\statSuppSimulMice` | `4` | 4 | notebook | Mice included in simulation control (Fig S7) |
 
-Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generated 2026-10-07T17:10:52)
+Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generated 2026-10-07T17:45:53)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
+| `\statSuppEightRFCorrNeurons` | `1,009` | 1009 | notebook | Depth-tuned neurons with significant multi-depth RFs in the RF correlation comparison (Fig S8D) |
+| `\statSuppEightRFCorrSessions` | `5` | 5 | notebook | Number of multi-depth sessions in the RF correlation comparison (Fig S8D) |
+| `\statSuppEightRFCorrMice` | `4` | 4 | notebook | Number of mice in the RF correlation comparison (Fig S8D) |
+| `\statSuppEightRFCorrMedianContra` | `$r = 0.334$` | 0.33399676894859875 | notebook | Median Pearson r between single- and multi-depth contralateral RF volumes (Fig S8D) |
+| `\statSuppEightRFCorrMedianIpsi` | `$r = 0.031$` | 0.030534735341280744 | notebook | Median Pearson r between single- and multi-depth ipsilateral RF volumes (Fig S8D) |
+| `\statSuppEightRFCorrPval` | `$p = 2.80 \times 10^{-182}$` | 2.7965434629083562e-182 | notebook | Mann-Whitney U test p-value, contralateral vs ipsilateral RF correlations (Fig S8D) |
 | `\statSuppEightSigRFSessionsSingle` | `84` | 84 | notebook | Number of single-depth sessions (Fig S8E) |
 | `\statSuppEightSigRFMedianSingle` | `46.4\%` | 0.464367816091954 | notebook | Median proportion of depth-tuned neurons with significant RFs across single-depth sessions (Fig S8E) |
 | `\statSuppEightSigRFSessionsMulti` | `5` | 5 | notebook | Number of multi-depth sessions (Fig S8E) |
