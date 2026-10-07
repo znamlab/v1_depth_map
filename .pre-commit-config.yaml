@@ -21,7 +21,7 @@ repos:
       rev: 0.6.1
       hooks:
           - id: nbstripout
-            args: [--extra-keys=metadata.language_info.version metadata.kernelspec.name metadata.kernelspec.display_name]
+            args: [--extra-keys=metadata.language_info.version metadata.kernelspec]
     - repo: https://github.com/astral-sh/ruff-pre-commit
       rev: v0.5.1
       hooks:
