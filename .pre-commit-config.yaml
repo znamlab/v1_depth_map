@@ -33,5 +33,7 @@ repos:
       rev: v2.2.6
       hooks:
       - id: codespell
+        # notebook committed with its figures (base64 images)
+        exclude: 'revisions/rf_spike_tau/tau_estimation\.ipynb'
         additional_dependencies:
         - tomli
