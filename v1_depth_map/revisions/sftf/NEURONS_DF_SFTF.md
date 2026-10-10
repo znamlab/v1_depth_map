@@ -11,7 +11,8 @@ S20230924).
 
 | file | date, author | notes |
 |---|---|---|
-| `<session>/neurons_df_sftf.pickle` (all 6 sessions) | 2026-02-24, hey2 | current version; ast-neuropil-corrected dF/F (see Known issues) |
+| `<session>/neurons_df_sftf.pickle` + `.json` (all 6 sessions) | 2026-10-08, blota (job 60117930) | current version: `ast_neuropil=False` `dff.npy`, 5-fold leave-one-recording-out cross-validation (`sftf_test_*` columns) |
+| `/camp/home/blota/code/sftf_crossval_run/backups/<session>/neurons_df_sftf.pickle` | 2026-02-24, hey2 | previous version; ast-neuropil-corrected dF/F (see Known issues) |
 | `PZAH10.2f/S20230817/results_temp/neurons_df_sftf.pickle` | 2023-09-11 | early version |
 
 The thesis summary figure (`yiran-phd-thesis/yh_thesis/depth/SFTF.ipynb`, February 2025) read the
@@ -55,7 +56,8 @@ version that existed then, which has since been overwritten.
 
 ## Contents
 
-One row per ROI, in suite2p order (same rows as `neurons_df.pickle`; there is no `roi` column), 11 columns:
+One row per ROI, in suite2p order (same rows as `neurons_df.pickle`; there is no `roi` column), 11 columns
+(15 with cross-validation):
 
 | column | meaning | units |
 |---|---|---|
@@ -69,6 +71,9 @@ One row per ROI, in suite2p order (same rows as `neurons_df.pickle`; there is no
 | `log_kappa` | log of the von Mises concentration (tuning width) | |
 | `dsi` | direction selectivity: 0 = same response to both directions of an orientation, 1 = no response to the opposite direction | [0, 1] |
 | `rsq` | R² of the best fit, **in-sample** on single trials | |
+| `sftf_test_rsq` | R² of the held-out predictions, concatenated across folds (one fold per recording) | |
+| `sftf_test_spearmanr_rval`, `sftf_test_spearmanr_pval` | Spearman correlation (two-sided p) between held-out responses and predictions | |
+| `sftf_test_popts` | fit parameters of each fold (n_folds × 10) | |
 
 Derived quantities used in the figures: preferred speed = exp(`tf0` − `sf0`) deg/s; preferred
 orientation = `alpha0` mod π.

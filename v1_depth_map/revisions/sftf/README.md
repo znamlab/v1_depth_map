@@ -91,6 +91,79 @@ Model-free check:
    the SF/TF criterion is in-sample; the thesis numbers (Venn 9 / 16 / 42 / 33%) came from older traces
    (ast-neuropil dF/F) and an older fit file, so they are not expected to match.
 
+## The thesis figure (`fig_sftf_summary.pdf`): criteria verified
+
+Applying the criteria of `yiran-phd-thesis/yh_thesis/depth/SFTF.ipynb` to the tables it saved
+(`/nemo/lab/znamenskiyp/home/shared/presentations/yiran_thesis/ver{1,2}/rsof/sftf/neurons_df_all.pickle` and
+`neurons_df_sftf_all.pickle`, November 2024 and January 2025, identical results) reproduces the PDF exactly
+(checked 2026-10-09, NEMO job 60363540):
+
+| panel | cells | criterion | n |
+|---|---|---|---|
+| A | all neurons | `iscell` | 3012 |
+| A | depth selective | `iscell` & `depth_tuning_test_spearmanr_rval_closedloop` > 0.1 & `..._pval_closedloop` (two-sided) < 0.05 | 758 |
+| A | SF/TF tuned | `iscell` & in-sample `rsq` > 0.05 | 1727 |
+| A | result | depth only 9%, both 16%, SF/TF only 42%, neither 33% | |
+| B, C | SF/TF tuned & RS/OF tuned (`rsof_test_rsq_closedloop_g2d` > 0.02) | not restricted to depth-selective cells | 43 (Spearman ρ = 0.38 with OF, −0.32 with depth, across cells) |
+| D, E | SF/TF tuned & depth selective | | 477 |
+| F | D, E cells with `dsi` > 0.6 | | 193 |
+
+The thesis grating fits (`neurons_df_sftf_all.pickle`) are value-for-value identical to the 2026-02-24
+`neurons_df_sftf.pickle` files (now in the backups), i.e. fits on ast-neuropil-corrected dF/F.
+
+## Depth-selective counts: criterion vs data (checked 2026-10-09)
+
+Same 3012 `iscell` neurons, depth columns from the thesis-era `neurons_df` (in the thesis `neurons_df_all`,
+ver2, January 2025) or the current `neurons_df.pickle` (2026-02-13):
+
+| | old rule (r > 0.1 & two-sided p < 0.05) | new rule (one-sided p < 0.05) |
+|---|---|---|
+| thesis-era `neurons_df` | 758 | 906 |
+| current `neurons_df` | 549 | 660 |
+
+The new rule adds cells on both (as it must: the old rule implies the new one). The drop comes from the
+data: held-out Spearman r is lower in the current `neurons_df` (median 0.015 vs 0.055, 63% of cells lower,
+r between versions 0.77), in every session (fraction depth tuned with the new rule: 0.13→0.08, 0.34→0.18,
+0.27→0.24, 0.23→0.17, 0.44→0.31, 0.39→0.33). With the new rule, 538 cells are depth tuned in both, 368
+only in the thesis-era data and 122 only in the current data. The thesis-era fits predate the
+`ast_neuropil=False` traces (2025-09-15), so the difference is ASt vs non-ASt dF/F and/or pipeline changes
+since 2024; separating the two needs a rerun of the current depth fit on the ASt traces.
+
+## Trace variants (2026-10-10)
+
+A quick check, removed afterwards: the figure was recomputed from two other traces, with grating fit and
+depth tuning refitted by the current pipeline functions. RS/OF (B, C selection) and `iscell` were kept from
+the main `neurons_df`. The script (`precompute_data/sftf_trace_variants.py`) is in
+v1_depth_map `9e642cb` and was removed in the next commit, with the notebook switch and the outputs. Its `dff`
+variant reproduced the production fits exactly.
+
+| | dF/F, `ast_neuropil=False` (main) | ASt dF/F | spikes (`ast_neuropil=False`) |
+|---|---|---|---|
+| depth selective | 660 (22%) | 888 (29%) | 470 (16%) |
+| SF/TF tuned (cross-validated) | 1455 (48%) | 2127 (71%) | 1033 (34%) |
+| both (expected if independent) | 13% (11%) | 23% (21%) | 6% (5%) |
+| B: grating speed vs OF (n) | ρ = 0.26, p = 0.39 (35) | ρ = 0.41, p = 0.11 (51) | ρ = 0.12, p = 0.55 (26) |
+| C: grating speed vs depth | ρ = −0.19, p = 0.45 | ρ = −0.32, p = 0.14 | ρ = 0.04, p = 0.95 |
+| responsive, depth / other | 60% / 50%, p < 0.0001 | 75% / 69%, p = 0.003 | 54% / 46%, p = 0.001 |
+| orientation selective, depth / other | 25% / 26%, p = 0.76 | 29% / 30%, p = 0.56 | 23% / 26%, p = 0.18 |
+| direction selective, depth / other | 14% / 12%, p = 0.14 | 15% / 13%, p = 0.11 | 14% / 11%, p = 0.09 |
+| preferred orientation, depth vs other (χ²) | p = 0.87 | p = 0.019 | p = 0.47 |
+| preferred direction (χ²) | p = 0.32 | p = 0.22 | p = 0.36 |
+| gOSI (Mann-Whitney) | p = 0.13 | p = 0.019 | p = 0.009 |
+| gDSI (Mann-Whitney) | p < 0.0001 | p < 0.0001 | p = 0.74 |
+| preferred depth across orientation bins (KW) | p = 0.66 (167) | p = 0.92 (257) | p = 0.22 (108) |
+
+- The conclusion holds for all three: depth and grating tuning overlap about as expected if independent
+  (slightly more), orientation selectivity does not differ between depth-selective and other cells, and
+  preferred orientation is unrelated to preferred depth. No B or C correlation is significant.
+- Small differences that are not consistent across traces: preferred orientation distribution
+  (p = 0.019 with ASt only), gOSI (p = 0.019 ASt, 0.009 spikes, 0.13 main), gDSI (main and ASt only).
+- **The depth-selective count depends on the traces, not on pipeline changes**: the current pipeline on
+  ASt traces gives 888 depth-selective cells, close to the thesis-era 906 (see the section above), against
+  660 on `ast_neuropil=False` dF/F.
+- ASt dF/F has a few large negative trial responses (down to −70 in PZAH10.2f_S20230912), presumably
+  neuropil over-subtraction.
+
 ## Open points
 
 - `P_RESPONSIVE` (0.01) differs from `P_SELECTIVE` (0.05) in the model-free section without a principled
