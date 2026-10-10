@@ -14,11 +14,15 @@ cross-validated leaving one recording out (held-out R2 and Spearman of the conca
 The running-speed models start from the base fit with zero slopes, plus random starts.
 
 Only `iscell` ROIs whose production `neurons_df_sftf` fit is cross-validated SF/TF tuned (one-sided
-Spearman p < 0.05) are fitted. Writes OUT_DIR/<session>_sftf_running_models.pickle (one row per ROI);
-production files are only read.
+Spearman p < 0.05) are fitted. Production files are only read. Three steps, so that ROIs can be fitted
+as separate jobs:
+
+    prepare SESSION      sync once, save running frames and dF/F to OUT_DIR/frames/<session>.npz
+    fit SESSION ROI      fit one ROI -> OUT_DIR/rois/<session>_<roi>.pickle (skipped if it exists)
+    merge SESSION        -> OUT_DIR/<session>_sftf_running_models.pickle (one row per ROI) + .json
 
 Usage:
-    python sftf_running_models.py SESSION --out-dir DIR [--n-jobs 1] [--rois 1,2,3]
+    python sftf_running_models.py {prepare,fit,merge} SESSION [ROI] --out-dir DIR [--n-jobs 1]
 """
 
 import argparse
@@ -196,17 +200,29 @@ def fit_models(X, y):
     return out
 
 
-def fit_roi(X, y, recording):
-    """Full-data and leave-one-recording-out fits of the four models for one ROI."""
-    row = {}
-    full = fit_models(X, y)
+def fit_roi(X, y, recording, n_jobs=1):
+    """Full-data and leave-one-recording-out fits of the four models for one ROI.
+
+    The full-data fit and the folds are independent and run in parallel with `n_jobs`.
+    """
+    recs = np.unique(recording)
+    subsets = [np.ones(len(y), bool)] + [recording != rec for rec in recs]
+    if n_jobs == 1:
+        fits = [fit_models(X[:, s], y[s]) for s in subsets]
+    else:
+        from joblib import Parallel, delayed
+
+        fits = Parallel(n_jobs=n_jobs)(
+            delayed(fit_models)(X[:, s], y[s]) for s in subsets
+        )
+    full, folds = fits[0], fits[1:]
     preds = {m: np.full(len(y), np.nan) for m in MODELS}
-    for rec in np.unique(recording):
-        train, test = recording != rec, recording == rec
-        fold = fit_models(X[:, train], y[train])
+    for rec, fold in zip(recs, folds):
+        test = recording == rec
         for m, free in MODELS.items():
             if np.all(np.isfinite(fold[m][0])):
                 preds[m][test] = rs_tuning(X[:, test], *fold[m][0], free=free)
+    row = {}
     for m, free in MODELS.items():
         names = list(GratingParams._fields) + list(free)
         row.update({f"{m}_{n}": v for n, v in zip(names, full[m][0])})
@@ -239,35 +255,58 @@ def sftf_tuned_rois(flm, session):
     return np.flatnonzero(iscell & (np.asarray(pval) < 0.05))
 
 
-def main(session, out_dir, n_jobs, rois=None):
-    flm = flz.get_flexilims_session(PROJECT)
-    if rois is None:
-        rois = sftf_tuned_rois(flm, session)
-    X, dff, recording, log_rs_median = session_frames(flm, session)
-    print(f"{session}: {X.shape[1]} running frames, {len(rois)} ROIs to fit")
-    start = time.time()
-    if n_jobs == 1:
-        rows = [fit_roi(X, dff[:, r], recording) for r in rois]
-    else:
-        from joblib import Parallel, delayed
+def frames_path(out_dir, session):
+    return Path(out_dir) / "frames" / f"{session}.npz"
 
-        rows = Parallel(n_jobs=n_jobs, verbose=5)(
-            delayed(fit_roi)(X, dff[:, r], recording) for r in rois
-        )
-    print(
-        f"fitted in {time.time() - start:.0f} s ({(time.time() - start) / len(rois):.1f} s/ROI)"
+
+def prepare(session, out_dir):
+    """Sync the session once and save the running frames and SF/TF-tuned ROIs' dF/F."""
+    flm = flz.get_flexilims_session(PROJECT)
+    rois = sftf_tuned_rois(flm, session)
+    X, dff, recording, log_rs_median = session_frames(flm, session)
+    path = frames_path(out_dir, session)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        path,
+        X=X,
+        dff=dff[:, rois],
+        rois=rois,
+        recording=recording,
+        log_rs_median=log_rs_median,
     )
-    out = pd.DataFrame(rows)
-    out.insert(0, "roi", rois)
-    out.insert(0, "session", session)
+    print(f"{session}: {X.shape[1]} running frames, {len(rois)} ROIs -> {path}")
+
+
+def fit(session, roi, out_dir, n_jobs):
+    """Fit one ROI from the prepared frames; skipped if its result exists."""
+    target = Path(out_dir) / "rois" / f"{session}_{roi}.pickle"
+    if target.exists():
+        print(f"{target} exists, skipping")
+        return
+    d = np.load(frames_path(out_dir, session))
+    (col,) = np.flatnonzero(d["rois"] == roi)
+    start = time.time()
+    row = fit_roi(d["X"], d["dff"][:, col], d["recording"], n_jobs=n_jobs)
+    row = dict(session=session, roi=roi, **row)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    pd.DataFrame([row]).to_pickle(target)
+    print(f"{session} ROI {roi} fitted in {time.time() - start:.0f} s -> {target}")
+
+
+def merge(session, out_dir):
+    """Concatenate the ROI results of a session; fails if any ROI is missing."""
     out_dir = Path(out_dir)
-    out_dir.mkdir(parents=True, exist_ok=True)
+    d = np.load(frames_path(out_dir, session))
+    paths = [out_dir / "rois" / f"{session}_{roi}.pickle" for roi in d["rois"]]
+    missing = [p.name for p in paths if not p.exists()]
+    assert not missing, f"{len(missing)} ROIs missing, e.g. {missing[:5]}"
+    out = pd.concat([pd.read_pickle(p) for p in paths], ignore_index=True)
     out.to_pickle(out_dir / f"{session}_sftf_running_models.pickle")
     (out_dir / f"{session}_sftf_running_models.json").write_text(
         json.dumps(
             dict(
-                n_frames=int(X.shape[1]),
-                log_rs_median=float(log_rs_median),
+                n_frames=int(d["X"].shape[1]),
+                log_rs_median=float(d["log_rs_median"]),
                 rs_thr=RS_THR,
                 lag=LAG,
                 filter_traces=FILTER_TRACES,
@@ -278,19 +317,22 @@ def main(session, out_dir, n_jobs, rois=None):
             indent=1,
         )
     )
-    print(f"Saved {out_dir / f'{session}_sftf_running_models.pickle'}")
+    print(
+        f"Saved {len(out)} ROIs to {out_dir / f'{session}_sftf_running_models.pickle'}"
+    )
 
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    p.add_argument("command", choices=["prepare", "fit", "merge"])
     p.add_argument("session")
+    p.add_argument("roi", nargs="?", type=int, help="ROI to fit (fit only)")
     p.add_argument("--out-dir", required=True)
     p.add_argument("--n-jobs", type=int, default=1)
-    p.add_argument(
-        "--rois",
-        default=None,
-        help="comma-separated ROIs (default: SF/TF-tuned iscell ROIs)",
-    )
     a = p.parse_args()
-    rois = None if a.rois is None else [int(r) for r in a.rois.split(",")]
-    main(a.session, a.out_dir, a.n_jobs, rois)
+    if a.command == "prepare":
+        prepare(a.session, a.out_dir)
+    elif a.command == "fit":
+        fit(a.session, a.roi, a.out_dir, a.n_jobs)
+    else:
+        merge(a.session, a.out_dir)
