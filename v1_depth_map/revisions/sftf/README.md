@@ -45,6 +45,13 @@ Outputs in `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_gratings/` (
     sessions (20000 resamples).
   - D, E: fitted direction selectivity (`dsi`) and preferred orientation, SF/TF-tuned and depth-selective
     cells. F: preferred direction of those with `dsi` > 0.6.
+- Example neurons (`fig_sftf_examples.pdf`, `figure_utils/sftf_examples.py`, layout of the thesis example
+  figure): PZAH10.2f_S20230914 ROI 447 (depth selective, preferred depth 2.7 m, SF/TF tuned, dsi 0.90) and
+  PZAH10.2f_S20230817 ROI 544 (thesis example; SF/TF tuned, not depth selective: depth r = 0.06). The thesis
+  depth-selective example, ROI 229 of PZAH10.2f_S20230817, is not `iscell`: its 82-pixel mask touches the edge
+  of the registered field of view. The `iscell` labels of these sessions were rewritten on 5-9 January 2024,
+  presumably by manual curation: they do not follow the suite2p classifier probability. They are the same
+  labels as in the thesis.
 - Model-free check (later sections of the notebook): vector-sum gOSI / gDSI and preferred orientation /
   direction at each cell's preferred SF/TF; responsive = one-way ANOVA across the 288 conditions
   (p < 0.01); orientation / direction selective = responsive and gOSI / gDSI shuffle p < 0.05.
