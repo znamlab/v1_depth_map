@@ -171,6 +171,107 @@ variant reproduced the production fits exactly.
 - ASt dF/F has a few large negative trial responses (down to −70 in PZAH10.2f_S20230912), presumably
   neuropil over-subtraction.
 
+## RF shape vs grating tuning (2026-10-10)
+
+Does the sphere RF shape predict grating tuning? (A) does a red centre with blue flanks on either side
+prefer gratings with bars parallel to the flanks; (B) are asymmetric RFs more direction selective?
+Notebook `figures/fig_reviewer_rf_sftf.ipynb`, helpers `figure_utils/rf_shape.py`, outputs in
+`<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_rf_sftf/`. Exploratory, no stats exported.
+
+- RF fits checked first: closed-loop dF/F and spike RFs (`neurons_df_spks.pickle`, made 5-6 Oct after the τ
+  re-deconvolution) are present and filled for every ROI of the 6 sessions.
+- Spike RFs, fold mean at the RF peak depth (16 × 24 map, 5° pixels). Metrics from circular moments of the
+  negative surround in a 20° disk around the peak, in z of the ipsilateral RF: flank axis, anisotropy,
+  asymmetry (0 symmetric, 1 single flank) and its direction, flank depth per side; centre elongation;
+  2D Gabor fit.
+- Grating convention, verified in the stimulus workflow (`vis-stim-2d/run_SFTF.bonsai`, same in the
+  2023-09-11 version `fa05b40` used for these sessions) and BonVision: `Angle` is the wave vector (bars at
+  `Angle` + 90°, 0 = vertical bars), the phase grows with time so bars drift towards `Angle` + 180°. The
+  grating is drawn in an orthographic view (x 0-120°, y ±50°) wrapped on the sphere (`SphereMapping`):
+  x = azimuth from the front increasing to the right, y = elevation up, the same axes as the RF
+  reconstruction. So grating and RF angles share one frame ("texture y = elevation" below is the correct
+  convention; the mirrored one is a control). E.g. `Angle` 0 drifts towards lower azimuth (back to front).
+  This matches the thesis (methods 2.4.10: "0° represented vertical gratings moving forward"; Fig. 5.10F
+  caption: 0/180° vertical drifting forward/backward, 90/270° horizontal drifting downward/upward). The
+  thesis and `cottage_analysis.plotting.grating_plots` polar plots are labelled in `Angle` units drawn
+  counterclockwise from the right, i.e. they draw the wave vector: in the RF-map frame (azimuth to the right,
+  elevation up) the drift points the opposite way (90° drawn up = drifting down). Panels E-F of
+  `fig_reviewer_gratings` follow the same labels and need the thesis caption wording.
+- Cells: 679 / 3012 have a significant RF, 396 with the peak ≥ 4 pixels from the map edges (needed so the
+  surround is not truncated). Of these, 214 flanked (deepest flank ≥ 2 z), 108 bilateral, 95
+  orientation-selective, 50 direction-selective, 186 SF/TF tuned. Bilateral and orientation selective: 23.
+
+| Test | n | Result |
+|---|---|---|
+| A1 flank axis vs preferred orientation (weighted mean cos 2Δ, within-session permutation) | 68 | 0.16, p = 0.11 (mirrored control: 0.11, p = 0.35) |
+| A2 centre long axis + 90° vs preferred orientation | 68 | 0.19, p = 0.06 / 0.17, p = 0.07 |
+| A3 Gabor orientation (R² ≥ 0.5) | 55 | p = 0.31 / 0.42 |
+| A4 flank axis vs fitted orientation, SF/TF-tuned | 131 | p = 0.13 / 0.05 |
+| A5 bilateral → horizontal bars | 23 vs 72 | 17% vs 28%, Fisher p = 0.41 |
+| A5 flanks above and below → vertical bars | 12 vs 83 | 58% vs 25%, Fisher p = 0.037 (one of six uncorrected A5 tests) |
+| B1 asymmetry vs fitted DSI (hierarchical bootstrap) | 103 | ρ = 0.09 [-0.34, 0.34], p = 0.68 |
+| B1 asymmetry vs gDSI, responsive | 119 | ρ = -0.01, p = 0.98 |
+| B2 asymmetry, direction selective vs not | 29 vs 90 | medians 0.36 vs 0.42, p = 0.26 |
+| B3 preferred motion vs asymmetry direction (asym ≥ 0.3, direction selective) | 17 | p = 0.36 / 0.52 |
+| B4 asymmetry direction vs local optic flow (V-test) | 145 | V = 0.03, p = 0.61 |
+| B4 asymmetry along azimuth vs RF azimuth | 145 | ρ = -0.53, p = 1e-11 |
+| B4 asymmetry along elevation vs RF elevation | 145 | ρ = -0.31, p = 0.0002 |
+
+Conclusions so far:
+1. **No reliable link between flank geometry and preferred orientation.** All alignment stats are positive
+   but none survives correction. The one nominal hit points the other way from the side-band hypothesis:
+   cells with flanks above and below the centre prefer *vertical* bars (7 of 12), which would fit end
+   inhibition, not horizontal-grating tuning. With 12 cells this is not evidence.
+2. **RF asymmetry does not predict direction selectivity** (B1-B3 null).
+3. **The asymmetry is largely set by RF position.** The deeper flank points towards the middle of the
+   mapped field (low azimuth for RFs at large azimuth, upwards for low RFs and downwards for high ones),
+   which suggests stimulus geometry (sphere density / size across the screen, or the ridge fit) rather than
+   a property of the cell. Any use of RF asymmetry needs to control for this.
+4. Limits: the RF maps are coarse (5° pixels resolve ≤ 0.1 cpd, and Laplacian smoothing favours low SF;
+   median Gabor SF ≈ 0.01 cpd, so most RFs are blobs); blue regions are suppression by spheres, which
+   need not be OFF subregions (sphere polarity not checked); the fold-split "reliability" in the notebook is not independent (fold
+   models share most of their training data).
+
+## Running-speed models: gain vs preference shift (10 chosen cells, 2026-10-10)
+
+To test whether running primarily **shifts** grating tuning (TF or SF preferences) or mainly modulates responses via multiplicative **gain** or additive **offset**, 9 candidate models were evaluated on 10 high-SNR cells across all 6 sessions and both mice (3 depth-tuned, 7 other, including thesis example PZAH10.2f_S20230817 ROI 544).
+Fits used nested warm starts and 5-fold leave-one-recording-out cross-validation (`precompute_data/sftf_running_model_selection.py`).
+
+| Session | ROI | Depth | base | gain | offset | gain_offset | tf | gain_offset_tf | gain_offset_sf | gain_offset_tf_sf | gain_offset_speed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PZAH10.2d_S20230920 | 220 | False | 0.6633 | 0.6836 | 0.6652 | 0.6836 | 0.6751 | 0.6829 | 0.6827 | 0.6825 | 0.6826 |
+| PZAH10.2d_S20230922 | 171 | False | 0.6618 | 0.6603 | 0.6617 | 0.6603 | 0.6632 | 0.6614 | 0.6597 | 0.6606 | 0.6596 |
+| PZAH10.2f_S20230817 | 62 | True | 0.5283 | 0.5276 | 0.5285 | 0.5277 | 0.5317 | 0.5306 | 0.5294 | 0.5303 | 0.5282 |
+| PZAH10.2f_S20230817 | 259 | True | 0.5113 | 0.5288 | 0.5142 | 0.5288 | 0.5239 | 0.5279 | 0.5287 | 0.5256 | 0.5285 |
+| PZAH10.2f_S20230817 | 214 | False | 0.4748 | 0.5072 | 0.4792 | 0.5072 | 0.5011 | 0.5141 | 0.5118 | 0.5158 | 0.5144 |
+| PZAH10.2f_S20230817 | 544 | False | 0.4858 | 0.5016 | 0.4881 | 0.5016 | 0.5006 | 0.5053 | 0.5075 | 0.5081 | 0.5098 |
+| PZAH10.2f_S20230912 | 391 | False | 0.5908 | 0.5759 | 0.5855 | 0.5754 | 0.5741 | 0.5701 | 0.5735 | 0.5674 | 0.5757 |
+| PZAH10.2f_S20230914 | 8 | True | 0.5532 | 0.5559 | 0.5538 | 0.5558 | 0.5549 | 0.5559 | 0.5551 | 0.5589 | 0.5532 |
+| PZAH10.2f_S20230924 | 206 | False | 0.5694 | 0.5773 | 0.5705 | 0.5773 | 0.5700 | 0.5771 | 0.5778 | 0.5774 | 0.5779 |
+| PZAH10.2f_S20230924 | 269 | False | 0.5659 | 0.5820 | 0.5667 | 0.5822 | 0.5715 | 0.5808 | 0.5810 | 0.5801 | 0.5807 |
+
+Held-out Test R² Gain over Base (× 1000):
+
+| Session | ROI | gain | offset | gain_offset | tf | gain_offset_tf | gain_offset_sf | gain_offset_tf_sf | gain_offset_speed |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| PZAH10.2d_S20230920 | 220 | +20.34 | +1.97 | +20.32 | +11.84 | +19.65 | +19.41 | +19.20 | +19.36 |
+| PZAH10.2d_S20230922 | 171 | -1.50 | -0.11 | -1.44 | +1.39 | -0.39 | -2.05 | -1.12 | -2.17 |
+| PZAH10.2f_S20230817 | 62 | -0.68 | +0.23 | -0.57 | +3.48 | +2.34 | +1.15 | +2.01 | -0.06 |
+| PZAH10.2f_S20230817 | 259 | +17.55 | +2.89 | +17.56 | +12.58 | +16.66 | +17.40 | +14.31 | +17.22 |
+| PZAH10.2f_S20230817 | 214 | +32.43 | +4.36 | +32.42 | +26.32 | +39.30 | +37.02 | +40.97 | +39.60 |
+| PZAH10.2f_S20230817 | 544 | +15.87 | +2.34 | +15.86 | +14.87 | +19.51 | +21.74 | +22.33 | +23.99 |
+| PZAH10.2f_S20230912 | 391 | -14.95 | -5.34 | -15.43 | -16.77 | -20.70 | -17.30 | -23.39 | -15.15 |
+| PZAH10.2f_S20230914 | 8 | +2.66 | +0.53 | +2.59 | +1.63 | +2.68 | +1.83 | +5.64 | -0.03 |
+| PZAH10.2f_S20230924 | 206 | +7.92 | +1.14 | +7.85 | +0.63 | +7.70 | +8.40 | +7.95 | +8.54 |
+| PZAH10.2f_S20230924 | 269 | +16.12 | +0.80 | +16.23 | +5.62 | +14.90 | +15.07 | +14.14 | +14.78 |
+
+Conclusions:
+1. **Multiplicative gain dominates**: In all cells where running modulates responses, `gain` alone produces large, positive held-out R² gains over `base` (median +16.1 × 10⁻³ in modulated cells). Additive offset (`offset`) contributes minimally (median +1.5 × 10⁻³; offset slope median $b = +0.002$).
+2. **Preference shift is largely an artifact confounded by gain**: The shift-only model (`tf`) showed apparent positive slopes (median $a_{\text{tf}} = +0.33$). However, once gain is allowed (`gain_offset_tf`), the fitted TF slope drops by more than half (median $a_{\text{tf}} = +0.17$), and held-out cross-validated R² fails to improve over `gain_offset` (median $\Delta R^2 = -0.6 \times 10⁻³$ due to overfitting to training noise).
+3. **Simulation sanity check**: Synthetic frames generated from `gain_offset` (ground truth $a_{\text{tf}} = 0$) recover $\hat{a}_{\text{tf}} \approx 0$ ($-0.007$ and $+0.002$), while synthetic frames with a true shift ($a_{\text{tf}} = 0.5$) recover $\hat{a}_{\text{tf}} = 0.497$ and $0.491$, confirming that gain and shift parameters are fully separable with this stimulus.
+4. **Robustness checks**: The conclusion holds across LAG 2, LAG 8, running speed smoothed over 0.5 s, and trial-level aggregated responses. In all variants, `gain_offset` reliably improves over `base` (median $+7.2$ to $+13.1 \times 10⁻³$), whereas adding `tf` shift on top of `gain_offset` yields negative median held-out gain ($-0.26$ to $-4.13 \times 10⁻³$).
+5. **Caveats**: Evaluated on 10 high-SNR cells to avoid the population noise floor; gratings were open-loop.
+
 ## Open points
 
 - `P_RESPONSIVE` (0.01) differs from `P_SELECTIVE` (0.05) in the model-free section without a principled
