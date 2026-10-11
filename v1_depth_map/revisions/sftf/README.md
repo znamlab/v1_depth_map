@@ -315,9 +315,87 @@ Hierarchical bootstrap across mice and sessions (1000 resamples):
 
 1. **Multiplicative gain is the principal running-related modulation**: `gain` is the most common winning modulated model across the population (22.1% all, 23.8% selected), outperforming both `tf` (14.4%) and `sf` (12.6%).
 2. **Co-fitting gain attenuates apparent TF preference shifts by 40%**: In the shift-only model `tf`, the population exhibits an apparent median shift $a_\text{tf} = +0.183$. Once multiplicative gain is co-fitted (`gain_tf`), the temporal frequency slope drops to $a_\text{tf} = +0.109$, confirming that a large fraction of apparent TF shifts in uncorrected models arises from running-dependent gain.
-3. **Residual TF shift remains positive and significant**: In `gain_tf`, a modest positive shift of $+0.109$ remains statistically significant ($p < 0.001$), corresponding to a preferred TF increase of $2^{0.109} \approx \times 1.08$ per doubling of running speed (versus $\times 1.13$ in the uncorrected `tf` model).
+3. **The residual TF shift is significant as a parameter but does not generalise overall**: in `gain_tf` the median $a_\text{tf} = +0.109$ ($p < 0.001$, ×1.08 per doubling of running speed, vs ×1.13 in `tf`), but adding the TF shift to `gain` lowers held-out $R^2$ in the selected cells (better in 40%, Wilcoxon $p = 0.0008$). The shift is concentrated in depth-selective cells (next section). *(Corrected 2026-10-11; first version said the residual shift was significant without the held-out comparison.)*
 4. **Spatial frequency is completely unaffected by running speed**: Median $a_\text{sf} \approx 0$ ($p = 0.24$), and adding SF shift degrades held-out $R^2$ ($p = 0.010$).
 
+### Depth-selective cells: gain in all cells, TF shift in depth-selective cells (2026-10-11)
+
+Hypothesis (from figure 3): every cell is gain modulated, and depth-selective cells also shift their preferred TF
+with running speed. `gain_tf` model (gain $g$ and TF shift $a_\text{tf}$ fitted together), selected cells (significant in
+at least one model): 165 depth-selective, 399 other. Depth > other tested with permutations of the depth labels within
+session, and within session × base-fit-quality tertile (one-sided, 10 000 permutations); within-group values against 0
+with Wilcoxon (cells) and hierarchical bootstrap (mice, sessions). Notebook section "Hypothesis: all cells are gain
+modulated, depth-selective cells also shift their TF preference", figure `depth_cells_tf_shift.pdf`.
+
+| Measure | Depth selective | Other | p (within session) | p (within session × fit quality) |
+|---|---|---|---|---|
+| gain $g$ (median) | 0.037 (Wilcoxon p = 0.013, bootstrap p = 0.13) | 0.082 (p < 1e-4, bootstrap p = 0.016) | 0.88 (depth not larger) | 0.71 |
+| TF shift $a_\text{tf}$ (median) | 0.161 (p = 0.0002, bootstrap 0.002) | 0.101 (p < 1e-4, bootstrap 0.002) | **0.015** | **0.010** |
+| held-out $R^2$, `gain_tf` − `gain` (median) | +0.00000 (Wilcoxon p = 0.29) | −0.00022 (p < 1e-4, worse) | **0.003** | **0.008** |
+| best model `tf` or `gain_tf` | 43% | 30% | **0.018** | **0.038** |
+
+Per session, the TF shift is larger in depth-selective cells in 4 of 6 sessions (S20230920 0.33 vs 0.15, S20230922
+0.16 vs 0.02, S20230817 0.19 vs 0.14, S20230914 0.25 vs 0.18; reversed slightly in S20230912 and S20230924).
+
+Interpretation:
+- **Gain is present in both groups** and not larger in depth-selective cells (median $g$ 0.04 vs 0.08; in
+  depth-selective cells it is significant across cells but not in the hierarchical bootstrap).
+- **The TF shift is larger in depth-selective cells**, and it is the part that generalises there: adding it to gain does
+  not hurt held-out prediction in depth-selective cells (median 0), while it overfits in the other cells (median
+  −2.2e-4). Controlling for fit quality does not change this (depth-selective cells are not simply better fitted).
+- So the data fit the hypothesis that all cells are gain modulated and depth-selective cells additionally shift their
+  TF preference with running speed, with two caveats: in depth-selective cells the shift still does not *improve*
+  held-out $R^2$ over gain alone (median gain ≈ 0), and $g$ and $a_\text{tf}$ trade off within a fit (both raise the
+  high-TF responses at fast running), so a smaller $g$ in depth-selective cells may partly be absorbed by $a_\text{tf}$.
+  2 mice, 6 sessions.
+
+
+### Model-free per-cell test: which cells shift their preferred TF beyond gain? (2026-10-11)
+
+Recommended test of the hypothesis (more direct than the model parameters above, where `g` and `a_tf` trade off).
+`precompute_data/sftf_tf_shift.py`, results `running_models/tf_shift.pickle` (+ `tf_shift_sham.pickle`), notebook
+section "Which cells shift their preferred TF beyond gain?", figures `tf_shift_enrichment.pdf`, `tf_shift_examples.pdf`.
+
+- Per cell: running frames split at the session's median running speed; TF curves of the slow and fast halves over the
+  SF / direction pairs that drive the cell (≥ 0.5 × best pair, same pairs in both halves); preferred TF of each half =
+  centre of mass in log2 TF of (curve − minimum), which a gain or an offset does not change; shift = fast − slow.
+- Null per cell: 200 surrogates from the cell's fitted `gain` model plus its own residuals circularly shifted within
+  each recording (keeps the noise structure and the gain-induced SNR difference between halves, no TF shift).
+  Shifter = observed shift above the surrogates, one-sided p < 0.05 (TF increasing with running).
+- Calibration: same analysis with the running-speed trace scrambled in time → 8.3% "shifters" in both groups (slightly
+  above the nominal 5%: per-cell p values are a little liberal, equally for both groups).
+
+| | Depth selective | Other | Enrichment p (within session) | p (within session × fit quality × preferred TF) |
+|---|---|---|---|---|
+| All 1454 SF/TF-tuned cells with a defined shift | **72/389 (18.5%)** | 130/1065 (12.2%) | **0.001** | **0.0007** |
+| Selected cells (564) | 52/165 (31.5%) | 94/399 (23.6%) | 0.015 | 0.018 |
+| Scrambled running speed (all cells) | 8.2% | 8.3% | 0.65 | 0.56 |
+
+- More shifters in depth-selective cells in 5 of 6 sessions. Robust to the pair threshold (0.3: 15.6% vs 10.8%, p = 0.002;
+  0.7: 18.7% vs 13.6%, p = 0.002; exploratory runs, not saved).
+- The shift is real and not a noise artefact: median +0.083 octaves (fast − slow) against +0.008 for the gain-only
+  surrogates; unrelated to the gain `g` (ρ = 0.02), related to `a_tf` of `gain_tf` (ρ = 0.21).
+- Depth-selective cells prefer higher TF (median 3.0 vs 1.6 Hz); stratifying on it does not change the enrichment.
+
+Are the shifters particular? Shifters have stronger, better-fitted and more selective grating responses than the other
+cells (amplitude, held-out R², gOSI, gDSI; p < 0.001), as expected since a shift is only detectable in strong responses.
+Among depth-selective cells, shifters have RS/OF Gaussians closer to the diagonal (median distance to 45°: 27° vs 37°,
+Mann-Whitney p = 0.02) and prefer faster running (p = 0.049), but neither survives controlling for fit quality
+(permutation within session × fit tertile: p = 0.26 and 0.26). Preferred depth, optic flow and RS/OF elongation do not
+differ. So no RS/OF property identifies the shifters beyond depth selectivity itself; the diagonal trend is suggestive.
+
+Relation to the population TF curves ("Population TF and SF tuning per running-speed bin"): both use the same TF curves
+over the same SF / direction pairs. The population curves average cells, aligned on the full-fit preferred TF and
+normalised by each cell's maximum over bins, so they keep the gain and show the shift only as an asymmetric growth of
+the high-TF flank. This test removes the gain from each curve, gives a statistic and a null for every cell, and so says
+which cells shift and whether they are enriched in depth-selective cells; the population curves are its group-average
+view.
+
+**Conclusion on the hypothesis.** The data support it: all cells are gain modulated, a subset additionally increases
+its preferred TF with running speed, and this subset is enriched among depth-selective cells (about 1.5 × the
+fraction of other cells; ~10 vs ~4 percentage points above the scrambled-speed rate). Caveats: other cells shift too;
+2 mice, 6 sessions; per-cell p values are slightly liberal (calibration 8%), so the comparison between groups, not the
+per-cell counts, is the robust result; the shift is modest (median ~0.1-0.2 octave between the slow and fast halves).
 
 ## Open points
 

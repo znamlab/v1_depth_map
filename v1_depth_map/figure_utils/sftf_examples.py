@@ -482,3 +482,84 @@ def plot_fitted_rs_params(axes, summary_df, fontsize_dict=None):
         fontsize=fontsize_dict["label"],
     )
     ax_tf.spines[["top", "right"]].set_visible(False)
+
+
+def population_tf_curves(
+    X, dff, log_rs_median, edges_cm_s, threshold=0.5, variable="tf"
+):
+    """TF (or SF) tuning per speed bin for many cells at once (vectorised `tf_curves_by_speed`).
+
+    For each cell, the SF / direction pairs whose mean response over all frames in the speed range is
+    at least `threshold` x that of the best pair are kept; the curve of a speed bin is the mean over the
+    kept pairs of the condition mean at each TF.
+
+    Args:
+        X (4, n_frames): log SF, log TF, direction (rad), log RS - `log_rs_median`.
+        dff (n_frames, n_cells): responses.
+        log_rs_median (float): median log RS (m/s) subtracted from X[3].
+        edges_cm_s (array): speed bin edges in cm/s; frames outside are dropped.
+        threshold (float): fraction of the best pair's response.
+        variable (str): "tf" for TF curves over SF / direction pairs, "sf" for SF curves over
+            TF / direction pairs.
+
+    Returns:
+        curves (n_cells, n_bins, n_values): mean response (NaN where no kept pair has frames),
+        values (n_values,): TF (Hz) or SF (cpd), labels (n_bins,): bin labels.
+    """
+    if variable == "sf":  # swap the roles of SF and TF
+        X = X[[1, 0, 2, 3]]
+    edges = np.log(np.asarray(edges_cm_s) / 100)
+    n_bins = len(edges) - 1
+    bins = np.searchsorted(edges, X[3] + log_rs_median, side="right") - 1
+    ok = (bins >= 0) & (bins < n_bins)
+    sf_v, i_sf = np.unique(X[0, ok].round(4), return_inverse=True)
+    tf_v, i_tf = np.unique(X[1, ok].round(4), return_inverse=True)
+    ang_v, i_ang = np.unique(X[2, ok].round(4), return_inverse=True)
+    n_sf, n_tf, n_ang = len(sf_v), len(tf_v), len(ang_v)
+    y = dff[ok]
+    n_cells = y.shape[1]
+    # sums and counts per (bin, sf, angle, tf)
+    cond = ((bins[ok] * n_sf + i_sf) * n_ang + i_ang) * n_tf + i_tf
+    n_cond = n_bins * n_sf * n_ang * n_tf
+    sums = np.zeros((n_cond, n_cells))
+    np.add.at(sums, cond, y)
+    counts = np.bincount(cond, minlength=n_cond).astype(float)
+    sums = sums.reshape(n_bins, n_sf, n_ang, n_tf, n_cells)
+    counts = counts.reshape(n_bins, n_sf, n_ang, n_tf)
+    # pair selection on all frames of the range
+    pair_mean = (
+        sums.sum(axis=(0, 3)) / counts.sum(axis=(0, 3))[..., None]
+    )  # (sf, ang, cell)
+    kept = pair_mean >= threshold * pair_mean.max(axis=(0, 1), keepdims=True)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        cond_mean = sums / counts[..., None]  # (bin, sf, ang, tf, cell)
+    cond_mean = np.where(kept[None, :, :, None, :], cond_mean, np.nan)
+    with np.errstate(invalid="ignore"):
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", RuntimeWarning)
+            curves = np.nanmean(cond_mean, axis=(1, 2))  # (bin, tf, cell)
+    cm_s = np.exp(edges) * 100
+    labels = [f"{cm_s[i]:.1f}-{cm_s[i + 1]:.1f} cm/s" for i in range(n_bins)]
+    # values rounded so that they print as the stimulus values (0.5, 1, ..., 16 Hz)
+    return np.moveaxis(curves, -1, 0), np.exp(tf_v).round(3), labels
+
+
+def tf_centre_of_mass(curves, tf):
+    """Gain-invariant preferred TF: centre of mass in log2 TF of (curve - min of curve).
+
+    Subtracting the minimum and normalising by the sum makes the value independent of a
+    multiplicative gain (and of an additive offset) applied to the curve.
+
+    Args:
+        curves (..., n_tf): TF curves.
+        tf (n_tf,): temporal frequencies (Hz).
+
+    Returns:
+        (...,) centre of mass in log2 Hz, NaN for flat curves.
+    """
+    w = curves - np.nanmin(curves, axis=-1, keepdims=True)
+    w = np.where(np.isfinite(w), w, 0)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return (w * np.log2(tf)).sum(axis=-1) / w.sum(axis=-1)
