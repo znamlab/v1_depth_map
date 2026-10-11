@@ -64,9 +64,9 @@ Outputs in `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_gratings/` (
 | SF/TF tuned | 1167 / 3012 (39%) |
 | Both | 305 (10%); 8.5% expected if independent |
 | SF/TF tuned among depth-selective / other cells | 46% / 37% (χ² p = 1e-5) |
-| RS/OF tuned (B, C) | 75; SF/TF and RS/OF tuned: 31 |
-| B: grating speed vs preferred OF | ρ = 0.18, 95% CI [-0.49, 0.68], bootstrap p = 0.43 (n = 31) |
-| C: grating speed vs preferred depth | ρ = -0.07, 95% CI [-0.59, 0.43], bootstrap p = 0.67 (n = 31) |
+| RS/OF tuned (B) | figure 2 empirical-null threshold (test R² > 0.0014): 527; SF/TF and RS/OF tuned: 358 |
+| B: grating speed vs preferred OF (SF/TF and RS/OF tuned) | ρ = 0.21, 95% CI [-0.18, 0.35], bootstrap p = 0.21 (n = 358) |
+| C: grating speed vs preferred depth (SF/TF tuned and depth selective) | ρ = -0.19, 95% CI [-0.37, -0.06], bootstrap p = 0.005 (n = 390) |
 | D: `dsi` of depth-selective, SF/TF-tuned cells | 44% below 0.5; median 0.57 vs 0.59 in non-depth-selective SF/TF-tuned cells (p = 0.89) |
 | E: preferred orientation (0/45/90/135°) | 82 / 61 / 100 / 62 cells, similar to non-depth-selective cells (229 / 176 / 252 / 205) |
 

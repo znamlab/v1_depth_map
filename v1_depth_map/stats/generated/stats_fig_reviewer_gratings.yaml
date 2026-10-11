@@ -1,7 +1,7 @@
 _meta:
   notebook: fig_reviewer_gratings
   figure: reviewer
-  generated_at: '2026-10-10T11:14:08'
+  generated_at: '2026-10-11T12:23:00'
   source: notebook
 metrics:
   n_neurons:
@@ -49,29 +49,40 @@ metrics:
     formatted: 11\%
     latex_macro: statRevGratPctBothExpected
     description: Percentage both expected if independent (A)
+  rsof_threshold:
+    raw: 0.0013793915208235989
+    formatted: '0.0014'
+    latex_macro: statRevGratRsofThreshold
+    description: RS/OF test R² empirical-null threshold (95th percentile, as figure
+      2)
   speed_of_n:
-    raw: 35
-    formatted: '35'
+    raw: 358
+    formatted: '358'
     latex_macro: statRevGratSpeedOfN
     description: SF/TF- and RS/OF-tuned neurons (B)
   speed_of_rho:
-    raw: 0.26486448695809345
-    formatted: '0.26'
+    raw: 0.21465442285966813
+    formatted: '0.21'
     latex_macro: statRevGratSpeedOfRho
     description: Spearman rho, preferred grating speed vs preferred optic flow (B)
   speed_of_p:
-    raw: 0.3884
-    formatted: $p = 0.388$
+    raw: 0.2082
+    formatted: $p = 0.208$
     latex_macro: statRevGratSpeedOfP
     description: Hierarchical bootstrap p (B)
+  speed_depth_n:
+    raw: 390
+    formatted: '390'
+    latex_macro: statRevGratSpeedDepthN
+    description: SF/TF-tuned depth-selective neurons (C)
   speed_depth_rho:
-    raw: -0.19330438436755845
+    raw: -0.18514565976302605
     formatted: '-0.19'
     latex_macro: statRevGratSpeedDepthRho
     description: Spearman rho, preferred grating speed vs preferred depth (C)
   speed_depth_p:
-    raw: 0.4494
-    formatted: $p = 0.449$
+    raw: 0.0053
+    formatted: $p = 0.0053$
     latex_macro: statRevGratSpeedDepthP
     description: Hierarchical bootstrap p (C)
   n_tuned_depth:
