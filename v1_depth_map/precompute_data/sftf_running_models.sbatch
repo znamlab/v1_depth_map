@@ -18,6 +18,7 @@ conda activate v1_depth_map
 export PYTHONPATH=$SLURM_SUBMIT_DIR/src${PYTHONPATH:+:$PYTHONPATH}
 export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 MKL_NUM_THREADS=1 PYTHONUNBUFFERED=1
 mapfile -t tasks < "$SLURM_SUBMIT_DIR/${1:?manifest}"
+OUT_DIR="${2:-$SLURM_SUBMIT_DIR/results}"
 # shellcheck disable=SC2086  # the line holds several arguments
 srun python "$SLURM_SUBMIT_DIR/src/v1_depth_map/precompute_data/sftf_running_models.py" \
-    ${tasks[$SLURM_ARRAY_TASK_ID]} --out-dir "$SLURM_SUBMIT_DIR/results" --n-jobs "$SLURM_CPUS_PER_TASK"
+    ${tasks[$SLURM_ARRAY_TASK_ID]} --out-dir "$OUT_DIR" --n-jobs "$SLURM_CPUS_PER_TASK"
