@@ -52,7 +52,14 @@ MIN_SIGMA = 0.25
 N_ITER_BASE = 5
 N_ITER_RS = 3  # random starts of the running-speed models, on top of the base-fit start
 SLOPE_BOUND = 5  # |a_sf|, |a_tf| in log SF (TF) per log RS
-MODELS = {"base": (), "tf": ("a_tf",), "sf": ("a_sf",), "both": ("a_sf", "a_tf")}
+MODELS = {
+    "base": (),
+    "gain": ("g",),
+    "tf": ("a_tf",),
+    "gain_tf": ("g", "a_tf"),
+    "sf": ("a_sf",),
+    "both": ("a_sf", "a_tf"),
+}
 
 
 def session_frames(flm, session):
@@ -99,13 +106,14 @@ def session_frames(flm, session):
 
 
 def rs_tuning(X, *params, free=(), min_sigma=MIN_SIGMA):
-    """grating_tuning with log SF0 / log TF0 shifted by a_sf * r / a_tf * r (`free` slopes)."""
+    """grating_tuning with log SF0 / log TF0 shifted or amplitude scaled by running speed."""
     p = GratingParams(*params[:10])
     slopes = dict(zip(free, params[10:]))
     sf0 = p.sf0 + slopes.get("a_sf", 0) * X[3]
     tf0 = p.tf0 + slopes.get("a_tf", 0) * X[3]
+    log_amp = p.log_amplitude + slopes.get("g", 0) * X[3]
     return grating_tuning(
-        (X[0], X[1], X[2]), p.log_amplitude, sf0, tf0, *p[3:], min_sigma=min_sigma
+        (X[0], X[1], X[2]), log_amp, sf0, tf0, *p[3:], min_sigma=min_sigma
     )
 
 
@@ -114,8 +122,8 @@ def bounds(X, free):
         -np.inf,
         X[0].min() - 1,
         X[1].min() - 1,
-        -np.inf,
-        -np.inf,
+        -20.0,
+        -20.0,
         0,
         -np.inf,
         0,
@@ -131,7 +139,7 @@ def bounds(X, free):
         np.pi / 2,
         np.inf,
         2 * np.pi,
-        np.inf,
+        6.0,
         1,
     )
     return list(lower) + [-SLOPE_BOUND] * len(free), list(upper) + [SLOPE_BOUND] * len(
@@ -164,7 +172,7 @@ def best_fit(func, X, y, lo, hi, starts):
     for p0 in starts:
         p0 = np.clip(p0, np.array(lo) + 1e-9, np.array(hi) - 1e-9)
         try:
-            popt, _ = curve_fit(func, X, y, p0=p0, bounds=(lo, hi), maxfev=20000)
+            popt, _ = curve_fit(func, X, y, p0=p0, bounds=(lo, hi), maxfev=5000)
         except (RuntimeError, ValueError):
             continue
         rsq = common_utils.calculate_r_squared(y, func(X, *popt))
@@ -192,6 +200,11 @@ def fit_models(X, y):
             continue
         lo, hi = bounds(X, free)
         starts = [list(base) + [0.0] * len(free)]
+        if model == "gain_tf" and "gain" in out and "tf" in out:
+            if np.all(np.isfinite(out["gain"][0])):
+                starts.append(list(out["gain"][0][:10]) + [out["gain"][0][10], 0.0])
+            if np.all(np.isfinite(out["tf"][0])):
+                starts.append(list(out["tf"][0][:10]) + [0.0, out["tf"][0][10]])
         starts += [
             random_p0(X, y) + list(np.random.uniform(-1, 1, len(free)))
             for _ in range(N_ITER_RS)

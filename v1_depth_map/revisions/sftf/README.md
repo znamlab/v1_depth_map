@@ -272,6 +272,53 @@ Conclusions:
 4. **Robustness checks**: The conclusion holds across LAG 2, LAG 8, running speed smoothed over 0.5 s, and trial-level aggregated responses. In all variants, `gain_offset` reliably improves over `base` (median $+7.2$ to $+13.1 \times 10⁻³$), whereas adding `tf` shift on top of `gain_offset` yields negative median held-out gain ($-0.26$ to $-4.13 \times 10⁻³$).
 5. **Caveats**: Evaluated on 10 high-SNR cells to avoid the population noise floor; gratings were open-loop.
 
+## Full-population running-speed models: gain vs preference shift (1,455 cells, 2026-10-11)
+
+Following the 10-cell detailed selection, all 1,455 SF/TF-tuned `iscell` ROIs across all 6 sessions were fitted on NEMO (Job `60485107`, `precompute_data/sftf_running_models.py`) with 5-fold leave-one-recording-out cross-validation comparing:
+- `base`: unmodulated grating tuning
+- `gain`: multiplicative gain modulation ($A \propto \text{RS}^g$)
+- `tf`: temporal frequency shift ($\text{TF}_0 \propto \text{RS}^{a_\text{tf}}$)
+- `gain_tf`: combined multiplicative gain and temporal frequency shift
+- `sf`: spatial frequency shift ($\text{SF}_0 \propto \text{RS}^{a_\text{sf}}$)
+- `both`: combined spatial and temporal frequency shifts
+
+Outputs are merged into `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_gratings/running_models/*_sftf_running_models.pickle` and plotted in `running_speed_models.pdf`.
+
+### Model comparison (% best-fitting model by held-out test $R^2$)
+
+| Model | Free parameters | All cells ($n=1455$) | Selected ($n=564$) | Selected, not depth selective ($n=399$) | Selected, depth selective ($n=165$) |
+| --- | --- | --- | --- | --- | --- |
+| **`base`** | None | 29.7% | 23.0% | 25.1% | 18.2% |
+| **`gain`** | $g$ | **22.1%** | **23.8%** | **25.3%** | 20.0% |
+| **`tf`** | $a_\text{tf}$ | 14.4% | 15.4% | 14.8% | 17.0% |
+| **`gain_tf`** | $g, a_\text{tf}$ | 13.7% | 18.4% | 15.3% | **26.1%** |
+| **`sf`** | $a_\text{sf}$ | 12.6% | 10.8% | 10.5% | 11.5% |
+| **`both`** | $a_\text{sf}, a_\text{tf}$ | 7.4% | 8.5% | 9.0% | 7.3% |
+
+### Parameter distributions and generalization (selected cells, $n = 564$)
+
+Hierarchical bootstrap across mice and sessions (1000 resamples):
+
+| Parameter / metric | Model | Median | 95% CI | Bootstrap $p$ | % Positive |
+| --- | --- | --- | --- | --- | --- |
+| Gain slope $g$ | `gain` | **+0.101** | [+0.030, +0.168] | $p < 0.001$ | 68.1% |
+| Gain slope $g$ | `gain_tf` | **+0.070** | [+0.012, +0.128] | $p = 0.004$ | 61.4% |
+| TF slope $a_\text{tf}$ | `tf` (alone) | **+0.183** | [+0.040, +0.244] | $p < 0.001$ | 72.7% |
+| TF slope $a_\text{tf}$ | `gain_tf` (co-fitted) | **+0.109** | [+0.048, +0.175] | $p < 0.001$ | 66.0% |
+| SF slope $a_\text{sf}$ | `sf` | -0.007 | [-0.024, +0.007] | $p = 0.240$ | 45.6% |
+| Held-out $\Delta R^2$ over base | `gain` | **+2.0 × 10⁻⁴** | [-1.0 × 10⁻⁴, +8.0 × 10⁻⁴] | $p = 0.352$ | 56.6% |
+| Held-out $\Delta R^2$ over base | `tf` | +0.2 × 10⁻⁴ | [-2.0 × 10⁻⁴, +6.0 × 10⁻⁴] | $p = 1.000$ | 50.5% |
+| Held-out $\Delta R^2$ over base | `gain_tf` | **+2.3 × 10⁻⁴** | [-2.0 × 10⁻⁴, +11.0 × 10⁻⁴] | $p = 0.386$ | 55.5% |
+| Held-out $\Delta R^2$ over base | `sf` | -0.9 × 10⁻⁴ | [-2.0 × 10⁻⁴, -0.0 × 10⁻⁴] | $p = 0.010$ | 40.2% |
+
+### Key population conclusions
+
+1. **Multiplicative gain is the principal running-related modulation**: `gain` is the most common winning modulated model across the population (22.1% all, 23.8% selected), outperforming both `tf` (14.4%) and `sf` (12.6%).
+2. **Co-fitting gain attenuates apparent TF preference shifts by 40%**: In the shift-only model `tf`, the population exhibits an apparent median shift $a_\text{tf} = +0.183$. Once multiplicative gain is co-fitted (`gain_tf`), the temporal frequency slope drops to $a_\text{tf} = +0.109$, confirming that a large fraction of apparent TF shifts in uncorrected models arises from running-dependent gain.
+3. **Residual TF shift remains positive and significant**: In `gain_tf`, a modest positive shift of $+0.109$ remains statistically significant ($p < 0.001$), corresponding to a preferred TF increase of $2^{0.109} \approx \times 1.08$ per doubling of running speed (versus $\times 1.13$ in the uncorrected `tf` model).
+4. **Spatial frequency is completely unaffected by running speed**: Median $a_\text{sf} \approx 0$ ($p = 0.24$), and adding SF shift degrades held-out $R^2$ ($p = 0.010$).
+
+
 ## Open points
 
 - `P_RESPONSIVE` (0.01) differs from `P_SELECTIVE` (0.05) in the model-free section without a principled
