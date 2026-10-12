@@ -350,6 +350,35 @@ Interpretation:
   2 mice, 6 sessions.
 
 
+### Deconvolved spikes at neural timescales: lag 2 frames (~131 ms) (2026-10-12)
+
+To test whether the gain vs shift separation holds on instantaneous neural event estimates without GCaMP decay dynamics, the four symmetric running-speed models (`base`, `gain`, `gain_tf`, `gain_sf`) were fitted to Suite2p deconvolved spikes (`spks.npy`, `ast_neuropil=False`) using the peak response lag from the receptive field analysis (`LAG = 2` frames, ~131 ms at 15.2 Hz; matching `revisions/rf_multidepth/`). All 1,455 SF/TF-tuned cells across the 6 sessions were fitted on NEMO with both 5-fold leave-one-recording-out cross-validation (held-out $R^2$) and full-dataset fits (best parameter estimates). Results in `running_models_spikes/` and `running_speed_models_spikes.pdf`.
+
+#### Winning model breakdown (held-out cross-validated $R^2$)
+
+| Model | Terms | All cells ($n = 1455$) | Running-modulated ($n = 757, 52\%$) | Depth selective ($n = 390$) | Other cells ($n = 1065$) |
+|---|---|---|---|---|---|
+| **`base`** | None | 48.0% (698) | — | 39.2% (153) | 51.2% (545) |
+| **`gain`** | $g$ | **24.3%** (354) | **46.8%** (354) | **26.9%** (105) | **23.4%** (249) |
+| **`gain_tf`** | $g, a_\text{tf}$ | **16.2%** (236) | **31.2%** (236) | **21.0%** (82) | 14.5% (154) |
+| **`gain_sf`** | $g, a_\text{sf}$ | 11.5% (167) | 22.1% (167) | 12.8% (50) | 11.0% (117) |
+
+#### Parameter distributions (full-dataset fits, all $n = 1455$ cells)
+
+| Parameter / metric | Model | Median | Mean | Wilcoxon $p$ vs 0 | dF/F correlation (Spearman $r$, $n=1455$) |
+|---|---|---|---|---|---|
+| Gain slope $g$ | `gain` | **+0.0215** | **+0.2483** | $p = 2.2 \times 10^{-19}$ | **$r = +0.790$** ($p < 10^{-300}$) |
+| TF slope $a_\text{tf}$ | `gain_tf` | **+0.1089** | **+0.1599** | $p = 1.6 \times 10^{-8}$ | **$r = +0.470$** ($p = 1.1 \times 10^{-80}$) |
+| SF slope $a_\text{sf}$ | `gain_sf` | -0.0147 | +0.0140 | $p = 0.253$ (not sig.) | **$r = +0.493$** ($p = 4.4 \times 10^{-90}$) |
+
+#### Key findings on spikes:
+1. **Multiplicative gain remains the dominant running modulation**: exactly as in dF/F (24.5%), `gain` is the winning running model in 24.3% of all cells (46.8% of modulated cells).
+2. **Robust temporal frequency shift ($a_\text{tf} > 0$)**: preferred TF shifts significantly rightward towards higher frequencies during locomotion (median $+0.109$, mean $+0.160$, $p = 1.6 \times 10^{-8}$), closely matching the dF/F median ($+0.103$).
+3. **Flat spatial frequency control ($a_\text{sf} \approx 0$)**: $a_\text{sf}$ is centered at zero ($p = 0.253$), confirming that the positive TF shift is not a non-specific fitting drift.
+4. **Tight cell-by-cell agreement**: cell-by-cell slopes correlate strongly between dF/F and spikes ($r = 0.79$ for gain, $r = 0.47$ for TF shift, $r = 0.49$ for SF shift).
+5. **Depth-selective enrichment**: `gain_tf` is significantly more likely to win in depth-selective cells (21.0% vs 14.5%, $\chi^2$ $p = 0.003$), with higher median shift ($a_\text{tf} = +0.142$ vs $+0.103$).
+
+
 ### Model-free per-cell test: which cells shift their preferred TF beyond gain? (2026-10-11)
 
 Recommended test of the hypothesis (more direct than the model parameters above, where `g` and `a_tf` trade off).
