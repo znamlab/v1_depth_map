@@ -23,9 +23,9 @@ Each model is fitted on all frames (parameters, `rsq`) and cross-validated leavi
 (held-out R2 and Spearman of the concatenated predictions). The running-speed models start from the base
 fit with zero slopes, plus random starts.
 
-Only `iscell` ROIs whose production `neurons_df_sftf` fit is cross-validated SF/TF tuned (one-sided
-Spearman p < 0.05) are fitted. Production files are only read. Three steps, so that ROIs can be fitted
-as separate jobs:
+Only `iscell` ROIs whose trial-level fit on the same trace is cross-validated SF/TF tuned (one-sided
+Spearman p < 0.05) are fitted: production `neurons_df_sftf` for dF/F, `neurons_df_sftf_spks` for
+spikes. Production files are only read. Three steps, so that ROIs can be fitted as separate jobs:
 
     prepare SESSION      sync once, save running frames and traces to OUT_DIR/frames/<session>.npz
     fit SESSION ROI      fit one ROI -> OUT_DIR/rois/<session>_<roi>.pickle (skipped if it exists;
@@ -344,12 +344,21 @@ def fit_roi(X, y, recording, n_jobs=1, models=None, log_rs_median=None):
     return row
 
 
-def sftf_tuned_rois(flm, session):
-    """iscell ROIs that are cross-validated SF/TF tuned in the production neurons_df_sftf."""
+def sftf_tuned_rois(flm, session, trace="spks"):
+    """iscell ROIs that are cross-validated SF/TF tuned in the trial-level fit of `trace`.
+
+    The fit is the production neurons_df_sftf.pickle for dF/F, neurons_df_sftf_spks.pickle for
+    deconvolved spikes (`rerun_depth_sftf.py --use-col spks`).
+    """
     folder = pipeline_utils.create_neurons_ds(
         session_name=session, flexilims_session=flm, project=PROJECT, conflicts="skip"
     ).path_full.parent
-    fit = pd.read_pickle(folder / "neurons_df_sftf.pickle")
+    fname = (
+        "neurons_df_sftf.pickle"
+        if trace == "dff"
+        else f"neurons_df_sftf_{trace}.pickle"
+    )
+    fit = pd.read_pickle(folder / fname)
     rois_ds = flz.get_datasets(
         origin_name=session,
         dataset_type="suite2p_rois",
@@ -371,7 +380,7 @@ def frames_path(out_dir, session):
 def prepare(session, out_dir, trace="spks", lag=2):
     """Sync the session once and save the running frames and SF/TF-tuned ROIs' signal."""
     flm = flz.get_flexilims_session(PROJECT)
-    rois = sftf_tuned_rois(flm, session)
+    rois = sftf_tuned_rois(flm, session, trace=trace)
     X, traces, recording, log_rs_median = session_frames(
         flm, session, trace=trace, lag=lag
     )

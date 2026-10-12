@@ -13,8 +13,13 @@ one fold per recording), after backing up the existing `neurons_df_sftf.pickle`:
 Provenance (k_folds, traces filter, backup) is saved as `neurons_df_sftf.json` next to the
 pickle. Restore with `cp -p BACKUP_DIR/SESSION/neurons_df_sftf.pickle <session folder>/`.
 
+With `--use-col spks`, the deconvolved spikes are fitted instead and saved as a new
+`neurons_df_sftf_spks.pickle` (+ .json); nothing is backed up or overwritten, and the run
+stops if that file exists.
+
 Usage:
     python rerun_depth_sftf.py SESSION --backup-dir DIR [--project P] [--k-folds 5] [--n-jobs 1]
+        [--use-col {dffs,spks}]
 """
 
 import argparse
@@ -57,14 +62,25 @@ def backup_and_check(target, backup_dir):
     return recorded
 
 
-def main(session, backup_dir, project, k_folds, n_jobs, photodiode_protocol):
+def main(
+    session, backup_dir, project, k_folds, n_jobs, photodiode_protocol, use_col="dffs"
+):
     flm = flz.get_flexilims_session(project)
     neurons_ds = pipeline_utils.create_neurons_ds(
         session_name=session, flexilims_session=flm, project=project, conflicts="skip"
     )
-    target = neurons_ds.path_full.parent / FILENAME
-    backup_md5 = backup_and_check(target, Path(backup_dir) / session)
-    print(f"{session}: backup verified ({backup_md5}), rerunning depth_SFTF")
+    if use_col == "dffs":
+        target = neurons_ds.path_full.parent / FILENAME
+        backup_md5 = backup_and_check(target, Path(backup_dir) / session)
+        print(f"{session}: backup verified ({backup_md5}), rerunning depth_SFTF")
+        provenance = dict(
+            previous_md5=backup_md5, backup=str(Path(backup_dir) / session / FILENAME)
+        )
+    else:
+        target = neurons_ds.path_full.parent / f"neurons_df_sftf_{use_col}.pickle"
+        assert not target.exists(), f"{target} exists: not overwriting"
+        print(f"{session}: fitting depth_SFTF on {use_col}")
+        provenance = {}
 
     depth_SFTF.main(
         project,
@@ -73,6 +89,7 @@ def main(session, backup_dir, project, k_folds, n_jobs, photodiode_protocol):
         photodiode_protocol=photodiode_protocol,
         k_folds=k_folds,
         n_jobs=n_jobs,
+        use_col=use_col,
     )
     target.with_suffix(".json").write_text(
         json.dumps(
@@ -81,8 +98,8 @@ def main(session, backup_dir, project, k_folds, n_jobs, photodiode_protocol):
                 fold_col="irecording",
                 filter_traces={"anatomical_only": 3, "ast_neuropil": False},
                 photodiode_protocol=photodiode_protocol,
-                previous_md5=backup_md5,
-                backup=str(Path(backup_dir) / session / FILENAME),
+                use_col=use_col,
+                **provenance,
             ),
             indent=1,
         )
@@ -100,5 +117,19 @@ if __name__ == "__main__":
     p.add_argument("--k-folds", type=int, default=5, help="1 for no cross-validation")
     p.add_argument("--n-jobs", type=int, default=1, help="ROIs fitted in parallel")
     p.add_argument("--photodiode", type=int, default=5)
+    p.add_argument(
+        "--use-col",
+        choices=["dffs", "spks"],
+        default="dffs",
+        help="spks: fit deconvolved spikes into neurons_df_sftf_spks.pickle",
+    )
     a = p.parse_args()
-    main(a.session, a.backup_dir, a.project, a.k_folds, a.n_jobs, a.photodiode)
+    main(
+        a.session,
+        a.backup_dir,
+        a.project,
+        a.k_folds,
+        a.n_jobs,
+        a.photodiode,
+        a.use_col,
+    )
