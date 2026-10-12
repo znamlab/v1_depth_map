@@ -8,6 +8,15 @@ recordings, with the preferred log SF and log TF allowed to depend linearly on l
 
     base: a_sf = a_tf = 0;  gain: g;  gain_tf: g, a_tf;  gain_sf: g, a_sf
 
+The gain multiplies the amplitude by RS^g (log amplitude + g * r). The running-speed tuning models replace
+it with a Gaussian in log RS, parameterised and bounded as the RS/OF fits of the pipeline
+(`fit_gaussian_blob.fit_rs_of_tuning`: preferred RS 0.005-5 m/s, sigma^2 = exp(log_sigma_rs2) + MIN_SIGMA,
+log_sigma_rs2 free):
+
+    log amplitude - (r - r0)^2 / (2 sigma^2)      rsg: r0, log_sigma_rs2;  rsg_tf: + a_tf;  rsg_sf: + a_sf
+
+with r0 the preferred log RS relative to the session median.
+
 Samples are imaging frames during gratings with RS > RS_THR (static frames excluded), neural trace shifted by
 LAG frames relative to the stimulus and RS (default: 2 frames for deconvolved spikes, 5 frames for dF/F).
 Each model is fitted on all frames (parameters, `rsq`) and cross-validated leaving one recording out
@@ -25,7 +34,7 @@ as separate jobs:
 
 Usage:
     python sftf_running_models.py {prepare,fit,merge} SESSION [ROI] --out-dir DIR [--n-jobs 1]
-        [--trace {spks,dff}] [--lag LAG] [--models MODEL ...]
+        [--trace {spks,dff}] [--lag LAG] [--models MODEL ...] [--overwrite]
 """
 
 import argparse
@@ -60,9 +69,30 @@ MODELS = {
     "gain": ("g",),
     "gain_tf": ("g", "a_tf"),
     "gain_sf": ("g", "a_sf"),
+    "rsg": ("r0", "log_sigma_rs2"),
+    "rsg_tf": ("r0", "log_sigma_rs2", "a_tf"),
+    "rsg_sf": ("r0", "log_sigma_rs2", "a_sf"),
 }
-# models also started from the fits of the simpler models they contain (new terms at 0)
-NESTED_STARTS = {"gain_tf": ("gain",), "gain_sf": ("gain",)}
+# models also started from the fits of the simpler models they contain (shared terms copied, new at 0)
+NESTED_STARTS = {
+    "gain_tf": ("gain",),
+    "gain_sf": ("gain",),
+    "rsg": ("gain",),
+    "rsg_tf": ("rsg", "gain_tf"),
+    "rsg_sf": ("rsg", "gain_sf"),
+}
+RS_RANGE = (
+    0.005,
+    5,
+)  # m/s, bounds of the preferred running speed (as rs_min, rs_max of the RS/OF fits)
+RSG_START_SIGMA = 5.0  # sigma of the running-speed Gaussian started from a gain fit
+RSG_START_QUANTILES = (
+    0.1,
+    0.3,
+    0.5,
+    0.7,
+    0.9,
+)  # r0 starts (sigma = 1) at these quantiles of r
 
 
 def session_frames(flm, session, trace="spks", lag=2):
@@ -122,12 +152,16 @@ def rs_tuning(X, *params, free=(), min_sigma=MIN_SIGMA):
     sf0 = p.sf0 + slopes.get("a_sf", 0) * X[3]
     tf0 = p.tf0 + slopes.get("a_tf", 0) * X[3]
     log_amp = p.log_amplitude + slopes.get("g", 0) * X[3]
+    if "r0" in slopes:
+        sigma2 = np.exp(slopes["log_sigma_rs2"]) + min_sigma
+        log_amp = log_amp - (X[3] - slopes["r0"]) ** 2 / (2 * sigma2)
     return grating_tuning(
         (X[0], X[1], X[2]), log_amp, sf0, tf0, *p[3:], min_sigma=min_sigma
     )
 
 
-def bounds(X, free):
+def bounds(X, free, log_rs_median=None):
+    """Bounds of the parameters; the preferred running speed r0 needs the session `log_rs_median`."""
     lower = GratingParams(
         -np.inf,
         X[0].min() - 1,
@@ -152,9 +186,28 @@ def bounds(X, free):
         6.0,
         1,
     )
-    return list(lower) + [-SLOPE_BOUND] * len(free), list(upper) + [SLOPE_BOUND] * len(
-        free
-    )
+    extra = {"log_sigma_rs2": (-np.inf, np.inf)}
+    if "r0" in free:
+        extra["r0"] = tuple(np.log(RS_RANGE) - log_rs_median)
+    lo_hi = [extra.get(t, (-SLOPE_BOUND, SLOPE_BOUND)) for t in free]
+    return list(lower) + [b[0] for b in lo_hi], list(upper) + [b[1] for b in lo_hi]
+
+
+def nested_start(simpler, popt, free, lo, hi):
+    """Start of a model with terms `free` (bounds lo, hi) from the fit `popt` of model `simpler`.
+
+    Shared terms are copied, new terms start at 0, and a gain g is converted to a running-speed
+    Gaussian of sigma RSG_START_SIGMA with the same slope at r = 0 (r0 = g sigma^2, log amplitude
+    raised by r0^2 / 2 sigma^2), r0 clipped to its bounds.
+    """
+    p = list(popt[:10])
+    terms = dict(zip(MODELS[simpler], popt[10:]))
+    if "r0" in free and "g" in terms:
+        i = 10 + free.index("r0")
+        r0 = float(np.clip(terms.pop("g") * RSG_START_SIGMA**2, lo[i], hi[i]))
+        p[0] += r0**2 / (2 * RSG_START_SIGMA**2)
+        terms.update(r0=r0, log_sigma_rs2=np.log(RSG_START_SIGMA**2 - MIN_SIGMA))
+    return p + [terms.get(t, 0.0) for t in free]
 
 
 def random_p0(X, y):
@@ -191,8 +244,10 @@ def best_fit(func, X, y, lo, hi, starts):
     return best
 
 
-def fit_models(X, y, models=None):
+def fit_models(X, y, models=None, log_rs_median=None):
     """Models on frames X, y: {model: (popt, rsq)}, running-speed models warm-started.
+
+    `log_rs_median` (log m/s) is needed for the bounds of the running-speed tuning models.
 
     `models` (default all) restricts which models are fitted; the models they are warm-started from
     are fitted too. Random starts are drawn for every model in MODELS order whether it is fitted or
@@ -200,8 +255,12 @@ def fit_models(X, y, models=None):
     """
     models = list(MODELS) if models is None else list(models)
     needed = set(models) | {"base"}
-    for m in models:
-        needed |= set(NESTED_STARTS.get(m, ()))
+    stack = list(models)
+    while stack:  # models needed for warm starts, recursively
+        for simpler in NESTED_STARTS.get(stack.pop(), ()):
+            if simpler not in needed:
+                needed.add(simpler)
+                stack.append(simpler)
     np.random.seed(42)
     out = {}
     lo, hi = bounds(X, ())
@@ -223,20 +282,33 @@ def fit_models(X, y, models=None):
         ]
         if model not in needed:
             continue
-        lo, hi = bounds(X, free)
+        lo, hi = bounds(X, free, log_rs_median)
         starts = [list(base) + [0.0] * len(free)]
+        if (
+            "r0" in free
+        ):  # base fit with a running-speed Gaussian (sigma = 1) at quantiles of r
+            starts = [
+                list(base)
+                + [
+                    {
+                        "r0": np.quantile(X[3], q),
+                        "log_sigma_rs2": np.log(1 - MIN_SIGMA),
+                    }.get(t, 0.0)
+                    for t in free
+                ]
+                for q in RSG_START_QUANTILES
+            ]
         for simpler in NESTED_STARTS.get(model, ()):
             popt = out[simpler][0]
             if np.all(np.isfinite(popt)):
-                slopes = dict(zip(MODELS[simpler], popt[10:]))
-                starts.append(list(popt[:10]) + [slopes.get(t, 0.0) for t in free])
+                starts.append(nested_start(simpler, popt, free, lo, hi))
         out[model] = best_fit(
             partial(rs_tuning, free=free), X, y, lo, hi, starts + random_starts
         )
     return {m: out[m] for m in models}
 
 
-def fit_roi(X, y, recording, n_jobs=1, models=None):
+def fit_roi(X, y, recording, n_jobs=1, models=None, log_rs_median=None):
     """Full-data and leave-one-recording-out fits of the models (default all) for one ROI.
 
     The full-data fit and the folds are independent and run in parallel with `n_jobs`.
@@ -244,12 +316,12 @@ def fit_roi(X, y, recording, n_jobs=1, models=None):
     recs = np.unique(recording)
     subsets = [np.ones(len(y), bool)] + [recording != rec for rec in recs]
     if n_jobs == 1:
-        fits = [fit_models(X[:, s], y[s], models) for s in subsets]
+        fits = [fit_models(X[:, s], y[s], models, log_rs_median) for s in subsets]
     else:
         from joblib import Parallel, delayed
 
         fits = Parallel(n_jobs=n_jobs)(
-            delayed(fit_models)(X[:, s], y[s], models) for s in subsets
+            delayed(fit_models)(X[:, s], y[s], models, log_rs_median) for s in subsets
         )
     full, folds = fits[0], fits[1:]
     preds = {m: np.full(len(y), np.nan) for m in full}
@@ -321,11 +393,12 @@ def prepare(session, out_dir, trace="spks", lag=2):
     )
 
 
-def fit(session, roi, out_dir, n_jobs, models=None):
+def fit(session, roi, out_dir, n_jobs, models=None, overwrite=False):
     """Fit one ROI from the prepared frames.
 
     Without `models`, skipped if its result exists. With `models`, those missing from an existing
-    result are fitted and their columns added to it (the other columns are kept).
+    result (all of them with `overwrite`) are fitted and their columns added to it, replacing the
+    previous columns of these models (the other columns are kept).
     """
     target = Path(out_dir) / "rois" / f"{session}_{roi}.pickle"
     old = pd.read_pickle(target) if target.exists() else None
@@ -333,7 +406,7 @@ def fit(session, roi, out_dir, n_jobs, models=None):
         if old is not None:
             print(f"{target} exists, skipping")
             return
-    elif old is not None:
+    elif old is not None and not overwrite:
         models = [m for m in models if f"{m}_test_rsq" not in old.columns]
         if not models:
             print(f"{target} has all requested models, skipping")
@@ -342,11 +415,27 @@ def fit(session, roi, out_dir, n_jobs, models=None):
     (col,) = np.flatnonzero(d["rois"] == roi)
     traces = d["traces"] if "traces" in d else d["dff"]
     start = time.time()
-    row = fit_roi(d["X"], traces[:, col], d["recording"], n_jobs=n_jobs, models=models)
+    row = fit_roi(
+        d["X"],
+        traces[:, col],
+        d["recording"],
+        n_jobs=n_jobs,
+        models=models,
+        log_rs_median=float(d["log_rs_median"]),
+    )
     if old is None:
         out = pd.DataFrame([dict(session=session, roi=roi, **row)])
-    else:
-        out = old.assign(**row)
+    else:  # drop previous columns of the refitted models (not those of longer model names)
+        longer = [
+            o for o in MODELS if any(o != m and o.startswith(f"{m}_") for m in models)
+        ]
+        stale = [
+            c
+            for c in old
+            if any(c.startswith(f"{m}_") for m in models)
+            and not any(c.startswith(f"{o}_") for o in longer if o not in models)
+        ]
+        out = old.drop(columns=stale).assign(**row)
     target.parent.mkdir(parents=True, exist_ok=True)
     out.to_pickle(target)
     print(f"{session} ROI {roi} fitted in {time.time() - start:.0f} s -> {target}")
@@ -410,11 +499,16 @@ if __name__ == "__main__":
         choices=list(MODELS),
         help="fit only these models, adding them to an existing ROI result (fit only)",
     )
+    p.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="refit the --models even if already in the ROI result (fit only)",
+    )
     a = p.parse_args()
     if a.command == "prepare":
         lag = a.lag if a.lag is not None else (2 if a.trace == "spks" else 5)
         prepare(a.session, a.out_dir, trace=a.trace, lag=lag)
     elif a.command == "fit":
-        fit(a.session, a.roi, a.out_dir, a.n_jobs, a.models)
+        fit(a.session, a.roi, a.out_dir, a.n_jobs, a.models, a.overwrite)
     else:
         merge(a.session, a.out_dir)
