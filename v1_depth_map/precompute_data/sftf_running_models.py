@@ -28,13 +28,14 @@ Spearman p < 0.05) are fitted: production `neurons_df_sftf` for dF/F, `neurons_d
 spikes. Production files are only read. Three steps, so that ROIs can be fitted as separate jobs:
 
     prepare SESSION      sync once, save running frames and traces to OUT_DIR/frames/<session>.npz
+                         (SF/TF-tuned iscell ROIs, or all iscell ROIs with --all-cells)
     fit SESSION ROI      fit one ROI -> OUT_DIR/rois/<session>_<roi>.pickle (skipped if it exists;
                          with --models, only the models missing from it are fitted and added)
     merge SESSION        -> OUT_DIR/<session>_sftf_running_models.pickle (one row per ROI) + .json
 
 Usage:
     python sftf_running_models.py {prepare,fit,merge} SESSION [ROI] --out-dir DIR [--n-jobs 1]
-        [--trace {spks,dff}] [--lag LAG] [--models MODEL ...] [--overwrite]
+        [--trace {spks,dff}] [--lag LAG] [--all-cells] [--models MODEL ...] [--overwrite]
 """
 
 import argparse
@@ -132,7 +133,8 @@ def session_frames(flm, session, trace="spks", lag=2):
         stim = img[PARAMS].to_numpy(float)
         tr = np.vstack(img.spks.values if trace == "spks" else img.dffs.values)
         # stimulus and RS of frame t with signal of frame t + lag
-        stim, rs, tr = stim[:-lag], rs[:-lag], tr[lag:]
+        n = len(stim) - lag  # not stim[:-lag], empty for lag 0
+        stim, rs, tr = stim[:n], rs[:n], tr[lag:]
         keep = np.isfinite(stim).all(axis=1) & np.isfinite(rs) & (rs > RS_THR)
         xs.append(
             np.c_[np.log(stim[keep, :2]), np.deg2rad(stim[keep, 2]), np.log(rs[keep])]
@@ -344,6 +346,18 @@ def fit_roi(X, y, recording, n_jobs=1, models=None, log_rs_median=None):
     return row
 
 
+def iscell_rois(flm, session):
+    """Boolean iscell mask of the suite2p ROIs of a session."""
+    rois_ds = flz.get_datasets(
+        origin_name=session,
+        dataset_type="suite2p_rois",
+        filter_datasets={"anatomical_only": 3},
+        flexilims_session=flm,
+        allow_multiple=False,
+    )
+    return np.load(rois_ds.path_full / "plane0" / "iscell.npy")[:, 0] == 1
+
+
 def sftf_tuned_rois(flm, session, trace="spks"):
     """iscell ROIs that are cross-validated SF/TF tuned in the trial-level fit of `trace`.
 
@@ -359,14 +373,7 @@ def sftf_tuned_rois(flm, session, trace="spks"):
         else f"neurons_df_sftf_{trace}.pickle"
     )
     fit = pd.read_pickle(folder / fname)
-    rois_ds = flz.get_datasets(
-        origin_name=session,
-        dataset_type="suite2p_rois",
-        filter_datasets={"anatomical_only": 3},
-        flexilims_session=flm,
-        allow_multiple=False,
-    )
-    iscell = np.load(rois_ds.path_full / "plane0" / "iscell.npy")[:, 0] == 1
+    iscell = iscell_rois(flm, session)
     pval = common_utils.one_sided_pval_from_spearman(
         fit.sftf_test_spearmanr_rval, fit.sftf_test_spearmanr_pval
     )
@@ -377,10 +384,18 @@ def frames_path(out_dir, session):
     return Path(out_dir) / "frames" / f"{session}.npz"
 
 
-def prepare(session, out_dir, trace="spks", lag=2):
-    """Sync the session once and save the running frames and SF/TF-tuned ROIs' signal."""
+def prepare(session, out_dir, trace="spks", lag=2, all_cells=False):
+    """Sync the session once and save the running frames and the ROIs' signal.
+
+    ROIs: iscell ROIs that are SF/TF tuned in the trial-level fit of `trace`, or all iscell ROIs
+    with `all_cells`.
+    """
     flm = flz.get_flexilims_session(PROJECT)
-    rois = sftf_tuned_rois(flm, session, trace=trace)
+    rois = (
+        np.flatnonzero(iscell_rois(flm, session))
+        if all_cells
+        else sftf_tuned_rois(flm, session, trace=trace)
+    )
     X, traces, recording, log_rs_median = session_frames(
         flm, session, trace=trace, lag=lag
     )
@@ -503,6 +518,11 @@ if __name__ == "__main__":
         help="stimulus to trace lag in frames (prepare only, default: 2 for spks, 5 for dff)",
     )
     p.add_argument(
+        "--all-cells",
+        action="store_true",
+        help="all iscell ROIs, not only the SF/TF-tuned ones (prepare only)",
+    )
+    p.add_argument(
         "--models",
         nargs="+",
         choices=list(MODELS),
@@ -516,7 +536,7 @@ if __name__ == "__main__":
     a = p.parse_args()
     if a.command == "prepare":
         lag = a.lag if a.lag is not None else (2 if a.trace == "spks" else 5)
-        prepare(a.session, a.out_dir, trace=a.trace, lag=lag)
+        prepare(a.session, a.out_dir, trace=a.trace, lag=lag, all_cells=a.all_cells)
     elif a.command == "fit":
         fit(a.session, a.roi, a.out_dir, a.n_jobs, a.models, a.overwrite)
     else:
