@@ -30,10 +30,11 @@ version that existed then, which has since been overwritten.
    - `synchronisation.generate_vs_df` (monitor frames from the photodiode, `FrameLog.csv`, parameter log
      `NewParams.csv`) and `synchronisation.generate_imaging_df` (one row per imaging volume);
    - `synchronisation.load_imaging_data`: dF/F of the recording (volumes × ROIs);
-   - `gratings.generate_trials_df(img_df, dff, skip_first_n_volumes=2)`: a trial starts at each volume where
+   - `gratings.generate_trials_df(img_df, dff, skip_first_n_volumes=8)`: a trial starts at each volume where
      `SpatialFrequency`, `TemporalFrequency` or `Angle` changes. The response window runs from
-     2 volumes after that change to 2 volumes after the next one, and the response is the mean dF/F
-     over the window. The last trial of each recording is dropped. ROI responses are stored in
+     8 volumes (0.53 s) after that change to the next one, and the response is the mean dF/F over the
+     window. Until 2026-10-15 it ran from 2 volumes after the change to 2 volumes after the next one, which
+     is the window of the 2026-10-08 file above (refit pending). The last trial of each recording is dropped. ROI responses are stored in
      integer-named columns. Two consecutive trials with identical parameters would be merged into one
      (rare, since the order is randomised).
 4. **Fit**: `analysis/fit_gaussian_blob.fit_sftf_tuning(trials_df, niter=10, min_sigma=0.25)`, one fit per ROI

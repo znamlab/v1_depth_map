@@ -55,6 +55,14 @@ Outputs in `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_gratings/` (
 - Model-free check (later sections of the notebook): vector-sum gOSI / gDSI and preferred orientation /
   direction at each cell's preferred SF/TF; responsive = one-way ANOVA across the 288 conditions
   (p < 0.01); orientation / direction selective = responsive and gOSI / gDSI shuffle p < 0.05.
+- Trial response window (2026-10-15): mean dF/F over `[onset + 8, next_onset)` volumes, i.e. skipping the
+  first 0.53 s (the volume closest to 0.5 s), in all trial-averaged SF/TF analyses
+  (`skip_first_n_volumes=8` default of `gratings.generate_trials_df`, so `neurons_df_sftf`; `LAG = 8` in the
+  notebook; `SKIP = 8` in `precompute_data/sftf_trial_average_subsets.py`).
+  Chosen from [`sftf_onset_profile.ipynb`](sftf_onset_profile.ipynb): gratings are back to back, there is no
+  onset transient, the response reaches 50% of its plateau at 0.33 s and the previous grating's response
+  decays to 50% 0.34 s after its offset (540 ROIs, ANOVA p < 0.01 and preferred-condition dF/F > 0.3).
+  Figures in `<processed>/v1_manuscript_figures/ver_rev1/sftf_onset_profile/`.
 
 ## Results
 
@@ -435,6 +443,13 @@ per-cell counts, is the robust result; the shift is modest (median ~0.1-0.2 octa
 
 ## Changes made along the way
 
+- 2026-10-15, response window bug: the window was `[onset + 2, next_onset + 2)` in both
+  `gratings.generate_trials_df` and the notebook's `recording_trials`, so each trial skipped only 0.13 s and
+  included the first 0.13 s of the next grating. `sftf_trial_average_subsets.py` shifted both edges by its
+  frame lag (0 for dF/F: no skip) and read RS and response from the same frames. Now `[onset + 8, next_onset)`
+  everywhere (see Analysis), with the subsets script pairing each response frame with the RS `lag` frames
+  earlier. To do: refit `neurons_df_sftf.pickle` on NEMO (`rerun_depth_sftf.py` with a new `--backup-dir`),
+  rerun the trial-average subsets, then `fig_reviewer_gratings` with `REBUILD = True`.
 - 2026-10-07, copied to `/Volumes/BlackPasspo` from NEMO for the 30 SFTF recordings: `FrameLog.csv`,
   `NewParams.csv` (raw) and `harpmessage.npz`, `monitor_frames_df.pickle` (processed). Local dF/F traces
   match NEMO (md5).

@@ -10,8 +10,10 @@ one fold per recording), after backing up the existing `neurons_df_sftf.pickle`:
   matches it, and stops otherwise (so a second run cannot overwrite a new fit; restore or
   delete the backup to run again).
 
-Provenance (k_folds, traces filter, backup) is saved as `neurons_df_sftf.json` next to the
-pickle. Restore with `cp -p BACKUP_DIR/SESSION/neurons_df_sftf.pickle <session folder>/`.
+Provenance (k_folds, traces filter, onset volumes skipped in each trial, backup) is saved as
+`neurons_df_sftf.json` next to the pickle. Restore with
+`cp -p BACKUP_DIR/SESSION/neurons_df_sftf.pickle <session folder>/`. To overwrite a file that this
+script fitted itself, use a new BACKUP_DIR (the md5 check is against the backup in BACKUP_DIR).
 
 With `--use-col spks`, the deconvolved spikes are fitted instead and saved as a new
 `neurons_df_sftf_spks.pickle` (+ .json); nothing is backed up or overwritten, and the run
@@ -24,12 +26,14 @@ Usage:
 
 import argparse
 import hashlib
+import inspect
 import json
 import shutil
 from pathlib import Path
 
 import flexiznam as flz
 
+from cottage_analysis.analysis import gratings
 from cottage_analysis.pipelines import depth_SFTF, pipeline_utils
 
 PROJECT = "hey2_3d-vision_foodres_20220101"
@@ -99,6 +103,9 @@ def main(
                 filter_traces={"anatomical_only": 3, "ast_neuropil": False},
                 photodiode_protocol=photodiode_protocol,
                 use_col=use_col,
+                skip_first_n_volumes=inspect.signature(gratings.generate_trials_df)
+                .parameters["skip_first_n_volumes"]
+                .default,
                 **provenance,
             ),
             indent=1,
