@@ -11,7 +11,8 @@ S20230924).
 
 | file | date, author | notes |
 |---|---|---|
-| `<session>/neurons_df_sftf.pickle` + `.json` (all 6 sessions) | 2026-10-08, blota (job 60117930) | current version: `ast_neuropil=False` `dff.npy`, 5-fold leave-one-recording-out cross-validation (`sftf_test_*` columns) |
+| `<session>/neurons_df_sftf.pickle` + `.json` (all 6 sessions) | 2026-10-15, blota (job 60867152, run folder `/camp/home/blota/code/sftf_skip8_run`) | current version: trial window `[onset + 8, next_onset)` (`skip_first_n_volumes=8`, in the `.json`), otherwise as the 2026-10-08 version; copied to BlackPasspo (md5 checked) |
+| `/camp/home/blota/code/sftf_skip8_run/backups/<session>/neurons_df_sftf.pickle` | 2026-10-08, blota (job 60117930) | previous version: `ast_neuropil=False` `dff.npy`, 5-fold leave-one-recording-out cross-validation (`sftf_test_*` columns), window `[onset + 2, next_onset + 2)` |
 | `/camp/home/blota/code/sftf_crossval_run/backups/<session>/neurons_df_sftf.pickle` | 2026-02-24, hey2 | previous version; ast-neuropil-corrected dF/F (see Known issues) |
 | `PZAH10.2f/S20230817/results_temp/neurons_df_sftf.pickle` | 2023-09-11 | early version |
 
@@ -34,7 +35,7 @@ version that existed then, which has since been overwritten.
      `SpatialFrequency`, `TemporalFrequency` or `Angle` changes. The response window runs from
      8 volumes (0.53 s) after that change to the next one, and the response is the mean dF/F over the
      window. Until 2026-10-15 it ran from 2 volumes after the change to 2 volumes after the next one, which
-     is the window of the 2026-10-08 file above (refit pending). The last trial of each recording is dropped. ROI responses are stored in
+     is the window of the 2026-10-08 file above. The last trial of each recording is dropped. ROI responses are stored in
      integer-named columns. Two consecutive trials with identical parameters would be merged into one
      (rare, since the order is randomised).
 4. **Fit**: `analysis/fit_gaussian_blob.fit_sftf_tuning(trials_df, niter=10, min_sigma=0.25)`, one fit per ROI

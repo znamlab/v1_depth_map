@@ -240,6 +240,59 @@ Conclusions so far:
    need not be OFF subregions (sphere polarity not checked); the fold-split "reliability" in the notebook is not independent (fold
    models share most of their training data).
 
+## Frame-level analyses moved to lag 0 (2026-10-14)
+
+All frame-level analyses (running-speed models, speed-binned responses, model-free TF shift) now pair the stimulus
+and running speed of a frame with the dF/F of the **same frame** (`FRAME_LAG = 0` in the notebook, `LAG = 0` in
+`precompute_data/sftf_running_models.py`). That is the convention of every manuscript RS/OF fit. Before this change
+they used a 5-frame lag, taken from the exploratory RS/OF lag sweep. **The sections below dated before 2026-10-14
+report lag-5 results.** Those results and their NEMO run directories have been deleted.
+
+**Lag sweep.** The grating lag sweep is in `revisions/rf_spike_tau/lag_choice.ipynb`, run with
+`sftf_lag_sweep.py`. It covers the 100 best trial-level-fitted SF/TF-tuned cells and fits `base`, `rsg` and
+`rsg_tf` at lags −2 to 15 frames. On the first 68 cells:
+- The best lag is 4 frames (median; IQR 3–5), for all three models.
+- Held-out R² as a fraction of the cell's best is 0.90 at lag 0 and 0.99 at lags 4–5.
+- Preferred SF and TF do not depend on the lag (median range over lags 0–8: 0.02 and 0.08 octaves).
+- `a_tf` is positive at every lag (median 0.08 at lag 0, 0.09 at lag 5).
+
+**Running-speed models at lag 0.** These are all 3012 `iscell` cells, refitted on NEMO
+(`/camp/home/blota/code/sftf_running_models_lag0`), with results in `running_models/`. 722 cells are significant in
+at least one model (731 at lag 5).
+
+| | All | Depth selective | Other | Depth > other |
+|---|---|---|---|---|
+| Best model `rsg_tf` | 17.9% | 22.9% | 16.0% | p = 0.10 (lag 5: 30.5% vs 20.0%, p = 0.025) |
+| `a_tf`, `rsg_tf` significant (median) | 0.095 (n = 566, p < 0.001) | 0.168 (p < 0.001) | 0.075 (p = 0.001) | **p = 0.002** (lag 5: p = 0.19) |
+| `a_sf`, `rsg_sf` significant (median) | −0.014 (p = 0.005) | −0.014 | −0.013 | p = 0.41 |
+| Held-out R² `rsg_tf` − `rsg` (median) | −1e-4 (worse, p < 0.001) | −1e-4 (p = 0.20) | −2e-4 (p < 0.001) | p = 0.005 |
+
+The p-values against 0 come from a hierarchical bootstrap. The depth vs other p-values permute depth labels within
+session. The lag-5 values are on the same cells (the lag-0 vs lag-5 comparison of 2026-10-14).
+
+**Model-free TF shift at lag 0** (`running_models/tf_shift.pickle`, regenerated). Shifters among the 1454 SF/TF-tuned
+cells:
+
+| | Depth selective | Other |
+|---|---|---|
+| Lag 0 | 55/389 (14.1%) | 132/1065 (12.4%) |
+| Scrambled running speed (sham) | 9.0% | 7.4% |
+
+Fisher one-sided p = 0.21 for lag 0 and 0.19 for the sham. At lag 5 the fractions were 18.5% vs 12.2%, and the
+within-session permutation gave p = 0.001.
+
+**What changes with the lag:**
+- **Holds at both lags:**
+  - Running shifts the preferred TF upwards: `a_tf` > 0 in depth-selective and other cells.
+  - The SF shift is small (about −0.014) and does not differ between groups.
+  - Adding the TF shift does not improve held-out R² overall, and it costs less in depth-selective cells.
+  - The trial-level results are not lag dependent (panels A–D, preferences, exported stats).
+- **Depends on the lag:**
+  - At lag 0 the larger `a_tf` of depth-selective cells becomes significant.
+  - At lag 0, two lag-5 results are lost: more depth-selective cells best fit by `rsg_tf`, and more model-free
+    TF shifters among depth-selective cells.
+  - The depth-selective vs other comparison should therefore be reported as lag sensitive.
+
 ## Running-speed models: gain vs preference shift (10 chosen cells, 2026-10-10)
 
 To test whether running primarily **shifts** grating tuning (TF or SF preferences) or mainly modulates responses via multiplicative **gain** or additive **offset**, 9 candidate models were evaluated on 10 high-SNR cells across all 6 sessions and both mice (3 depth-tuned, 7 other, including thesis example PZAH10.2f_S20230817 ROI 544).
@@ -434,6 +487,54 @@ fraction of other cells; ~10 vs ~4 percentage points above the scrambled-speed r
 2 mice, 6 sessions; per-cell p values are slightly liberal (calibration 8%), so the comparison between groups, not the
 per-cell counts, is the robust result; the shift is modest (median ~0.1-0.2 octave between the slow and fast halves).
 
+## Running-speed Gaussian (`rsg`) vs a quadratic running-speed term (2026-10-13)
+
+The notebook's running-speed models (`rsg`, `rsg_tf`, `rsg_sf`; all 3012 `iscell` cells, dF/F) use a Gaussian in log
+running speed, parameterised and bounded as the RS/OF fits of figure 2: preferred speed 0.5 cm/s - 5 m/s,
+σ² = exp(log σ²) + 0.25. A monotonic cell needs a wide Gaussian peaking far outside the speeds analysed. With the
+peak capped at 5 m/s, steeply increasing cells keep some curvature, and 36% of the cells fitted significantly had
+their `rsg` peak at a bound.
+
+**Alternative tested.** The same curves were written as a quadratic in log running speed,
+$\ln A = \ell + g \cdot r - c \cdot r^2$, with $0 \leq c \leq 2$ (the same minimum width, σ ≥ 0.5) and |g| ≤ 20.
+- There is no bound on the peak: $c = 0$ is exactly the power-law gain.
+- Models `quad`, `quad_tf` and `quad_sf` were fitted on all cells (NEMO job 60631747).
+- They were started from the gain fit and from peaks at quantiles of running speed, not from `rsg`.
+- 2996 of the 3012 cells were done when the job was stopped; 651 were significant in `gain`, `rsg` or `quad`.
+
+**Result: the quadratic term is not better.**
+- **Same solution wherever `rsg` is not at a bound.** For the 404 cells where both models peak:
+  - preferred speed Spearman 1.000, 98% of cells within 5%;
+  - width Spearman 0.999, 98% within 5%.
+- **Cells where `rsg` was at its bound (235).** `quad` becomes monotonic ($c = 0$) for 79% of them. Its held-out R² is
+  better in 59% of these cells, but only by a median of +4e-5, against a typical held-out R² of about 0.02.
+- **Held-out R² over all cells.**
+
+  | Comparison | Median difference | Mean difference |
+  |---|---|---|
+  | quad - rsg | -7e-7 | +4e-5 |
+  | quad_tf - rsg_tf | -2e-6 | +5e-5 |
+  | quad_sf - rsg_sf | -6e-7 | +2e-4 |
+
+  These are within optimiser noise.
+- **Preference shifts unchanged.**
+
+  | Shift | Spearman between models | Median, `quad` | Median, `rsg` |
+  |---|---|---|---|
+  | `a_tf` | 0.94 | 0.10 | 0.12 |
+  | `a_sf` | 0.95 | -0.015 | -0.015 |
+
+- **`gain` still beats the curved model in about 2/3 of the cells**: 65% against `quad`, 69% against `rsg`. That
+  happens because the extra curvature parameter overfits and costs on held-out data. The 5 m/s cap is not the
+  reason.
+
+**Decision.** Keep `rsg`, which matches the RS/OF fits. The quadratic models, their code and their results were
+removed.
+
+The `gain` vs `rsg` comparison (shape of the running-speed curve, preferred speed vs the RS/OF fit, `a_tf` under
+both models; `running_speed_tuning_vs_gain.pdf`) was moved on 2026-10-14 from `fig_reviewer_gratings.ipynb` to
+`running_speed_gain_vs_preferred_rs.ipynb` in this folder (personal notes, not for the paper).
+
 ## Open points
 
 - `P_RESPONSIVE` (0.01) differs from `P_SELECTIVE` (0.05) in the model-free section without a principled
@@ -448,8 +549,10 @@ per-cell counts, is the robust result; the shift is modest (median ~0.1-0.2 octa
   included the first 0.13 s of the next grating. `sftf_trial_average_subsets.py` shifted both edges by its
   frame lag (0 for dF/F: no skip) and read RS and response from the same frames. Now `[onset + 8, next_onset)`
   everywhere (see Analysis), with the subsets script pairing each response frame with the RS `lag` frames
-  earlier. To do: refit `neurons_df_sftf.pickle` on NEMO (`rerun_depth_sftf.py` with a new `--backup-dir`),
-  rerun the trial-average subsets, then `fig_reviewer_gratings` with `REBUILD = True`.
+  earlier. Done the same day on NEMO (run folder `/camp/home/blota/code/sftf_skip8_run`):
+  `neurons_df_sftf.pickle` refit (job 60867152, previous files in `backups/`) and trial-average subsets
+  (job 60867153, previous local results in `fig_reviewer_gratings/trial_average_subsets_before_skip8/`), copied
+  to BlackPasspo; `fig_reviewer_gratings` rerun with rebuilt caches.
 - 2026-10-07, copied to `/Volumes/BlackPasspo` from NEMO for the 30 SFTF recordings: `FrameLog.csv`,
   `NewParams.csv` (raw) and `harpmessage.npz`, `monitor_frames_df.pickle` (processed). Local dF/F traces
   match NEMO (md5).
