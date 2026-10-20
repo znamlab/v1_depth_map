@@ -76,6 +76,18 @@ alongside the `"model"` results instead of overwriting them::
     python fit_revision_treadmill.py --only treadmill_frames --method plateau
     python fit_revision_treadmill.py --only treadmill_frames --method plateau --merge
 
+Spikes (`--use-col spks`)
+-------------------------
+Fits the deconvolved suite2p spikes (`spks_stim`) instead of dF/F, with everything else
+identical, to compare free-locomotion fits on spikes with the treadmill fits. Filenames
+get a `_spks` tag (`..._legacy_refit_spks.pickle`, `..._treadmill_trial_average_legacy_plateau_spks.pickle`),
+so the dF/F merge globs never pick them up. They are not merged into `neurons_df.pickle`
+(`--merge` refuses); analyses read the pickles directly::
+
+    python fit_revision_treadmill.py --only sphere --use-col spks --configs gaussian_2d:None:5
+    python fit_revision_treadmill.py --only treadmill --method plateau --use-col spks \
+        --configs gaussian_2d:None:5
+
 Fit bounds (`param_range`)
 --------------------------
 `param_range` bounds the *centre* of the fitted Gaussian - `x0` = log(RS in m/s), `y0` =
@@ -280,7 +292,7 @@ def assert_site_root(site):
     print(f"          raw root: {flz.get_data_root('raw', project=PROJECT)}")
 
 
-def target_config(target, method):
+def target_config(target, method, use_col="dffs"):
     """Per-(target, method) config: static FIT_TARGETS entry resolved for one onset method.
 
     The `sphere` target never touches `treadmill.sync_all_recordings` (it goes through
@@ -305,15 +317,18 @@ def target_config(target, method):
     cfg["column_suffix"] = cfg["column_suffix"][method]
     if cfg["protocol_base"] == "SpheresTubeMotor" and method != "model":
         cfg["file_special_sfx"] += f"_{method}"
+    if use_col == "spks":
+        cfg["file_special_sfx"] += "_spks"
+        cfg["column_suffix"] += "_spks"
     return cfg
 
 
-def fit_filename(target, method, model, choose_trials, k_folds):
+def fit_filename(target, method, model, choose_trials, k_folds, use_col="dffs"):
     """Output filename, matching what pipeline_utils.load_and_fit would produce."""
     suffix = (
         model + ("_crossval" if isinstance(choose_trials, str) else "") + f"_k{k_folds}"
     )
-    special_sfx = target_config(target, method)["file_special_sfx"]
+    special_sfx = target_config(target, method, use_col)["file_special_sfx"]
     return f"fit_rs_of_tuning_{suffix}{special_sfx}.pickle"
 
 
@@ -334,7 +349,7 @@ def _cottage_analysis_sha():
         return None
 
 
-def param_range_record(target, method, cfg):
+def param_range_record(target, method, cfg, use_col="dffs"):
     """The fit parameters that a pickle's popts depend on but do not record.
 
     `fit_rs_of_tuning` stores `min_sigma` in the output (`rsof_minSigma_*`) but not
@@ -345,6 +360,7 @@ def param_range_record(target, method, cfg):
     return {
         "target": target,
         "method": method,
+        "use_col": use_col,
         "param_range": cfg["param_range"],
         "min_sigma": COMMON_PARAMS["min_sigma"],
         "rs_thr": COMMON_PARAMS["rs_thr"],
@@ -356,7 +372,7 @@ def param_range_record(target, method, cfg):
     }
 
 
-def write_param_range_record(session_dir, target, method, cfg):
+def write_param_range_record(session_dir, target, method, cfg, use_col="dffs"):
     """Write `param_range_current.json` next to the pickles this run produced.
 
     `.json` is invisible to `merge_fit_dataframes`' `fit_rs_of_tuning_*.pickle` glob, so
@@ -365,7 +381,7 @@ def write_param_range_record(session_dir, target, method, cfg):
     import json
 
     path = Path(session_dir) / "param_range_current.json"
-    record = param_range_record(target, method, cfg)
+    record = param_range_record(target, method, cfg, use_col)
     path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
     print(f"### wrote provenance record: {path}")
     return path
@@ -475,6 +491,7 @@ def fit_session_target(
     dry_run=False,
     skip_existing=True,
     check_range_only=False,
+    use_col="dffs",
 ):
     """Fit every config of one (session, target), loading the session data ONCE.
 
@@ -485,7 +502,7 @@ def fit_session_target(
     the 11 configs all consume the same `trials_df`. Keep this in step with
     `load_and_fit` (pipeline_utils.py:246) if that changes.
     """
-    cfg = target_config(target, method)
+    cfg = target_config(target, method, use_col)
 
     if dry_run:
         print(f"[dry-run] {session_name} | {target} | param_range={cfg['param_range']}")
@@ -496,7 +513,7 @@ def fit_session_target(
         session_dir = _session_dir_or_none(session_name)
         n_skip = 0
         for model, choose_trials, k_folds in configs:
-            fname = fit_filename(target, method, model, choose_trials, k_folds)
+            fname = fit_filename(target, method, model, choose_trials, k_folds, use_col)
             if session_dir is None:
                 verdict = "?         "  # could not resolve; still list the config
             elif skip_existing and (session_dir / fname).exists():
@@ -530,6 +547,7 @@ def fit_session_target(
         protocol_base=cfg["protocol_base"],
         recording_type="two_photon",
         tread_kwargs={"method": method},
+        add_spikes=use_col == "spks",
     )
     # Drop multidepth recordings, as load_and_fit does (pipeline_utils.py:352-354).
     is_multidepth = trials_df_all.recording_name.str.contains("multidepth")
@@ -545,11 +563,11 @@ def fit_session_target(
     if check_range_only:
         return []
 
-    write_param_range_record(neurons_ds.path_full.parent, target, method, cfg)
+    write_param_range_record(neurons_ds.path_full.parent, target, method, cfg, use_col)
 
     durations = []
     for model, choose_trials, k_folds in configs:
-        fname = fit_filename(target, method, model, choose_trials, k_folds)
+        fname = fit_filename(target, method, model, choose_trials, k_folds, use_col)
         out_path = neurons_ds.path_full.with_name(fname)
         if skip_existing and out_path.exists():
             print(f"--- skip (exists): {fname}")
@@ -568,6 +586,7 @@ def fit_session_target(
             max_rs2motor_diff=cfg["max_rs2motor_diff"],
             trial_average=cfg["trial_average"],
             param_range=cfg["param_range"],
+            use_col=use_col,
             **COMMON_PARAMS,
         )
         # Write to a temp file and rename. `rename` is atomic within a filesystem, so an
@@ -592,6 +611,7 @@ def submit_one(
     slurm_root,
     dry_run=False,
     skip_existing=True,
+    use_col="dffs",
 ):
     """Submit ONE (session, target, config) fit as a slurm job.
 
@@ -599,8 +619,8 @@ def submit_one(
     reloads the session itself. That redundant load is deliberate here: on the cluster
     every config runs as its own job, so maximum parallelism beats sharing a `trials_df`.
     """
-    cfg = target_config(target, method)
-    fname = fit_filename(target, method, model, choose_trials, k_folds)
+    cfg = target_config(target, method, use_col)
+    fname = fit_filename(target, method, model, choose_trials, k_folds, use_col)
     label = (
         f"{session_name} | {target:16s} | {model} choose_trials={choose_trials} "
         f"k={k_folds}"
@@ -621,7 +641,10 @@ def submit_one(
     # scripts_name must be unique per job: slurm_it writes {slurm_folder}/{scripts_name}.py
     # and .sh, so two jobs sharing a name overwrite each other's scripts.
     trials_tag = f"_{choose_trials}" if isinstance(choose_trials, str) else ""
-    scripts_name = f"refit_{session_name}_{target}_{model}{trials_tag}_k{k_folds}"
+    col_tag = "_spks" if use_col == "spks" else ""
+    scripts_name = (
+        f"refit_{session_name}_{target}_{model}{trials_tag}_k{k_folds}{col_tag}"
+    )
     slurm_folder = Path(slurm_root) / session_name
 
     if dry_run:
@@ -649,6 +672,7 @@ def submit_one(
         trial_sfx="",
         filter_datasets=FILTER_DATASETS,
         tread_kwargs={"method": method},
+        use_col=use_col,
         use_slurm=True,
         slurm_folder=str(slurm_folder),
         scripts_name=scripts_name,
@@ -801,6 +825,13 @@ def main():
         "'model'.",
     )
     parser.add_argument(
+        "--use-col",
+        choices=["dffs", "spks"],
+        default="dffs",
+        help="Response to fit: dF/F or the suite2p spikes. 'spks' tags output filenames "
+        "with '_spks'; those fits are not merged.",
+    )
+    parser.add_argument(
         "--site",
         choices=sorted(SITE_ROOTS),
         default="local",
@@ -841,10 +872,13 @@ def main():
                     configs,
                     dry_run=args.dry_run,
                     check_range_only=True,
+                    use_col=args.use_col,
                 )
         return
 
     if args.merge:
+        if args.use_col == "spks":
+            parser.error("spike fits are not merged; read the _spks pickles directly")
         for session_name in args.sessions:
             for target in targets:
                 merge_one(
@@ -878,6 +912,7 @@ def main():
                         args.slurm_folder,
                         dry_run=args.dry_run,
                         skip_existing=not args.redo,
+                        use_col=args.use_col,
                     )
                     if jid:
                         job_ids.append(jid)
@@ -896,6 +931,7 @@ def main():
                 configs,
                 dry_run=args.dry_run,
                 skip_existing=not args.redo,
+                use_col=args.use_col,
             )
             if durations:
                 print(
