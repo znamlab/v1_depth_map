@@ -179,11 +179,11 @@ variant reproduced the production fits exactly.
 - ASt dF/F has a few large negative trial responses (down to −70 in PZAH10.2f_S20230912), presumably
   neuropil over-subtraction.
 
-## RF shape vs grating tuning (2026-10-10)
+## RF shape vs grating tuning (2026-10-10, numbers updated 2026-10-20)
 
 Does the sphere RF shape predict grating tuning? (A) does a red centre with blue flanks on either side
 prefer gratings with bars parallel to the flanks; (B) are asymmetric RFs more direction selective?
-Notebook `figures/fig_reviewer_rf_sftf.ipynb`, helpers `figure_utils/rf_shape.py`, outputs in
+Notebook `revisions/sftf/fig_reviewer_rf_sftf.ipynb`, helpers `figure_utils/rf_shape.py`, outputs in
 `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_rf_sftf/`. Exploratory, no stats exported.
 
 - RF fits checked first: closed-loop dF/F and spike RFs (`neurons_df_spks.pickle`, made 5-6 Oct after the τ
@@ -205,31 +205,34 @@ Notebook `figures/fig_reviewer_rf_sftf.ipynb`, helpers `figure_utils/rf_shape.py
   counterclockwise from the right, i.e. they draw the wave vector: in the RF-map frame (azimuth to the right,
   elevation up) the drift points the opposite way (90° drawn up = drifting down). Panels E-F of
   `fig_reviewer_gratings` follow the same labels and need the thesis caption wording.
-- Cells: 679 / 3012 have a significant RF, 396 with the peak ≥ 4 pixels from the map edges (needed so the
-  surround is not truncated). Of these, 214 flanked (deepest flank ≥ 2 z), 108 bilateral, 95
-  orientation-selective, 50 direction-selective, 186 SF/TF tuned. Bilateral and orientation selective: 23.
+- Numbers below are from the 2026-10-20 run, after the PZAH10.2d_S20230920 FrameLog restore and refit. That
+  session went from 27 to 110 significant RFs (19 to 65 centred); the other five sessions are unchanged. The
+  2026-10-10 run, on the bad S20230920 sync, had one nominal hit (flanks above and below → vertical bars,
+  7 of 12, Fisher p = 0.037) that is gone with the corrected RFs.
+- Cells: 762 / 3012 have a significant RF, 442 with the peak ≥ 4 pixels from the map edges (needed so the
+  surround is not truncated). Of these, 251 flanked (deepest flank ≥ 2 z), 120 bilateral, 134
+  orientation-selective, 79 direction-selective, 207 SF/TF tuned. Bilateral and orientation selective: 32.
 
 | Test | n | Result |
 |---|---|---|
-| A1 flank axis vs preferred orientation (weighted mean cos 2Δ, within-session permutation) | 68 | 0.16, p = 0.11 (mirrored control: 0.11, p = 0.35) |
-| A2 centre long axis + 90° vs preferred orientation | 68 | 0.19, p = 0.06 / 0.17, p = 0.07 |
-| A3 Gabor orientation (R² ≥ 0.5) | 55 | p = 0.31 / 0.42 |
-| A4 flank axis vs fitted orientation, SF/TF-tuned | 131 | p = 0.13 / 0.05 |
-| A5 bilateral → horizontal bars | 23 vs 72 | 17% vs 28%, Fisher p = 0.41 |
-| A5 flanks above and below → vertical bars | 12 vs 83 | 58% vs 25%, Fisher p = 0.037 (one of six uncorrected A5 tests) |
-| B1 asymmetry vs fitted DSI (hierarchical bootstrap) | 103 | ρ = 0.09 [-0.34, 0.34], p = 0.68 |
-| B1 asymmetry vs gDSI, responsive | 119 | ρ = -0.01, p = 0.98 |
-| B2 asymmetry, direction selective vs not | 29 vs 90 | medians 0.36 vs 0.42, p = 0.26 |
-| B3 preferred motion vs asymmetry direction (asym ≥ 0.3, direction selective) | 17 | p = 0.36 / 0.52 |
-| B4 asymmetry direction vs local optic flow (V-test) | 145 | V = 0.03, p = 0.61 |
-| B4 asymmetry along azimuth vs RF azimuth | 145 | ρ = -0.53, p = 1e-11 |
-| B4 asymmetry along elevation vs RF elevation | 145 | ρ = -0.31, p = 0.0002 |
+| A1 flank axis vs preferred orientation (weighted mean cos 2Δ, within-session permutation) | 98 | 0.07, p = 0.14 (mirrored control: 0.07, p = 0.18) |
+| A2 centre long axis + 90° vs preferred orientation | 98 | 0.08, p = 0.16 / 0.10, p = 0.09 |
+| A3 Gabor orientation (R² ≥ 0.5) | 74 | p = 0.28 / 0.04 (mirrored control only) |
+| A4 flank axis vs fitted orientation, SF/TF-tuned | 148 | p = 0.32 / 0.09 |
+| A5 bilateral → horizontal bars | 32 vs 102 | 28% vs 25%, Fisher p = 0.82 |
+| A5 flanks above and below → vertical bars | 19 vs 115 | 37% vs 30%, Fisher p = 0.59 (→ horizontal bars: 37% vs 24%, p = 0.27) |
+| B1 asymmetry vs fitted DSI (hierarchical bootstrap) | 118 | ρ = 0.07 [-0.17, 0.33], p = 0.56 |
+| B1 \|sin Gabor phase\| vs fitted DSI | 121 | ρ = 0.01 [-0.22, 0.39], p = 0.84 |
+| B2 asymmetry, direction selective vs not | 45 vs 73 | medians 0.39 vs 0.37, p = 0.98 |
+| B3 preferred motion vs asymmetry direction (asym ≥ 0.3, direction selective) | 27 | p = 0.41 / 0.97 |
+| B4 asymmetry direction vs local optic flow (V-test) | 175 | V = 0.06, p = 0.28 |
+| B4 asymmetry along azimuth vs RF azimuth | 175 | ρ = -0.59, p = 4e-18 |
+| B4 asymmetry along elevation vs RF elevation | 175 | ρ = -0.36, p = 7e-7 |
 
 Conclusions so far:
-1. **No reliable link between flank geometry and preferred orientation.** All alignment stats are positive
-   but none survives correction. The one nominal hit points the other way from the side-band hypothesis:
-   cells with flanks above and below the centre prefer *vertical* bars (7 of 12), which would fit end
-   inhibition, not horizontal-grating tuning. With 12 cells this is not evidence.
+1. **No link between flank geometry and preferred orientation.** No test with the correct convention
+   reaches p < 0.05; the only nominal p < 0.05 is the Gabor test under the mirrored control convention. Cells
+   with flanks above and below the centre split evenly between vertical and horizontal bars (7 and 7 of 19).
 2. **RF asymmetry does not predict direction selectivity** (B1-B3 null).
 3. **The asymmetry is largely set by RF position.** The deeper flank points towards the middle of the
    mapped field (low azimuth for RFs at large azimuth, upwards for low RFs and downwards for high ones),
