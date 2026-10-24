@@ -33,6 +33,7 @@ dependencies = [
     "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git",
     "cottage_analysis",
     "pyparsing<3.0.0",
+    "cmcrameri>=1.10",
 ]
 
 [project.optional-dependencies]
