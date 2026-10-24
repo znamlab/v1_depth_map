@@ -31,12 +31,12 @@ All outputs are under `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_g
    slim neurons_df (`cache/<session>_neurons_slim.pickle`) and `grating_tuning_cells.csv` (one row per `iscell`
    ROI: model-free tuning, depth and RS/OF tuning, the trial-level fit and the selections).
 3. `precompute_data/sftf_running_models.py` (NEMO): `prepare --trace dff --all-cells` (running frames) and
-   `prepare --trace dff --all-cells --still` (still frames, not fitted) → `running_models/frames{,_still}/<session>.npz`;
+   `prepare --trace dff --all-cells --slow` (frames below 2.83 cm/s, not fitted) → `running_models/frames{,_slow}/<session>.npz`;
    `fit` and `merge` → `running_models/<session>_sftf_running_models.pickle`. The figure needs only the `base`
    model (`fit SESSION ROI --models base`: selection of the population curves); the other models feed the
    exploratory notebook (`--models gain gain_tf gain_sf rsg rsg_tf rsg_sf`, added to the same ROI results).
 4. `revisions/sftf/sftf_tf_shift.py` → `running_models/tf_shift.pickle` (exploratory notebook only).
-5. `figures/fig_reviewer_gratings.ipynb`: builds `cache/speed_curves_v2.pickle`, writes `fig_sftf_analysis.{pdf,png}`
+5. `figures/fig_reviewer_gratings.ipynb`: builds `cache/speed_curves_v7.pickle`, writes `fig_sftf_analysis.{pdf,png}`
    and the stats YAML.
 6. `revisions/sftf/sftf_exploratory_analysis.ipynb` (optional).
 
@@ -93,22 +93,32 @@ increasing to the right, y = elevation up). The figure plots drift direction (`s
 higher azimuth, i.e. front to back, the optic flow of forward running; 90° is up. The thesis polar plots were labelled
 in `Angle` units.
 
-**Correlations** (panels F–J). Spearman ρ, 95% CI and p from a hierarchical bootstrap over sessions only (with 2
-mice, resampling mice is degenerate: half the resamples contain one mouse). Nine pairs are tested (SF, TF and
-grating speed against preferred depth, optic flow and running speed) and Holm-corrected; the figure shows five, with
-a log-log regression line where the Holm p < 0.05.
+**Correlations** (panels F–I). Spearman ρ, 95% CI and p from a hierarchical bootstrap over sessions only (with 2
+mice, resampling mice is degenerate: half the resamples contain one mouse). Five pairs are tested and Holm-corrected
+(decided 2026-10-24): preferred grating speed vs preferred depth (F), the question; TF and SF vs depth (G, H), to see
+which of the two drives it; then, as SF does, SF vs preferred optic flow (I) and running speed (not shown). The
+other combinations (TF or grating speed vs optic flow or running speed) are not tested. Log-log regression line where
+the Holm p < 0.05.
 
 **Overlap of depth-selective and SF/TF-tuned cells** (stats only): the count expected if independent is computed per
 session and summed, because the fractions of tuned cells differ between sessions; Mantel-Haenszel test of the pooled
 odds ratio.
 
-**Running speed** (panels K–P). Bins of 5–11.3, 11.3–22.6, 22.6–45.2 and 45.2–90.5 cm/s (the treadmill bins of figure
-3 with the two slowest merged, the first starting at the still threshold). Still frames: running speed below 5 cm/s
-for about 1 s, as figure 1. Curves over the SF (TF) / direction pairs where the fitted tuning is at least half its
-best pair. Population curves (`sftf.build_speed_curves`): cells significant on the frame-level `base` fit and with a
-significant TF (SF) effect; each cell's peak and its value come from the running frames of half of the recordings
-(alternate recordings, i.e. alternate presentations of each condition), and the curves of the other half, per speed
-bin and for the still frames, are aligned on that peak and divided by that value.
+**Running speed** (panels J–O). Bins of 2.8–5.7, 5.7–11.3, 11.3–22.6, 22.6–45.3 and > 45.3 cm/s: the treadmill bins
+of figure 3 (motor speeds 4–61 cm/s, one octave apart), the last with no upper limit. One more curve (black) for all
+the frames below 2.8 cm/s, whatever the running speed before or after (`prepare --slow`). Decided 2026-10-24; before,
+the bins were 5–11.3, 11.3–22.6, 22.6–45.2 and 45.2–90.5 cm/s and the black curve was the still frames (below 5 cm/s
+for about 1 s, as figure 1), which left out ~10% of the grating frames (slow but not still for 1 s). Curves over the
+SF (TF) / direction pairs where the fitted tuning is at least half its best pair. Population curves
+(`sftf.build_speed_curves`): cells significant on the frame-level `base` fit and with a significant TF (SF) effect;
+each cell's peak comes from all the frames (running frames in the speed bins and slow frames, pooled) of half of the
+recordings (alternate recordings, i.e. alternate presentations of each condition), and the curves of the other half,
+per speed bin and for the slow frames, are aligned on that peak, so that no speed range defines the alignment (until
+2026-10-24 the peak came from the running frames only). Responses are the dF/F minus the offset of the trial-level SF/TF fit,
+divided by the fitted peak above that offset over the tested stimuli (`sftf.sftf_fit_peak`). Until 2026-10-24 they
+were divided by the peak value of the selection half, which blew up for a cell whose peak was just above 0 (ΔF/F/peak
+of about 1300 after the onset-skip refit); the fit is on all recordings, so the normalisation is not held out, but it
+is never close to 0.
 
 **Running-speed models** (exploratory). The amplitude depends on running speed through a Gaussian in log running
 speed, parameterised and bounded as the RS/OF fits (`rsg`), optionally with a TF or SF preference shift. A

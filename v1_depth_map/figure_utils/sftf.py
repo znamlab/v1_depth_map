@@ -3,7 +3,7 @@
 - depth-protocol trials and the panel B example (`load_depth_trials`, `load_depth_example`);
 - frame-level SF / TF tuning per running-speed bin (`speed_binned_responses`, `tf_curves_by_speed`,
   `population_tf_curves`, `sftf_model_kept_pairs`);
-- held-out population curves per speed bin and for still frames (`build_speed_curves`);
+- held-out population curves per speed bin and for the slow frames (`build_speed_curves`);
 - `stratified_median_difference`: group difference with labels permuted within sessions;
 - plotting (`plot_sftf_3x3_grid`, `plot_polar_direction_hist`, `plot_heldout_speed_curves_panel`);
 - `bootstrap_spearman`: hierarchical bootstrap of Spearman correlations over sessions.
@@ -62,7 +62,7 @@ def speed_binned_responses(
         edges_cm_s (array, optional): bin edges in cm/s; frames outside are dropped.
         recording (array, optional): recording name per frame to identify trial boundaries.
         single_bin_label (str, optional): all frames in one bin with this label, ignoring the
-            running speed (e.g. "Static" for the still frames, whose X[3] is 0).
+            running speed (e.g. `SLOW_LABEL` for the slow frames, whose X[3] is 0).
 
     Returns:
         list of (label, DataFrame): one table per bin with `SpatialFrequency`,
@@ -100,17 +100,22 @@ def speed_binned_responses(
     )
     if single_bin_label is not None:
         return [(single_bin_label, frames)]
-    cm_s = np.exp(edges) * 100
     return [
-        (
-            f"{cm_s[i]:.1f}-{cm_s[i + 1]:.1f} cm/s",
-            frames[bins == i].reset_index(drop=True),
-        )
-        for i in range(n_bins)
+        (label, frames[bins == i].reset_index(drop=True))
+        for i, label in enumerate(_speed_bin_labels(edges))
     ]
 
 
 FREQ_COLS = {"tf": "TemporalFrequency", "sf": "SpatialFrequency"}
+
+
+def _speed_bin_labels(edges):
+    """Labels of the speed bins with edges `edges` (log m/s); an infinite last edge gives "> x cm/s"."""
+    cm_s = np.exp(edges) * 100
+    return [
+        f"> {lo:.1f} cm/s" if np.isinf(hi) else f"{lo:.1f}-{hi:.1f} cm/s"
+        for lo, hi in zip(cm_s[:-1], cm_s[1:])
+    ]
 
 
 def drift_direction(angle_deg):
@@ -144,22 +149,18 @@ def example_condition_means(cache_dir, session, roi):
     )
 
 
-def sftf_model_kept_pairs(
-    cell_fits, sf_values, tf_values, angle_values, variable="tf", threshold=0.5
-):
-    """Determine kept (SF, Angle) or (TF, Angle) pairs using the fitted SFTF parametric model.
+def _fit_tuning_above_offset(cell_fits, sf_values, tf_values, angle_values):
+    """Fitted SFTF tuning minus its offset over the tested stimuli, and the offsets.
 
     Args:
-        cell_fits: list/array of 10 parameters, Series, or DataFrame containing GratingParams fields.
+        cell_fits: list/array of 10 parameters, Series, or DataFrame containing GratingParams fields
+            (prefixed `fit_` or `base_`, or not).
         sf_values: tested spatial frequencies in cpd.
         tf_values: tested temporal frequencies in Hz.
         angle_values: tested drift directions in degrees or radians.
-        variable: "tf" (kept SF x Angle pairs for TF tuning) or "sf" (kept TF x Angle pairs for SF tuning).
-        threshold: fraction of peak pair response (default 0.5).
 
     Returns:
-        kept: boolean array of shape (n_sf, n_ang, n_cells) if variable == "tf",
-              or (n_tf, n_ang, n_cells) if variable == "sf".
+        pred (n_cells, n_sf, n_tf, n_ang), offset (n_cells,).
     """
     from cottage_analysis.analysis.fit_gaussian_blob import (
         GratingParams,
@@ -194,29 +195,57 @@ def sftf_model_kept_pairs(
 
     SF, TF, ANG = np.meshgrid(np.log(sf_v), np.log(tf_v), ang_v, indexing="ij")
     stim = np.stack([SF.ravel(), TF.ravel(), ANG.ravel()])  # (3, 288)
-
-    n_cells = len(popt_mat)
-    kept_list = []
-    for i in range(n_cells):
-        popt = popt_mat[i]
-        offset = popt[6]
-        pred = (
+    offset = popt_mat[:, 6]
+    pred = np.stack(
+        [
             grating_tuning(stim, *popt, min_sigma=0.25).reshape(
                 len(sf_v), len(tf_v), len(ang_v)
             )
-            - offset
-        )
-        if variable == "tf":
-            pair_resp = pred.mean(axis=1)  # (n_sf, n_ang)
-        else:
-            pair_resp = pred.mean(axis=0)  # (n_tf, n_ang)
-        peak = pair_resp.max()
-        kept_list.append(
-            pair_resp >= threshold * peak
-            if peak > 0
-            else np.zeros_like(pair_resp, bool)
-        )
-    return np.stack(kept_list, axis=-1)
+            for popt in popt_mat
+        ]
+    )
+    return pred - offset[:, None, None, None], offset
+
+
+def sftf_fit_peak(cell_fits, sf_values, tf_values, angle_values):
+    """Offset and peak above the offset of the fitted SFTF tuning over the tested stimuli.
+
+    The peak is the maximum of the fitted tuning minus its offset over the tested SF x TF x direction
+    grid, rather than the amplitude parameter, which exceeds every tested response when SF0 or TF0
+    lies beyond the tested range. It is positive for every cell. Arguments as `sftf_model_kept_pairs`.
+
+    Returns:
+        offset (n_cells,), peak (n_cells,).
+    """
+    pred, offset = _fit_tuning_above_offset(
+        cell_fits, sf_values, tf_values, angle_values
+    )
+    return offset, pred.max(axis=(1, 2, 3))
+
+
+def sftf_model_kept_pairs(
+    cell_fits, sf_values, tf_values, angle_values, variable="tf", threshold=0.5
+):
+    """Determine kept (SF, Angle) or (TF, Angle) pairs using the fitted SFTF parametric model.
+
+    Args:
+        cell_fits: list/array of 10 parameters, Series, or DataFrame containing GratingParams fields.
+        sf_values: tested spatial frequencies in cpd.
+        tf_values: tested temporal frequencies in Hz.
+        angle_values: tested drift directions in degrees or radians.
+        variable: "tf" (kept SF x Angle pairs for TF tuning) or "sf" (kept TF x Angle pairs for SF tuning).
+        threshold: fraction of peak pair response (default 0.5).
+
+    Returns:
+        kept: boolean array of shape (n_sf, n_ang, n_cells) if variable == "tf",
+              or (n_tf, n_ang, n_cells) if variable == "sf".
+    """
+    pred, _ = _fit_tuning_above_offset(cell_fits, sf_values, tf_values, angle_values)
+    # pair response: mean over TF (SF) of (n_cells, n_sf, n_tf, n_ang)
+    pair_resp = pred.mean(axis=2) if variable == "tf" else pred.mean(axis=1)
+    peak = pair_resp.max(axis=(1, 2), keepdims=True)
+    kept = (pair_resp >= threshold * peak) & (peak > 0)
+    return np.moveaxis(kept, 0, -1)
 
 
 def tf_curves_by_speed(
@@ -313,7 +342,7 @@ def population_tf_curves(
         dff (n_frames, n_cells): responses.
         log_rs_median (float): median log RS (m/s) subtracted from X[3].
         edges_cm_s (array): speed bin edges in cm/s; frames outside are dropped. None: one bin
-            with all frames (e.g. still frames, whose X[3] is 0), labelled "all".
+            with all frames (e.g. slow frames, whose X[3] is 0), labelled "all".
         threshold (float): fraction of the best pair's response.
         variable (str): "tf" for TF curves over SF / direction pairs, "sf" for SF curves over
             TF / direction pairs.
@@ -378,11 +407,7 @@ def population_tf_curves(
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", RuntimeWarning)
             curves = np.nanmean(cond_mean, axis=(1, 2))  # (bin, tf, cell)
-    if edges_cm_s is None:
-        labels = ["all"]
-    else:
-        cm_s = np.exp(edges) * 100
-        labels = [f"{cm_s[i]:.1f}-{cm_s[i + 1]:.1f} cm/s" for i in range(n_bins)]
+    labels = ["all"] if edges_cm_s is None else _speed_bin_labels(edges)
     # values rounded so that they print as the stimulus values (0.5, 1, ..., 16 Hz)
     return np.moveaxis(curves, -1, 0), np.exp(tf_v).round(3), labels
 
@@ -391,14 +416,21 @@ def population_tf_curves(
 # Held-out population curves per running-speed bin (panels M-P)
 # ==============================================================================
 
-# running-speed bins (cm/s); the first starts at 5 cm/s, the still threshold
-SPEED_EDGES_CM_S = [5, 11.31, 22.63, 45.25, 90.51]
+# running-speed bins (cm/s): the treadmill bins of figure 3 (`treadmill.compute_treadmill_rsof_bins`, motor speeds
+# 4-61 cm/s one octave apart, edges 2.83, 5.66, ... cm/s), the last with no upper limit. The frames below the first
+# edge are the slow frames (`sftf_running_models.py prepare --slow`, SLOW_THR), plotted as one more curve.
+SPEED_EDGES_CM_S = [*2.0 ** np.arange(1.5, 6), np.inf]
+SLOW_LABEL = f"< {SPEED_EDGES_CM_S[0]:.1f} cm/s"
 TF_SELECT_THRESHOLD = 0.5
 P_FREQ_TUNED = 0.05
 MIN_CELLS_PER_POINT = 10
 # version of the held-out speed curves in the summary cache: 2 = static curve as bin -1, halves by recording;
-# 3 = cells with a peak <= 0 in either selection half dropped
-SPEED_CURVES_VERSION = 3
+# 3 = cells with a peak <= 0 in either selection half dropped; 4 = responses minus the fit offset, divided by
+# the fitted peak over the tested stimuli (`sftf_fit_peak`) instead of the selection half's peak; 5 = peak
+# position from all frames of the selection half (running and still pooled), not only the running frames;
+# 6 = last speed bin open-ended (> 45.25 cm/s, no longer capped at 90.51); 7 = treadmill bins from 2.83 cm/s and
+# the frames below 2.83 cm/s (any duration) instead of the still frames (< 5 cm/s for 1 s)
+SPEED_CURVES_VERSION = 7
 
 
 def _freq_modulation_p(trials, resp, variable, threshold=TF_SELECT_THRESHOLD):
@@ -433,22 +465,16 @@ def _frame_halves(recording, recordings):
     Each SFTF recording shows every condition once, so the k-th presentation of a condition is in
     the k-th recording: the half of a frame is the parity of its recording's rank in `recordings`
     (all SFTF recordings of the session, in time order). Unlike ranking the presentations found in
-    the frames, this gives the same halves for any subset of the frames (running or still).
+    the frames, this gives the same halves for any subset of the frames (running or slow).
     """
     rank = {name: i for i, name in enumerate(sorted(recordings))}
     return np.array([rank[r] for r in recording]) % 2
 
 
-def _align_to_peak(curves_sel, curves_out):
-    """Peak frequency index and normalisation from curves_sel applied to curves_out.
-
-    Returns the peak index, the normalised curves_out and the peak value: a peak value <= 0 (a cell whose
-    selection half is below baseline everywhere) flips or blows up the normalised curves, so the caller drops it.
-    """
+def _peak_index(curves_sel):
+    """Index of the peak frequency of each cell's curve averaged over speed bins (n_cells,)."""
     mean_curve = np.nanmean(curves_sel, axis=1)
-    peak = np.argmax(np.where(np.isnan(mean_curve), -np.inf, mean_curve), axis=1)
-    peak_value = mean_curve[np.arange(len(peak)), peak]
-    return peak, curves_out / peak_value[:, None, None], peak_value
+    return np.argmax(np.where(np.isnan(mean_curve), -np.inf, mean_curve), axis=1)
 
 
 def stratified_median_difference(values, labels, strata, n_perm=20000, seed=0):
@@ -559,36 +585,37 @@ def load_depth_example(cache_dir, session, roi, rebuild=False):
 
 
 def build_speed_curves(sftf_root, rebuild=False):
-    """Held-out TF and SF tuning curves per running-speed bin and for still frames (panels M-P).
+    """Held-out TF and SF tuning curves per running-speed bin and for the slow frames (panels L-O).
 
     Cells: significant on the frame-level `base` fit of `precompute_data/sftf_running_models.py`
     (held-out R² above the empirical-null threshold), and for each variable with a significant effect
     of TF (SF) at the kept SF (TF) / direction pairs (`_freq_modulation_p`, trial responses). Kept pairs
     come from the trial-level SF/TF fit (`grating_tuning_cells.csv`, `sftf_model_kept_pairs`).
 
-    For each half of the recordings (`_frame_halves`), the curves of the running frames of one half give
-    each cell's peak (of the mean over speed bins) and its value; the curves of the other half, per speed
-    bin (`SPEED_EDGES_CM_S`) and for the still frames (bin -1, "Static"), are aligned on that peak and
-    divided by that value. The two folds are averaged per cell. Cells whose peak value is <= 0 in either
-    half are dropped (their count is printed and returned).
+    For each half of the recordings (`_frame_halves`), the curve of all the frames of one half (running
+    frames in the speed bins and slow frames, pooled) gives each cell's peak; the curves of the other half,
+    per speed bin (`SPEED_EDGES_CM_S`) and for the slow frames (bin -1, `SLOW_LABEL`), are aligned on that
+    peak, so that neither state defines the alignment. Responses
+    are the dF/F minus the offset of the trial-level fit, divided by the fitted peak above that offset over
+    the tested stimuli (`sftf_fit_peak`; fitted on all recordings, so the normalisation is not held out but
+    never close to 0). The two folds are averaged per cell.
 
     Args:
         sftf_root (Path): `fig_reviewer_gratings` folder (`grating_tuning_cells.csv`, `cache/`,
-            `running_models/` with `frames/`, `frames_still/` and the merged fits).
+            `running_models/` with `frames/`, `frames_slow/` and the merged fits).
         rebuild (bool): recompute instead of reading the cache.
 
     Returns:
         dict: `heldout_means` (mean, SEM, count and bootstrap CI across cells per variable, depth
             group, speed bin and frequency relative to the peak; points with fewer than
             `MIN_CELLS_PER_POINT` cells dropped), `heldout_counts` ((cells, sessions, mice) per variable
-            and depth group), `mean_peaks` (mean peak position per speed bin), `speed_labels` and
-            `n_nonpositive_peak` (cells dropped for a peak <= 0, per variable and depth group).
+            and depth group), `mean_peaks` (mean peak position per speed bin) and `speed_labels`.
     """
     from cottage_analysis.analysis import common_utils
 
     cache_dir = sftf_root / "cache"
     frames_dir = sftf_root / "running_models" / "frames"
-    still_dir = sftf_root / "running_models" / "frames_still"
+    slow_dir = sftf_root / "running_models" / "frames_slow"
     cache = cache_dir / f"speed_curves_v{SPEED_CURVES_VERSION}.pickle"
     if cache.exists() and not rebuild:
         return pd.read_pickle(cache)
@@ -611,7 +638,7 @@ def build_speed_curves(sftf_root, rebuild=False):
     common_utils.add_rsq_significance(rs_fits, {"base": "base_test_rsq"}, verbose=False)
     pop_cells = rs_fits[rs_fits.base_test_rsq_sig]
 
-    heldout_rows, p_mod, nonpositive = [], [], []
+    heldout_rows, p_mod = [], []
     speed_labels = None
     for var in ("tf", "sf"):
         for session, sc in pop_cells.groupby("session"):
@@ -623,6 +650,7 @@ def build_speed_curves(sftf_root, rebuild=False):
             kept = sftf_model_kept_pairs(
                 sc, sf_v, tf_v, ang_v, variable=var, threshold=TF_SELECT_THRESHOLD
             )
+            offset, fit_peak = sftf_fit_peak(sc, sf_v, tf_v, ang_v)
             args = (
                 d["X"],
                 d["dff"][:, cols],
@@ -630,33 +658,45 @@ def build_speed_curves(sftf_root, rebuild=False):
                 SPEED_EDGES_CM_S,
             )
             kw = dict(threshold=TF_SELECT_THRESHOLD, variable=var, kept_pairs=kept)
-            # still frames: one more bin ("Static"), aligned and normalised by the running half
-            ds = np.load(still_dir / f"{session}.npz")
+            # slow frames: one more bin (`SLOW_LABEL`), aligned and normalised as the running bins
+            ds = np.load(slow_dir / f"{session}.npz")
             assert np.array_equal(ds["rois"], d["rois"]), f"{session}: ROIs differ"
-            still_args = (ds["X"], ds["dff"][:, cols], np.nan, None)
+            assert np.isclose(
+                float(ds["slow_thr"]) * 100, SPEED_EDGES_CM_S[0]
+            ), f"{session}: slow frames threshold is not the first speed edge"
+            slow_args = (ds["X"], ds["dff"][:, cols], np.nan, None)
             recordings = set(d["recording"]) | set(ds["recording"])
             half = _frame_halves(d["recording"], recordings)
-            half_still = _frame_halves(ds["recording"], recordings)
+            half_slow = _frame_halves(ds["recording"], recordings)
+            # all plotted frames pooled (running frames in the speed bins and slow frames), for the peak
+            log_rs = d["X"][3] + float(d["log_rs_median"])
+            in_bins = (log_rs >= np.log(SPEED_EDGES_CM_S[0] / 100)) & (
+                log_rs < np.log(SPEED_EDGES_CM_S[-1] / 100)
+            )
+            pooled_args = (
+                np.concatenate([d["X"][:, in_bins], ds["X"]], axis=1),
+                np.concatenate([args[1][in_bins], slow_args[1]]),
+                np.nan,
+                None,
+            )
+            half_pooled = np.r_[half[in_bins], half_slow]
             for h in (0, 1):
-                a, b = half == h, half != h
-                curves_a = population_tf_curves(*args, **kw, select=a, use=a)[0]
-                curves_b, _, speed_labels = population_tf_curves(
-                    *args, **kw, select=a, use=b
-                )
-                curves_still = population_tf_curves(
-                    *still_args, **kw, use=half_still != h
+                b = half != h
+                curves_a = population_tf_curves(
+                    *pooled_args, **kw, use=half_pooled == h
                 )[0]
-                assert curves_still.shape[2] == curves_b.shape[2]
-                # peak and its value from the running half `a`, applied to the held-out half
-                peak, resp, peak_value = _align_to_peak(
-                    curves_a, np.concatenate([curves_b, curves_still], axis=1)
-                )
-                nonpositive.append(
-                    pd.DataFrame(
-                        dict(variable=var, session=session, roi=sc.roi.to_numpy())
-                    )[peak_value <= 0]
-                )
-                labels = np.asarray(list(speed_labels) + ["Static"])
+                curves_b, _, speed_labels = population_tf_curves(*args, **kw, use=b)
+                curves_slow = population_tf_curves(
+                    *slow_args, **kw, use=half_slow != h
+                )[0]
+                assert curves_slow.shape[2] == curves_b.shape[2] == curves_a.shape[2]
+                # peak from all frames of half `h`, applied to the held-out half; fit normalisation
+                peak = _peak_index(curves_a)
+                resp = (
+                    np.concatenate([curves_b, curves_slow], axis=1)
+                    - offset[:, None, None]
+                ) / fit_peak[:, None, None]
+                labels = np.asarray(list(speed_labels) + [SLOW_LABEL])
                 bin_ids = np.r_[np.arange(len(speed_labels)), -1]
                 idx = np.indices(resp.shape).reshape(3, -1)
                 heldout_rows.append(
@@ -689,33 +729,6 @@ def build_speed_curves(sftf_root, rebuild=False):
             )
     p_mod = pd.concat(p_mod, ignore_index=True)
     freq_tuned = p_mod[p_mod.p < P_FREQ_TUNED][["variable", "session", "roi"]]
-    # drop the cells whose peak is <= 0 in either selection half
-    nonpositive = (
-        pd.concat(nonpositive, ignore_index=True)
-        .drop_duplicates()
-        .merge(freq_tuned, on=["variable", "session", "roi"])
-        .merge(
-            cells[["session", "roi", "depth_tuned"]], on=["session", "roi"], how="left"
-        )
-    )
-    n_nonpositive_peak = {
-        (var, is_dt): int(
-            ((nonpositive.variable == var) & (nonpositive.depth_tuned == is_dt)).sum()
-        )
-        for var in ("tf", "sf")
-        for is_dt in (True, False)
-    }
-    print(
-        "Cells dropped with a peak <= 0 in a selection half (variable, depth selective): "
-        f"{n_nonpositive_peak}"
-    )
-    freq_tuned = (
-        freq_tuned.merge(
-            nonpositive[["variable", "session", "roi"]], how="left", indicator=True
-        )
-        .query("_merge == 'left_only'")
-        .drop(columns="_merge")
-    )
 
     keys = ["variable", "depth_tuned", "speed_bin", "speed", "delta"]
     heldout_pop = (
@@ -759,7 +772,6 @@ def build_speed_curves(sftf_root, rebuild=False):
         heldout_counts=heldout_counts,
         mean_peaks=mean_peaks,
         speed_labels=speed_labels,
-        n_nonpositive_peak=n_nonpositive_peak,
     )
     pd.to_pickle(curves, cache)
     return curves
@@ -968,15 +980,15 @@ def plot_heldout_speed_curves_panel(
     colors=None,
     fontsize_dict=None,
     peak_y=None,
-    plot_static=True,
+    plot_slow=True,
     norm_to_own_peak=False,
     use_com=True,
     is_depth_tuned=True,
 ):
     """Plot held-out TF or SF tuning curves across running-speed bins for depth-selective or non-depth cells.
 
-    The still frames are the bin -1 of `heldout_means` (`build_speed_curves`), plotted in black if
-    `plot_static`.
+    The slow frames are the bin -1 of `heldout_means` (`build_speed_curves`), plotted in black if
+    `plot_slow`.
     """
     fontsize_dict = fontsize_dict or {"title": 7, "label": 7, "tick": 5, "legend": 5}
     if colors is None:
@@ -987,21 +999,21 @@ def plot_heldout_speed_curves_panel(
     ]
     peaks = mean_peaks.get((var, is_depth_tuned), {}) if mean_peaks is not None else {}
 
-    c_stat = m[m.speed_bin == -1].sort_values("delta")
-    if plot_static and len(c_stat):
+    c_slow = m[m.speed_bin == -1].sort_values("delta")
+    if plot_slow and len(c_slow):
         if norm_to_own_peak:
-            stat_min = float(c_stat["mean"].min())
-            stat_scale = float(c_stat["mean"].max()) - stat_min
-            stat_scale = stat_scale if stat_scale > 0 else 1.0
+            slow_min = float(c_slow["mean"].min())
+            slow_scale = float(c_slow["mean"].max()) - slow_min
+            slow_scale = slow_scale if slow_scale > 0 else 1.0
         else:
-            stat_min = 0.0
-            stat_scale = 1.0
+            slow_min = 0.0
+            slow_scale = 1.0
         ax.errorbar(
-            c_stat.delta,
-            (c_stat["mean"] - stat_min) / stat_scale,
+            c_slow.delta,
+            (c_slow["mean"] - slow_min) / slow_scale,
             yerr=(
-                (c_stat["mean"] - c_stat.ci_low) / stat_scale,
-                (c_stat.ci_high - c_stat["mean"]) / stat_scale,
+                (c_slow["mean"] - c_slow.ci_low) / slow_scale,
+                (c_slow.ci_high - c_slow["mean"]) / slow_scale,
             ),
             fmt=".-",
             color="k",
@@ -1009,18 +1021,18 @@ def plot_heldout_speed_curves_panel(
             markeredgewidth=0.3,
             linewidth=1.1,
             markersize=6.0,
-            label="Static",
+            label=SLOW_LABEL,
             zorder=2,
         )
         if peak_y is not None:
-            stat_pos = (
-                _curve_centre_of_mass(c_stat.delta, c_stat["mean"])
+            slow_pos = (
+                _curve_centre_of_mass(c_slow.delta, c_slow["mean"])
                 if use_com
                 else peaks.get(-1)
             )
-            if stat_pos is not None and np.isfinite(stat_pos):
+            if slow_pos is not None and np.isfinite(slow_pos):
                 ax.plot(
-                    stat_pos,
+                    slow_pos,
                     peak_y,
                     marker="v",
                     ms=3,

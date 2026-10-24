@@ -27,27 +27,26 @@ Each model is fitted on all frames (parameters, `rsq`) and cross-validated leavi
 (held-out R2 and Spearman of the concatenated predictions). The running-speed models start from the base
 fit with zero slopes, plus random starts.
 
-With --still (prepare), the frames are instead the still frames, as the not-running depth fits of figure 1:
-RS < STILL_THR in the frame, the STILL_FRAMES - 1 frames before it (~1 s) and the LAG frames after it (up to
-the frame of the signal), wherever these frames fall (previous grating or outside the gratings). They are saved
-to OUT_DIR/frames_still/<session>.npz, beside the running frames, and are not fitted (`fit` and `merge` read
-only the running frames); the figure uses them for the static curves (`sftf.build_speed_curves`). The RS column
-of X is 0. Use --all-cells for both, so that the ROIs match.
+With --slow (prepare), the frames are instead those with RS < SLOW_THR (2.83 cm/s, the low edge of the slowest
+motor-speed bin of the figure 3 treadmill, and of the slowest running bin of the figure), whatever the running speed
+before or after. They are saved to OUT_DIR/frames_slow/<session>.npz, beside the running frames, and are not fitted
+(`fit` and `merge` read only the running frames); the figure uses them for the slow curves
+(`sftf.build_speed_curves`). The RS column of X is 0. Use --all-cells for both, so that the ROIs match.
 
 Only `iscell` ROIs whose trial-level fit on the same trace is cross-validated SF/TF tuned (one-sided
 Spearman p < 0.05) are fitted: production `neurons_df_sftf` for dF/F, `neurons_df_sftf_spks` for
 spikes. Production files are only read. Three steps, so that ROIs can be fitted as separate jobs:
 
     prepare SESSION      sync once, save running frames and traces to OUT_DIR/frames/<session>.npz
-                         (SF/TF-tuned iscell ROIs, or all iscell ROIs with --all-cells); with --still,
-                         still frames to OUT_DIR/frames_still/<session>.npz
+                         (SF/TF-tuned iscell ROIs, or all iscell ROIs with --all-cells); with --slow,
+                         frames below SLOW_THR to OUT_DIR/frames_slow/<session>.npz
     fit SESSION ROI      fit one ROI -> OUT_DIR/rois/<session>_<roi>.pickle (skipped if it exists;
                          with --models, only the models missing from it are fitted and added)
     merge SESSION        -> OUT_DIR/<session>_sftf_running_models.pickle (one row per ROI) + .json
 
 Usage:
     python sftf_running_models.py {prepare,fit,merge} SESSION [ROI] --out-dir DIR [--n-jobs 1]
-        [--trace {spks,dff}] [--lag LAG] [--skip SKIP] [--all-cells] [--still] [--models MODEL ...] [--overwrite]
+        [--trace {spks,dff}] [--lag LAG] [--skip SKIP] [--all-cells] [--slow] [--models MODEL ...] [--overwrite]
 """
 
 import argparse
@@ -72,8 +71,8 @@ PHOTODIODE_PROTOCOL = 5
 FILTER_TRACES = {"anatomical_only": 3, "ast_neuropil": False}
 PARAMS = ["SpatialFrequency", "TemporalFrequency", "Angle"]
 RS_THR = 0.01  # m/s, floor used only when log-transforming RS to cut 0s (as rs_thr of the RS/OF fits; not a definition of static)
-STILL_THR = 0.05  # m/s, max RS of still frames (--still), as figure 1
-STILL_FRAMES = 15  # still frame t: RS < STILL_THR from t - 14 (~1 s) to t + lag
+# m/s, max RS of the slow frames (--slow): low edge of the slowest treadmill bin of figure 3 (2.83 cm/s)
+SLOW_THR = 2**1.5 / 100
 LAG = 0  # default frames between stimulus / RS and signal for dF/F (as the RS/OF fits; 2 for deconvolved spikes)
 SKIP = 8  # frames dropped after each grating onset (0.53 s at 15.2 Hz, as the trial window of the trial-level fits)
 MIN_SIGMA = 0.25
@@ -120,23 +119,22 @@ RSG_START_QUANTILES = (
 )  # r0 starts (sigma = 1) at these quantiles of r
 
 
-def session_frames(flm, session, trace="spks", lag=2, still=False, skip=SKIP):
-    """Running (or still) frames during gratings of all SFTF recordings of a session.
+def session_frames(flm, session, trace="spks", lag=2, slow=False, skip=SKIP):
+    """Running (or slow) frames during gratings of all SFTF recordings of a session.
 
     Args:
         flm: Flexilims session.
         session: session name.
         trace: "spks" (deconvolved spikes) or "dff" (dF/F).
         lag: number of frames to shift signal relative to stimulus and RS.
-        still: keep the still frames instead of the running frames: RS < STILL_THR in the frame,
-            the STILL_FRAMES - 1 before it and the `lag` after it (up to the signal frame), over
-            all frames of the recording.
+        slow: keep the frames with RS < SLOW_THR (whatever the RS of the other frames) instead of the
+            running frames.
         skip: drop the frames whose stimulus frame is fewer than `skip` frames after the onset of its grating
             (onset = change of the parameter-log time, as the trial tables).
 
     Returns:
-        X (4, n_frames): log SF, log TF, direction (rad), log RS - median log RS (0 if `still`);
-        traces (n_frames, n_rois), recording (n_frames,), median log RS (NaN if `still`).
+        X (4, n_frames): log SF, log TF, direction (rad), log RS - median log RS (0 if `slow`);
+        traces (n_frames, n_rois), recording (n_frames,), median log RS (NaN if `slow`).
     """
     recordings = flz.get_children(
         parent_name=session, children_datatype="recording", flexilims_session=flm
@@ -166,21 +164,17 @@ def session_frames(flm, session, trace="spks", lag=2, still=False, skip=SKIP):
         onset = (harptime.notna() & (harptime != harptime.shift())).to_numpy()
         frame = np.arange(len(img))
         since_onset = frame - np.maximum.accumulate(np.where(onset, frame, 0))
-        is_still = np.zeros(len(rs), bool)
-        is_still[
-            common_utils.find_thresh_sequence(
-                array=rs,
-                threshold_max=STILL_THR,
-                length=STILL_FRAMES + lag,  # frames t - STILL_FRAMES + 1 to t + lag
-                shift=STILL_FRAMES,
-            )
-        ] = True
         # stimulus and RS of frame t with signal of frame t + lag
         n = len(stim) - lag  # not stim[:-lag], empty for lag 0
-        stim, rs, is_still, tr = stim[:n], rs[:n], is_still[:n], tr[lag:]
+        stim, rs, tr = stim[:n], rs[:n], tr[lag:]
         after_onset = since_onset[:n] >= skip
-        if still:
-            keep = np.isfinite(stim).all(axis=1) & after_onset & is_still
+        if slow:
+            keep = (
+                np.isfinite(stim).all(axis=1)
+                & after_onset
+                & np.isfinite(rs)
+                & (rs < SLOW_THR)
+            )
             log_rs = np.zeros(keep.sum())
         else:
             keep = (
@@ -194,8 +188,8 @@ def session_frames(flm, session, trace="spks", lag=2, still=False, skip=SKIP):
         traces_list.append(tr[keep])
         recs.append(np.full(keep.sum(), rec["name"]))
     X = np.concatenate(xs).T
-    log_rs_median = np.nan if still else np.median(X[3])
-    if not still:
+    log_rs_median = np.nan if slow else np.median(X[3])
+    if not slow:
         X[3] -= log_rs_median
     return X, np.concatenate(traces_list), np.concatenate(recs), log_rs_median
 
@@ -483,17 +477,17 @@ def sftf_tuned_rois(flm, session, trace="spks"):
     return np.flatnonzero(iscell & (np.asarray(pval) < 0.05))
 
 
-def frames_path(out_dir, session, still=False):
-    return Path(out_dir) / ("frames_still" if still else "frames") / f"{session}.npz"
+def frames_path(out_dir, session, slow=False):
+    return Path(out_dir) / ("frames_slow" if slow else "frames") / f"{session}.npz"
 
 
 def prepare(
-    session, out_dir, trace="spks", lag=2, all_cells=False, still=False, skip=SKIP
+    session, out_dir, trace="spks", lag=2, all_cells=False, slow=False, skip=SKIP
 ):
     """Sync the session once and save the running frames and the ROIs' signal.
 
     ROIs: iscell ROIs that are SF/TF tuned in the trial-level fit of `trace`, or all iscell ROIs
-    with `all_cells`. Still frames instead of running frames with `still`.
+    with `all_cells`. Frames below SLOW_THR instead of running frames with `slow`.
     """
     flm = flz.get_flexilims_session(PROJECT)
     rois = (
@@ -502,9 +496,9 @@ def prepare(
         else sftf_tuned_rois(flm, session, trace=trace)
     )
     X, traces, recording, log_rs_median = session_frames(
-        flm, session, trace=trace, lag=lag, still=still, skip=skip
+        flm, session, trace=trace, lag=lag, slow=slow, skip=skip
     )
-    path = frames_path(out_dir, session, still=still)
+    path = frames_path(out_dir, session, slow=slow)
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(
         path,
@@ -516,11 +510,12 @@ def prepare(
         log_rs_median=log_rs_median,
         trace=trace,
         lag=lag,
-        still=still,
+        slow=slow,
+        slow_thr=SLOW_THR,
         skip=skip,
     )
     print(
-        f"{session} ({trace}, lag={lag}, skip={skip}): {X.shape[1]} {'still' if still else 'running'} frames, {len(rois)} ROIs -> {path}"
+        f"{session} ({trace}, lag={lag}, skip={skip}): {X.shape[1]} {'slow' if slow else 'running'} frames, {len(rois)} ROIs -> {path}"
     )
 
 
@@ -532,7 +527,7 @@ def fit(session, roi, out_dir, n_jobs, models=None, overwrite=False):
     previous columns of these models (the other columns are kept). Running frames only.
     """
     d = np.load(frames_path(out_dir, session))
-    assert not ("still" in d and bool(d["still"])), "still frames: not fitted"
+    assert not ("slow" in d and bool(d["slow"])), "slow frames: not fitted"
     target = Path(out_dir) / "rois" / f"{session}_{roi}.pickle"
     old = pd.read_pickle(target) if target.exists() else None
     if models is None:
@@ -596,9 +591,6 @@ def merge(session, out_dir):
                 trace=trace,
                 lag=lag,
                 skip=skip,
-                still=bool(d["still"]) if "still" in d else False,
-                still_thr=STILL_THR,
-                still_frames=STILL_FRAMES,
                 filter_traces=FILTER_TRACES,
                 n_iter_base=N_ITER_BASE,
                 n_iter_rs=N_ITER_RS,
@@ -644,9 +636,9 @@ if __name__ == "__main__":
         help="all iscell ROIs, not only the SF/TF-tuned ones (prepare only)",
     )
     p.add_argument(
-        "--still",
+        "--slow",
         action="store_true",
-        help="still frames instead of running frames, saved to frames_still/ and not fitted (prepare only)",
+        help="frames below SLOW_THR instead of running frames, saved to frames_slow/ and not fitted (prepare only)",
     )
     p.add_argument(
         "--models",
@@ -668,7 +660,7 @@ if __name__ == "__main__":
             trace=a.trace,
             lag=lag,
             all_cells=a.all_cells,
-            still=a.still,
+            slow=a.slow,
             skip=a.skip,
         )
     elif a.command == "fit":
