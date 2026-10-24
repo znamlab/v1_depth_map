@@ -14,14 +14,23 @@ it with a Gaussian in log RS, parameterised and bounded as the RS/OF fits of the
 log_sigma_rs2 free):
 
     log amplitude - (r - r0)^2 / (2 sigma^2)      rsg: r0, log_sigma_rs2;  rsg_tf: + a_tf;  rsg_sf: + a_sf
+                                                  rsg_notf: rsg without TF (1D SF + dir + RS);
+                                                  rsg_nosf: rsg without SF (1D TF + dir + RS)
 
 with r0 the preferred log RS relative to the session median.
 
-Samples are imaging frames during gratings with RS > RS_THR (static frames excluded), neural trace shifted by
-LAG frames relative to the stimulus and RS (default: 2 frames for deconvolved spikes, 5 frames for dF/F).
+Samples are imaging frames during gratings with RS > RS_THR (used only when log-transforming to cut zeros, not as a definition of static), neural trace shifted by
+LAG frames relative to the stimulus and RS (default: 2 frames for deconvolved spikes, 0 for dF/F as the RS/OF fits).
+The first SKIP frames of each grating are dropped, as the trial window of the trial-level analyses
+(`[onset + 8, next_onset)`, `gratings.generate_trials_df`): they carry the decay of the previous grating's response.
 Each model is fitted on all frames (parameters, `rsq`) and cross-validated leaving one recording out
 (held-out R2 and Spearman of the concatenated predictions). The running-speed models start from the base
 fit with zero slopes, plus random starts.
+
+With --still (prepare), the frames are instead the still frames, as the not-running depth fits of figure 1:
+RS < STILL_THR in the frame, the STILL_FRAMES - 1 frames before it (~1 s) and the LAG frames after it (up to
+the frame of the signal), wherever these frames fall (previous grating or outside the gratings). Only `base`
+is fitted on them; the RS column of X is 0.
 
 Only `iscell` ROIs whose trial-level fit on the same trace is cross-validated SF/TF tuned (one-sided
 Spearman p < 0.05) are fitted: production `neurons_df_sftf` for dF/F, `neurons_df_sftf_spks` for
@@ -35,7 +44,7 @@ spikes. Production files are only read. Three steps, so that ROIs can be fitted 
 
 Usage:
     python sftf_running_models.py {prepare,fit,merge} SESSION [ROI] --out-dir DIR [--n-jobs 1]
-        [--trace {spks,dff}] [--lag LAG] [--all-cells] [--models MODEL ...] [--overwrite]
+        [--trace {spks,dff}] [--lag LAG] [--skip SKIP] [--all-cells] [--still] [--models MODEL ...] [--overwrite]
 """
 
 import argparse
@@ -59,8 +68,11 @@ PROJECT = "hey2_3d-vision_foodres_20220101"
 PHOTODIODE_PROTOCOL = 5
 FILTER_TRACES = {"anatomical_only": 3, "ast_neuropil": False}
 PARAMS = ["SpatialFrequency", "TemporalFrequency", "Angle"]
-RS_THR = 0.01  # m/s, frames at or below are static (as rs_thr of the RS/OF fits)
-LAG = 5  # default frames between stimulus / RS and signal (5 for dF/F, 2 for deconvolved spikes)
+RS_THR = 0.01  # m/s, floor used only when log-transforming RS to cut 0s (as rs_thr of the RS/OF fits; not a definition of static)
+STILL_THR = 0.05  # m/s, max RS of still frames (--still), as figure 1
+STILL_FRAMES = 15  # still frame t: RS < STILL_THR from t - 14 (~1 s) to t + lag
+LAG = 0  # default frames between stimulus / RS and signal for dF/F (as the RS/OF fits; 2 for deconvolved spikes)
+SKIP = 8  # frames dropped after each grating onset (0.53 s at 15.2 Hz, as the trial window of the trial-level fits)
 MIN_SIGMA = 0.25
 N_ITER_BASE = 5
 N_ITER_RS = 3  # random starts of the running-speed models, on top of the base-fit start
@@ -73,6 +85,13 @@ MODELS = {
     "rsg": ("r0", "log_sigma_rs2"),
     "rsg_tf": ("r0", "log_sigma_rs2", "a_tf"),
     "rsg_sf": ("r0", "log_sigma_rs2", "a_sf"),
+    "rsg_notf": ("r0", "log_sigma_rs2"),
+    "rsg_nosf": ("r0", "log_sigma_rs2"),
+}
+# GratingParams fields omitted in 1D SF-only / TF-only models
+DROPPED_GRATING_PARAMS = {
+    "rsg_notf": ("tf0", "log_sigma_y2", "theta"),
+    "rsg_nosf": ("sf0", "log_sigma_x2", "theta"),
 }
 # models also started from the fits of the simpler models they contain (shared terms copied, new at 0)
 NESTED_STARTS = {
@@ -81,6 +100,8 @@ NESTED_STARTS = {
     "rsg": ("gain",),
     "rsg_tf": ("rsg", "gain_tf"),
     "rsg_sf": ("rsg", "gain_sf"),
+    "rsg_notf": ("rsg", "gain"),
+    "rsg_nosf": ("rsg", "gain"),
 }
 RS_RANGE = (
     0.005,
@@ -96,18 +117,23 @@ RSG_START_QUANTILES = (
 )  # r0 starts (sigma = 1) at these quantiles of r
 
 
-def session_frames(flm, session, trace="spks", lag=2):
-    """Running frames during gratings of all SFTF recordings of a session.
+def session_frames(flm, session, trace="spks", lag=2, still=False, skip=SKIP):
+    """Running (or still) frames during gratings of all SFTF recordings of a session.
 
     Args:
         flm: Flexilims session.
         session: session name.
         trace: "spks" (deconvolved spikes) or "dff" (dF/F).
         lag: number of frames to shift signal relative to stimulus and RS.
+        still: keep the still frames instead of the running frames: RS < STILL_THR in the frame,
+            the STILL_FRAMES - 1 before it and the `lag` after it (up to the signal frame), over
+            all frames of the recording.
+        skip: drop the frames whose stimulus frame is fewer than `skip` frames after the onset of its grating
+            (onset = change of the parameter-log time, as the trial tables).
 
     Returns:
-        X (4, n_frames): log SF, log TF, direction (rad), log RS - median log RS;
-        traces (n_frames, n_rois), recording (n_frames,), median log RS.
+        X (4, n_frames): log SF, log TF, direction (rad), log RS - median log RS (0 if `still`);
+        traces (n_frames, n_rois), recording (n_frames,), median log RS (NaN if `still`).
     """
     recordings = flz.get_children(
         parent_name=session, children_datatype="recording", flexilims_session=flm
@@ -132,37 +158,73 @@ def session_frames(flm, session, trace="spks", lag=2):
         rs = (img.mouse_z_harp.diff() / img.mouse_z_harptime.diff()).to_numpy()
         stim = img[PARAMS].to_numpy(float)
         tr = np.vstack(img.spks.values if trace == "spks" else img.dffs.values)
+        # frames since the onset of the current grating
+        harptime = img["stimulus_harptime"]
+        onset = (harptime.notna() & (harptime != harptime.shift())).to_numpy()
+        frame = np.arange(len(img))
+        since_onset = frame - np.maximum.accumulate(np.where(onset, frame, 0))
+        is_still = np.zeros(len(rs), bool)
+        is_still[
+            common_utils.find_thresh_sequence(
+                array=rs,
+                threshold_max=STILL_THR,
+                length=STILL_FRAMES + lag,  # frames t - STILL_FRAMES + 1 to t + lag
+                shift=STILL_FRAMES,
+            )
+        ] = True
         # stimulus and RS of frame t with signal of frame t + lag
         n = len(stim) - lag  # not stim[:-lag], empty for lag 0
-        stim, rs, tr = stim[:n], rs[:n], tr[lag:]
-        keep = np.isfinite(stim).all(axis=1) & np.isfinite(rs) & (rs > RS_THR)
-        xs.append(
-            np.c_[np.log(stim[keep, :2]), np.deg2rad(stim[keep, 2]), np.log(rs[keep])]
-        )
+        stim, rs, is_still, tr = stim[:n], rs[:n], is_still[:n], tr[lag:]
+        after_onset = since_onset[:n] >= skip
+        if still:
+            keep = np.isfinite(stim).all(axis=1) & after_onset & is_still
+            log_rs = np.zeros(keep.sum())
+        else:
+            keep = (
+                np.isfinite(stim).all(axis=1)
+                & after_onset
+                & np.isfinite(rs)
+                & (rs > RS_THR)
+            )
+            log_rs = np.log(rs[keep])
+        xs.append(np.c_[np.log(stim[keep, :2]), np.deg2rad(stim[keep, 2]), log_rs])
         traces_list.append(tr[keep])
         recs.append(np.full(keep.sum(), rec["name"]))
     X = np.concatenate(xs).T
-    log_rs_median = np.median(X[3])
-    X[3] -= log_rs_median
+    log_rs_median = np.nan if still else np.median(X[3])
+    if not still:
+        X[3] -= log_rs_median
     return X, np.concatenate(traces_list), np.concatenate(recs), log_rs_median
 
 
-def rs_tuning(X, *params, free=(), min_sigma=MIN_SIGMA):
-    """grating_tuning with log SF0 / log TF0 shifted or amplitude scaled by running speed."""
-    p = GratingParams(*params[:10])
-    slopes = dict(zip(free, params[10:]))
+def rs_tuning(X, *params, free=(), drop=(), min_sigma=MIN_SIGMA):
+    """grating_tuning with log SF0 / log TF0 shifted or amplitude scaled by running speed.
+
+    `drop` lists `GratingParams` fields omitted from `params` (e.g. `("tf0", "log_sigma_y2", "theta")`
+    for a 1D SF-only model, or `("sf0", "log_sigma_x2", "theta")` for a 1D TF-only model).
+    """
+    if drop:
+        kept = [f for f in GratingParams._fields if f not in drop]
+        g_dict = dict(zip(kept, params[: len(kept)]))
+        p = GratingParams(**{f: g_dict.get(f, 0.0) for f in GratingParams._fields})
+        slopes = dict(zip(free, params[len(kept) :]))
+    else:
+        p = GratingParams(*params[:10])
+        slopes = dict(zip(free, params[10:]))
     sf0 = p.sf0 + slopes.get("a_sf", 0) * X[3]
     tf0 = p.tf0 + slopes.get("a_tf", 0) * X[3]
     log_amp = p.log_amplitude + slopes.get("g", 0) * X[3]
     if "r0" in slopes:
         sigma2 = np.exp(slopes["log_sigma_rs2"]) + min_sigma
         log_amp = log_amp - (X[3] - slopes["r0"]) ** 2 / (2 * sigma2)
+    sf = 0.0 if "sf0" in drop else X[0]
+    tf = 0.0 if "tf0" in drop else X[1]
     return grating_tuning(
-        (X[0], X[1], X[2]), log_amp, sf0, tf0, *p[3:], min_sigma=min_sigma
+        (sf, tf, X[2]), log_amp, sf0, tf0, *p[3:], min_sigma=min_sigma
     )
 
 
-def bounds(X, free, log_rs_median=None):
+def bounds(X, free, log_rs_median=None, drop=()):
     """Bounds of the parameters; the preferred running speed r0 needs the session `log_rs_median`."""
     lower = GratingParams(
         -np.inf,
@@ -188,24 +250,48 @@ def bounds(X, free, log_rs_median=None):
         6.0,
         1,
     )
+    lo_g = [b for f, b in zip(GratingParams._fields, lower) if f not in drop]
+    hi_g = [b for f, b in zip(GratingParams._fields, upper) if f not in drop]
     extra = {"log_sigma_rs2": (-np.inf, np.inf)}
     if "r0" in free:
         extra["r0"] = tuple(np.log(RS_RANGE) - log_rs_median)
     lo_hi = [extra.get(t, (-SLOPE_BOUND, SLOPE_BOUND)) for t in free]
-    return list(lower) + [b[0] for b in lo_hi], list(upper) + [b[1] for b in lo_hi]
+    return lo_g + [b[0] for b in lo_hi], hi_g + [b[1] for b in lo_hi]
 
 
-def nested_start(simpler, popt, free, lo, hi):
+def project_grating(popt10, drop=()):
+    """Project 10-element `GratingParams` onto kept fields when `drop` omits SF or TF."""
+    if not drop:
+        return list(popt10)
+    p = GratingParams(*popt10)
+    sx = np.exp(np.clip(p.log_sigma_x2, -20, 20)) + MIN_SIGMA
+    sy = np.exp(np.clip(p.log_sigma_y2, -20, 20)) + MIN_SIGMA
+    c2, s2 = np.cos(p.theta) ** 2, np.sin(p.theta) ** 2
+    s_sf2 = 1.0 / (c2 / sx + s2 / sy)
+    s_tf2 = 1.0 / (s2 / sx + c2 / sy)
+    p = p._replace(
+        log_sigma_x2=float(np.log(max(s_sf2 - MIN_SIGMA, 1e-9))),
+        log_sigma_y2=float(np.log(max(s_tf2 - MIN_SIGMA, 1e-9))),
+    )
+    return [v for f, v in zip(GratingParams._fields, p) if f not in drop]
+
+
+def nested_start(simpler, popt, free, lo, hi, drop=()):
     """Start of a model with terms `free` (bounds lo, hi) from the fit `popt` of model `simpler`.
 
     Shared terms are copied, new terms start at 0, and a gain g is converted to a running-speed
     Gaussian of sigma RSG_START_SIGMA with the same slope at r = 0 (r0 = g sigma^2, log amplitude
     raised by r0^2 / 2 sigma^2), r0 clipped to its bounds.
     """
-    p = list(popt[:10])
-    terms = dict(zip(MODELS[simpler], popt[10:]))
+    n_simpler_g = 10 - len(DROPPED_GRATING_PARAMS.get(simpler, ()))
+    p = (
+        project_grating(popt[:10], drop)
+        if n_simpler_g == 10
+        else list(popt[:n_simpler_g])
+    )
+    terms = dict(zip(MODELS[simpler], popt[n_simpler_g:]))
     if "r0" in free and "g" in terms:
-        i = 10 + free.index("r0")
+        i = len(p) + free.index("r0")
         r0 = float(np.clip(terms.pop("g") * RSG_START_SIGMA**2, lo[i], hi[i]))
         p[0] += r0**2 / (2 * RSG_START_SIGMA**2)
         terms.update(r0=r0, log_sigma_rs2=np.log(RSG_START_SIGMA**2 - MIN_SIGMA))
@@ -278,19 +364,22 @@ def fit_models(X, y, models=None, log_rs_median=None):
     for model, free in MODELS.items():
         if model == "base":
             continue
+        drop = DROPPED_GRATING_PARAMS.get(model, ())
         random_starts = [
-            random_p0(X, y) + list(np.random.uniform(-1, 1, len(free)))
+            [v for f, v in zip(GratingParams._fields, random_p0(X, y)) if f not in drop]
+            + list(np.random.uniform(-1, 1, len(free)))
             for _ in range(N_ITER_RS)
         ]
         if model not in needed:
             continue
-        lo, hi = bounds(X, free, log_rs_median)
-        starts = [list(base) + [0.0] * len(free)]
+        lo, hi = bounds(X, free, log_rs_median, drop=drop)
+        base_proj = project_grating(base, drop)
+        starts = [base_proj + [0.0] * len(free)]
         if (
             "r0" in free
         ):  # base fit with a running-speed Gaussian (sigma = 1) at quantiles of r
             starts = [
-                list(base)
+                base_proj
                 + [
                     {
                         "r0": np.quantile(X[3], q),
@@ -303,9 +392,14 @@ def fit_models(X, y, models=None, log_rs_median=None):
         for simpler in NESTED_STARTS.get(model, ()):
             popt = out[simpler][0]
             if np.all(np.isfinite(popt)):
-                starts.append(nested_start(simpler, popt, free, lo, hi))
+                starts.append(nested_start(simpler, popt, free, lo, hi, drop=drop))
         out[model] = best_fit(
-            partial(rs_tuning, free=free), X, y, lo, hi, starts + random_starts
+            partial(rs_tuning, free=free, drop=drop),
+            X,
+            y,
+            lo,
+            hi,
+            starts + random_starts,
         )
     return {m: out[m] for m in models}
 
@@ -331,11 +425,17 @@ def fit_roi(X, y, recording, n_jobs=1, models=None, log_rs_median=None):
         test = recording == rec
         for m in full:
             if np.all(np.isfinite(fold[m][0])):
-                preds[m][test] = rs_tuning(X[:, test], *fold[m][0], free=MODELS[m])
+                preds[m][test] = rs_tuning(
+                    X[:, test],
+                    *fold[m][0],
+                    free=MODELS[m],
+                    drop=DROPPED_GRATING_PARAMS.get(m, ()),
+                )
     row = {}
     for m in full:
         free = MODELS[m]
-        names = list(GratingParams._fields) + list(free)
+        drop = DROPPED_GRATING_PARAMS.get(m, ())
+        names = [f for f in GratingParams._fields if f not in drop] + list(free)
         row.update({f"{m}_{n}": v for n, v in zip(names, full[m][0])})
         row[f"{m}_rsq"] = full[m][1]
         ok = np.isfinite(preds[m])
@@ -384,11 +484,13 @@ def frames_path(out_dir, session):
     return Path(out_dir) / "frames" / f"{session}.npz"
 
 
-def prepare(session, out_dir, trace="spks", lag=2, all_cells=False):
+def prepare(
+    session, out_dir, trace="spks", lag=2, all_cells=False, still=False, skip=SKIP
+):
     """Sync the session once and save the running frames and the ROIs' signal.
 
     ROIs: iscell ROIs that are SF/TF tuned in the trial-level fit of `trace`, or all iscell ROIs
-    with `all_cells`.
+    with `all_cells`. Still frames instead of running frames with `still`.
     """
     flm = flz.get_flexilims_session(PROJECT)
     rois = (
@@ -397,7 +499,7 @@ def prepare(session, out_dir, trace="spks", lag=2, all_cells=False):
         else sftf_tuned_rois(flm, session, trace=trace)
     )
     X, traces, recording, log_rs_median = session_frames(
-        flm, session, trace=trace, lag=lag
+        flm, session, trace=trace, lag=lag, still=still, skip=skip
     )
     path = frames_path(out_dir, session)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -411,9 +513,11 @@ def prepare(session, out_dir, trace="spks", lag=2, all_cells=False):
         log_rs_median=log_rs_median,
         trace=trace,
         lag=lag,
+        still=still,
+        skip=skip,
     )
     print(
-        f"{session} ({trace}, lag={lag}): {X.shape[1]} running frames, {len(rois)} ROIs -> {path}"
+        f"{session} ({trace}, lag={lag}, skip={skip}): {X.shape[1]} {'still' if still else 'running'} frames, {len(rois)} ROIs -> {path}"
     )
 
 
@@ -422,8 +526,12 @@ def fit(session, roi, out_dir, n_jobs, models=None, overwrite=False):
 
     Without `models`, skipped if its result exists. With `models`, those missing from an existing
     result (all of them with `overwrite`) are fitted and their columns added to it, replacing the
-    previous columns of these models (the other columns are kept).
+    previous columns of these models (the other columns are kept). Still frames: `base` only.
     """
+    d = np.load(frames_path(out_dir, session))
+    if "still" in d and bool(d["still"]):
+        assert models is None or set(models) == {"base"}, "only base on still frames"
+        models = ["base"]
     target = Path(out_dir) / "rois" / f"{session}_{roi}.pickle"
     old = pd.read_pickle(target) if target.exists() else None
     if models is None:
@@ -435,7 +543,6 @@ def fit(session, roi, out_dir, n_jobs, models=None, overwrite=False):
         if not models:
             print(f"{target} has all requested models, skipping")
             return
-    d = np.load(frames_path(out_dir, session))
     (col,) = np.flatnonzero(d["rois"] == roi)
     traces = d["traces"] if "traces" in d else d["dff"]
     start = time.time()
@@ -476,6 +583,9 @@ def merge(session, out_dir):
     out.to_pickle(out_dir / f"{session}_sftf_running_models.pickle")
     lag = int(d["lag"]) if "lag" in d else LAG
     trace = str(d["trace"]) if "trace" in d else "dff"
+    skip = (
+        int(d["skip"]) if "skip" in d else 0
+    )  # frames prepared before the onset skip have none
     (out_dir / f"{session}_sftf_running_models.json").write_text(
         json.dumps(
             dict(
@@ -484,6 +594,10 @@ def merge(session, out_dir):
                 rs_thr=RS_THR,
                 trace=trace,
                 lag=lag,
+                skip=skip,
+                still=bool(d["still"]) if "still" in d else False,
+                still_thr=STILL_THR,
+                still_frames=STILL_FRAMES,
                 filter_traces=FILTER_TRACES,
                 n_iter_base=N_ITER_BASE,
                 n_iter_rs=N_ITER_RS,
@@ -515,12 +629,23 @@ if __name__ == "__main__":
         "--lag",
         type=int,
         default=None,
-        help="stimulus to trace lag in frames (prepare only, default: 2 for spks, 5 for dff)",
+        help="stimulus to trace lag in frames (prepare only, default: 2 for spks, 0 for dff)",
+    )
+    p.add_argument(
+        "--skip",
+        type=int,
+        default=SKIP,
+        help=f"frames dropped after each grating onset (prepare only, default: {SKIP})",
     )
     p.add_argument(
         "--all-cells",
         action="store_true",
         help="all iscell ROIs, not only the SF/TF-tuned ones (prepare only)",
+    )
+    p.add_argument(
+        "--still",
+        action="store_true",
+        help="still frames instead of running frames, base model only (prepare only)",
     )
     p.add_argument(
         "--models",
@@ -535,8 +660,16 @@ if __name__ == "__main__":
     )
     a = p.parse_args()
     if a.command == "prepare":
-        lag = a.lag if a.lag is not None else (2 if a.trace == "spks" else 5)
-        prepare(a.session, a.out_dir, trace=a.trace, lag=lag, all_cells=a.all_cells)
+        lag = a.lag if a.lag is not None else (2 if a.trace == "spks" else LAG)
+        prepare(
+            a.session,
+            a.out_dir,
+            trace=a.trace,
+            lag=lag,
+            all_cells=a.all_cells,
+            still=a.still,
+            skip=a.skip,
+        )
     elif a.command == "fit":
         fit(a.session, a.roi, a.out_dir, a.n_jobs, a.models, a.overwrite)
     else:

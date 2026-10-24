@@ -538,6 +538,45 @@ The `gain` vs `rsg` comparison (shape of the running-speed curve, preferred spee
 both models; `running_speed_tuning_vs_gain.pdf`) was moved on 2026-10-14 from `fig_reviewer_gratings.ipynb` to
 `running_speed_gain_vs_preferred_rs.ipynb` in this folder (personal notes, not for the paper).
 
+## Fitted preferences beyond the tested SF / TF range (2026-10-24)
+
+`fit_sftf_tuning` bounds the preferred log SF0 and log TF0 one natural-log unit beyond the tested range: SF0 can be
+0.0037–0.87 cpd (tested 0.01–0.32), TF0 0.18–43 Hz (tested 0.5–16). Fits that end on a bound are kept. Preferred
+grating speed (TF0 / SF0) inherits both. **Decision: keep the extrapolated fits, and leave the figure unchanged.**
+This section is for reference only.
+
+Extent (current `grating_tuning_cells.csv`, 1442 SF/TF-tuned cells):
+
+| | Outside the tested range | Below / above | On the bound |
+|---|---|---|---|
+| SF0 | 404 (28%) | 142 / 262 | 248 |
+| TF0 | 688 (48%) | 352 / 336 | 487 |
+| Both in range | 604 (42%) | | |
+
+Correlations of the figure on all cells vs only the cells whose preferences are inside the tested range. The in-range
+set uses SF0 for SF panels, TF0 for TF panels and both for speed. Spearman ρ, hierarchical bootstrap over sessions,
+2000 resamples:
+
+| Panel | All cells | In range only |
+|---|---|---|
+| F speed vs depth | n = 390, ρ = −0.16, p = 0.006 | n = 149, ρ = −0.32, p = 0.007 |
+| G TF vs depth | n = 390, ρ = 0.06, p = 0.55 | n = 193, ρ = −0.05, p = 0.58 |
+| H SF vs depth | n = 390, ρ = 0.36, p = 0.011 | n = 264, ρ = 0.31, p = 0.002 |
+| I SF vs optic flow | n = 426, ρ = −0.39, p < 0.0005 | n = 283, ρ = −0.31, p < 0.0005 |
+| speed vs optic flow | n = 426, ρ = 0.13, p = 0.038 | n = 151, ρ = 0.30, p = 0.038 |
+
+- Extrapolation does not change any conclusion. Every correlation keeps its sign and its significance (G stays null).
+  The speed correlations are stronger on in-range cells, so extrapolated speeds add noise rather than signal.
+- Spearman uses only ranks. An extrapolated value means "below the lowest" or "above the highest" tested
+  frequency, which keeps its rank meaning.
+- What extrapolation does affect: the log-log regression lines and their CIs (F, H, I), and the axis range of the
+  scatters, which extends beyond the stimulus range.
+
+Options if a reviewer asks (not applied):
+- Mark the out-of-range points (open markers, or shading outside the tested range) in F–I.
+- Give the in-range correlations above as a robustness check in the legend or methods.
+- Fit the regression lines on in-range cells only.
+
 ## Open points
 
 - `P_RESPONSIVE` (0.01) differs from `P_SELECTIVE` (0.05) in the model-free section without a principled
