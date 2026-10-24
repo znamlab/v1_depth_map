@@ -26,6 +26,7 @@ This document tracks the execution status, resource utilization, and action item
 | [`figsupp9_v1_depth_map.ipynb`](../v1_depth_map/figures/figsupp9_v1_depth_map.ipynb) | ✅ Success | 7.9 min | 2.31 GB | Fig S9 (Panels A–G: corrected depth map) | Cortical alignment, gradient z-test; owns all `\statSuppNine*` macros |
 | [`figsupp9_rf_distance.ipynb`](../v1_depth_map/figures/figsupp9_rf_distance.ipynb) | ✅ Success | 3.1 min | 1.24 GB | Fig S9 (Panels H–I: uncorrected depth) | Uncorrected V1 map; the pairwise RF distance panels moved to Fig 4 I–K |
 | [`unused_single_depth_receptive_fields.ipynb`](../v1_depth_map/figures/unused_single_depth_receptive_fields.ipynb) | 💤 Unused | - | - | None in this manuscript version | Single-depth protocol RFs; superseded by the Fig S8 comparison. Skipped by the pipeline unless named with `--notebooks` |
+| [`fig_reviewer_gratings.ipynb`](../v1_depth_map/figures/fig_reviewer_gratings.ipynb) | ⏳ Rerun pending | - | - | Reviewer figure (Panels A–P: drifting gratings vs depth selectivity) | Refactored 2026-10-24; needs `precompute_data/sftf_grating_cells.py` and the NEMO `sftf_running_models.py` frames / `base` fits with the onset skip first (see `revisions/sftf/README.md`) |
 | [`revisions/multi_days.ipynb`](../v1_depth_map/revisions/multi_days.ipynb) | ✅ Success | - | - | Fig 1N–P (multiday stability) | Longitudinal tracking; the manuscript panels now live in `figure1_depth_selectivity.ipynb` |
 
 ---

@@ -51,6 +51,7 @@ flowchart TD
 | **Full Cut Decoder** | [run_full_cut.py](../run_full_cut.py) | `ridge_decoder_neurons_motor_cut.parquet` | ✅ |
 | **Grid Subsets Decoder** | [run_grid_subsets.py](../run_grid_subsets.py) | `ridge_decoder_subsets_*.parquet` | ✅ |
 | **Size Control** | `size_control_all_sessions.py` | `neurons_df_size_control.pickle` | ✅ |
+| **Drifting gratings (SF/TF)** | [`rerun_depth_sftf.py`](../v1_depth_map/precompute_data/rerun_depth_sftf.py), [`sftf_grating_cells.py`](../v1_depth_map/precompute_data/sftf_grating_cells.py), [`sftf_running_models.py`](../v1_depth_map/precompute_data/sftf_running_models.py) | `neurons_df_sftf.pickle`; `fig_reviewer_gratings/grating_tuning_cells.csv`, `running_models/` | ✅ |
 | **RS/OF Simulation Control** | [`fit_revision_simulation.py`](../v1_depth_map/precompute_data/fit_revision_simulation.py) | `simulated_responses_fit_{treadmill,spheres}_2_0.15_circular.parquet`, `simulated_responses_fit_treadmill_trial_average_plateau_2_0.15_circular.parquet` | N/A (sim) |
 
 ---
