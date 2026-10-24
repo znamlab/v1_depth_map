@@ -42,7 +42,13 @@ def load_depth_trials(flexilims_session, session, photodiode_protocol=5):
 
 
 def speed_binned_responses(
-    X, response, log_rs_median, n_bins=3, edges_cm_s=None, recording=None
+    X,
+    response,
+    log_rs_median,
+    n_bins=3,
+    edges_cm_s=None,
+    recording=None,
+    single_bin_label=None,
 ):
     """Frame responses of one ROI split into running-speed bins of equal frame counts.
 
@@ -54,13 +60,18 @@ def speed_binned_responses(
         n_bins (int): number of speed bins (quantiles of log RS), if `edges_cm_s` is None.
         edges_cm_s (array, optional): bin edges in cm/s; frames outside are dropped.
         recording (array, optional): recording name per frame to identify trial boundaries.
+        single_bin_label (str, optional): all frames in one bin with this label, ignoring the
+            running speed (e.g. "Static" for the still frames, whose X[3] is 0).
 
     Returns:
         list of (label, DataFrame): one table per bin with `SpatialFrequency`,
             `TemporalFrequency`, `Angle` (deg), `trial` ID and the response in column 0.
     """
     log_rs = X[3] + log_rs_median
-    if edges_cm_s is None:
+    if single_bin_label is not None:
+        n_bins = 1
+        bins = np.zeros(X.shape[1], int)
+    elif edges_cm_s is None:
         edges = np.quantile(log_rs, np.linspace(0, 1, n_bins + 1))
         bins = np.clip(np.searchsorted(edges, log_rs, side="right") - 1, 0, n_bins - 1)
     else:
@@ -86,6 +97,8 @@ def speed_binned_responses(
             0: response,
         }
     )
+    if single_bin_label is not None:
+        return [(single_bin_label, frames)]
     cm_s = np.exp(edges) * 100
     return [
         (
@@ -97,6 +110,37 @@ def speed_binned_responses(
 
 
 FREQ_COLS = {"tf": "TemporalFrequency", "sf": "SpatialFrequency"}
+
+
+def drift_direction(angle_deg):
+    """Drift direction (deg) of a grating of `Angle` `angle_deg`.
+
+    `Angle` is the grating's wave vector and the bars drift towards `Angle` + 180° (stimulus workflow
+    `vis-stim-2d/run_SFTF.bonsai` and BonVision, see `revisions/sftf/README.md`). Drift direction in the
+    RF-map frame: 0° towards higher azimuth (front to back, the optic flow of forward running), 90° up.
+    """
+    return (np.asarray(angle_deg) + 180) % 360
+
+
+def example_condition_means(cache_dir, session, roi):
+    """Mean trial response of one ROI to each direction x SF x TF (panel C).
+
+    Returns:
+        means (n_angles, n_sf, n_tf), angles (deg, grating `Angle`), sf (cpd), tf (Hz).
+    """
+    data = pd.read_pickle(cache_dir / f"{session}_sftf_trials.pickle")
+    trials = data["trials"].assign(response=data["dff"][:, roi])
+    means = trials.groupby(
+        ["Angle", "SpatialFrequency", "TemporalFrequency"]
+    ).response.mean()
+    angles, sf, tf = (np.sort(trials[c].unique()) for c in means.index.names)
+    full = pd.MultiIndex.from_product([angles, sf, tf], names=means.index.names)
+    return (
+        means.reindex(full).to_numpy().reshape(len(angles), len(sf), len(tf)),
+        angles,
+        sf,
+        tf,
+    )
 
 
 def sftf_model_kept_pairs(
@@ -639,6 +683,43 @@ def build_speed_curves(sftf_root, rebuild=False):
     )
     pd.to_pickle(curves, cache)
     return curves
+
+
+def save_with_vector_image(fig, image, vector_pdf, pdf_path, png_path=None, dpi=300):
+    """Save `fig` as PDF with a raster image replaced by its vector version, and as PNG.
+
+    Matplotlib cannot place vector graphics in an axes: `image` (an `AxesImage` of a raster copy of
+    `vector_pdf`) is drawn in the PNG, hidden in the PDF, and the first page of `vector_pdf` is merged
+    onto the PDF at the same position and size (`pypdf`). Both files are cropped to the same tight
+    bounding box, as `bbox_inches="tight"`.
+    """
+    from matplotlib.transforms import Bbox
+    from pypdf import PdfReader, PdfWriter, Transformation
+
+    renderer = fig.canvas.get_renderer()
+    bbox = fig.get_tightbbox(renderer).padded(plt.rcParams["savefig.pad_inches"])
+    extent = Bbox(image.get_window_extent(renderer).get_points() / fig.dpi)  # inches
+    if png_path is not None:
+        fig.savefig(png_path, dpi=dpi, bbox_inches=bbox)
+    image.set_visible(False)
+    fig.savefig(pdf_path, bbox_inches=bbox)
+    image.set_visible(True)
+
+    page = PdfReader(pdf_path).pages[0]
+    insert = PdfReader(vector_pdf).pages[0]
+    scale_x = extent.width * 72 / float(insert.mediabox.width)
+    scale_y = extent.height * 72 / float(insert.mediabox.height)
+    page.merge_transformed_page(
+        insert,
+        Transformation()
+        .translate(-float(insert.mediabox.left), -float(insert.mediabox.bottom))
+        .scale(scale_x, scale_y)
+        .translate((extent.x0 - bbox.x0) * 72, (extent.y0 - bbox.y0) * 72),
+    )
+    writer = PdfWriter()
+    writer.add_page(page)
+    with open(pdf_path, "wb") as f:
+        writer.write(f)
 
 
 def plot_sftf_3x3_grid(

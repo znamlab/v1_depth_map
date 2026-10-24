@@ -18,6 +18,9 @@ dist/
 *.pdf
 *.svg
 *.png
+# panel A schematic of fig_reviewer_gratings (vector, and its raster preview)
+!v1_depth_map/figures/schematic_gratings.pdf
+!v1_depth_map/figures/schematic_gratings.png
 *.pickle
 .venv/
 antigravity_output/
