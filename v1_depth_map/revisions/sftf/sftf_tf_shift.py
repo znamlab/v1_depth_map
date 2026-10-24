@@ -1,6 +1,6 @@
 """Per-cell, gain-invariant test of a running-speed shift of the preferred TF.
 
-For the reviewer grating analysis (`figures/fig_reviewer_gratings.ipynb`). Uses the running frames
+For the exploratory grating analysis (`revisions/sftf/sftf_exploratory_analysis.ipynb`). Uses the running frames
 and fits of `sftf_running_models.py` (`running_models/frames/<session>.npz` and
 `running_models/<session>_sftf_running_models.pickle`, gain model included).
 
@@ -8,9 +8,9 @@ For each SF/TF-tuned cell:
 
 1. the running frames of the session are split at the median running speed (slow / fast halves);
 2. TF curves of the two halves over the SF / direction pairs that drive the cell (pairs >= THRESHOLD x
-   the best pair over all frames, same pairs for both halves; `sftf_examples.population_tf_curves`);
+   the best pair over all frames, same pairs for both halves; `sftf.population_tf_curves`);
 3. preferred TF of each half = centre of mass in log2 TF of (curve - its minimum)
-   (`sftf_examples.tf_centre_of_mass`), which a multiplicative gain or an offset does not change;
+   (`sftf_plots.tf_centre_of_mass`), which a multiplicative gain or an offset does not change;
    shift = fast - slow, in octaves;
 4. null: N_SIM surrogates from the cell's fitted `gain` model (amplitude ∝ RS^g, no TF shift) plus its own
    residuals circularly shifted within each recording (same shift for all cells), analysed identically.
@@ -35,7 +35,8 @@ import numpy as np
 import pandas as pd
 
 from cottage_analysis.analysis.fit_gaussian_blob import GratingParams
-from v1_depth_map.figure_utils import sftf_examples
+from v1_depth_map.figure_utils import sftf
+from v1_depth_map.revisions.sftf import sftf_plots
 from v1_depth_map.precompute_data.sftf_running_models import rs_tuning
 
 
@@ -68,10 +69,10 @@ def session_shifts(frames, fits, n_sim, threshold, sham, rng):
     resid = y - pred
 
     def shift_of(responses):
-        curves, tf, _ = sftf_examples.population_tf_curves(
+        curves, tf, _ = sftf.population_tf_curves(
             X_bins, responses, log_rs_median, edges, threshold=threshold
         )
-        com = sftf_examples.tf_centre_of_mass(curves, tf)
+        com = sftf_plots.tf_centre_of_mass(curves, tf)
         return com[:, 1] - com[:, 0]
 
     observed = shift_of(y)
