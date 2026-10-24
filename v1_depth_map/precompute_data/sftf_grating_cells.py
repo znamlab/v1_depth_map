@@ -15,8 +15,11 @@ Input of `figures/fig_reviewer_gratings.ipynb` (and of `revisions/sftf/`). Write
     Gaussian fit (preferred optic flow in deg/s and running speed in m/s, held-out R²);
   - the trial-level SF/TF fit (`neurons_df_sftf.pickle`, columns prefixed `fit_`), preferred grating speed
     (TF0 / SF0, deg/s) and the selections: `sftf_tuned` (held-out Spearman, one-sided p < 0.05), `rsof_tuned`
-    (RS/OF held-out R² above the empirical-null threshold, as figure 2), `responsive`, `ori_selective`,
-    `dir_selective`.
+    (RS/OF held-out R² above the empirical-null threshold of figure 2, computed on the iscell ROIs of all its
+    sessions and copied in `rsof_threshold`), `responsive`, `ori_selective`, `dir_selective`.
+
+The RS/OF threshold is read from the figure 2 table `fig2/results_all_rsof_closedloop.parquet` (written by
+`figures/figure2_rsof_integration.ipynb`), so figure 2 must have been run first.
 
 Moved from the analysis cells of `revisions/sftf/sftf_exploratory_analysis.ipynb`; same output.
 
@@ -57,6 +60,7 @@ N_SHUFFLES = 1000
 RSOF_SIG_PERCENTILE = (
     95  # empirical-null threshold of the RS/OF held-out R², as figure 2
 )
+FIG2_RSOF_TABLE = "fig2/results_all_rsof_closedloop.parquet"  # under the read root
 NEURONS_COLUMNS = [
     "roi",
     "iscell",
@@ -207,6 +211,21 @@ def load_sftf_fit(flm, session):
     return fit.drop(columns=["sftf_test_popts"])
 
 
+def figure2_rsof_threshold(flm):
+    """Empirical-null threshold of the RS/OF held-out R² of figure 2 (iscell ROIs of all its sessions)."""
+    read_root, _ = get_figures_roots(flm)
+    rsq = pd.read_parquet(
+        read_root / FIG2_RSOF_TABLE, columns=["iscell", "rsof_test_rsq_closedloop_g2d"]
+    )
+    rsq = rsq[rsq.iscell].copy()  # as figure2_rsof_integration
+    return common_utils.add_rsq_significance(
+        rsq,
+        {"g2d": "rsof_test_rsq_closedloop_g2d"},
+        percentile=RSOF_SIG_PERCENTILE,
+        verbose=False,
+    )["g2d"]
+
+
 def main(rebuild=False):
     flm = flz.get_flexilims_session(PROJECT)
     _, save_root = get_figures_roots(flm, fig_subdir="fig_reviewer_gratings")
@@ -262,17 +281,16 @@ def main(rebuild=False):
         pval_col="fit_sftf_test_spearmanr_pval",
         out_col="sftf_tuned",
     )
-    rsof_thresholds = common_utils.add_rsq_significance(
-        cells, {"g2d": "rsof_test_rsq"}, percentile=RSOF_SIG_PERCENTILE, verbose=False
-    )
-    cells["rsof_tuned"] = cells["rsof_test_rsq_sig"]
+    rsof_threshold = figure2_rsof_threshold(flm)
+    cells["rsof_threshold"] = rsof_threshold
+    cells["rsof_tuned"] = cells.rsof_test_rsq > rsof_threshold
     cells.to_csv(save_root / "grating_tuning_cells.csv", index=False)
 
     print(f"{len(cells)} iscell ROIs -> {save_root / 'grating_tuning_cells.csv'}")
     print(f"depth selective: {cells.depth_tuned.sum()}")
     print(f"SF/TF tuned (cross-validated): {cells.sftf_tuned.sum()}")
     print(
-        f"RS/OF tuned (test R² > empirical-null threshold {rsof_thresholds['g2d']:.4f}): "
+        f"RS/OF tuned (test R² > figure 2 empirical-null threshold {rsof_threshold:.4f}): "
         f"{cells.rsof_tuned.sum()}"
     )
     print(

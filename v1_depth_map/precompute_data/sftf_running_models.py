@@ -29,15 +29,18 @@ fit with zero slopes, plus random starts.
 
 With --still (prepare), the frames are instead the still frames, as the not-running depth fits of figure 1:
 RS < STILL_THR in the frame, the STILL_FRAMES - 1 frames before it (~1 s) and the LAG frames after it (up to
-the frame of the signal), wherever these frames fall (previous grating or outside the gratings). Only `base`
-is fitted on them; the RS column of X is 0.
+the frame of the signal), wherever these frames fall (previous grating or outside the gratings). They are saved
+to OUT_DIR/frames_still/<session>.npz, beside the running frames, and are not fitted (`fit` and `merge` read
+only the running frames); the figure uses them for the static curves (`sftf.build_speed_curves`). The RS column
+of X is 0. Use --all-cells for both, so that the ROIs match.
 
 Only `iscell` ROIs whose trial-level fit on the same trace is cross-validated SF/TF tuned (one-sided
 Spearman p < 0.05) are fitted: production `neurons_df_sftf` for dF/F, `neurons_df_sftf_spks` for
 spikes. Production files are only read. Three steps, so that ROIs can be fitted as separate jobs:
 
     prepare SESSION      sync once, save running frames and traces to OUT_DIR/frames/<session>.npz
-                         (SF/TF-tuned iscell ROIs, or all iscell ROIs with --all-cells)
+                         (SF/TF-tuned iscell ROIs, or all iscell ROIs with --all-cells); with --still,
+                         still frames to OUT_DIR/frames_still/<session>.npz
     fit SESSION ROI      fit one ROI -> OUT_DIR/rois/<session>_<roi>.pickle (skipped if it exists;
                          with --models, only the models missing from it are fitted and added)
     merge SESSION        -> OUT_DIR/<session>_sftf_running_models.pickle (one row per ROI) + .json
@@ -480,8 +483,8 @@ def sftf_tuned_rois(flm, session, trace="spks"):
     return np.flatnonzero(iscell & (np.asarray(pval) < 0.05))
 
 
-def frames_path(out_dir, session):
-    return Path(out_dir) / "frames" / f"{session}.npz"
+def frames_path(out_dir, session, still=False):
+    return Path(out_dir) / ("frames_still" if still else "frames") / f"{session}.npz"
 
 
 def prepare(
@@ -501,7 +504,7 @@ def prepare(
     X, traces, recording, log_rs_median = session_frames(
         flm, session, trace=trace, lag=lag, still=still, skip=skip
     )
-    path = frames_path(out_dir, session)
+    path = frames_path(out_dir, session, still=still)
     path.parent.mkdir(parents=True, exist_ok=True)
     np.savez(
         path,
@@ -526,12 +529,10 @@ def fit(session, roi, out_dir, n_jobs, models=None, overwrite=False):
 
     Without `models`, skipped if its result exists. With `models`, those missing from an existing
     result (all of them with `overwrite`) are fitted and their columns added to it, replacing the
-    previous columns of these models (the other columns are kept). Still frames: `base` only.
+    previous columns of these models (the other columns are kept). Running frames only.
     """
     d = np.load(frames_path(out_dir, session))
-    if "still" in d and bool(d["still"]):
-        assert models is None or set(models) == {"base"}, "only base on still frames"
-        models = ["base"]
+    assert not ("still" in d and bool(d["still"])), "still frames: not fitted"
     target = Path(out_dir) / "rois" / f"{session}_{roi}.pickle"
     old = pd.read_pickle(target) if target.exists() else None
     if models is None:
@@ -645,7 +646,7 @@ if __name__ == "__main__":
     p.add_argument(
         "--still",
         action="store_true",
-        help="still frames instead of running frames, base model only (prepare only)",
+        help="still frames instead of running frames, saved to frames_still/ and not fitted (prepare only)",
     )
     p.add_argument(
         "--models",

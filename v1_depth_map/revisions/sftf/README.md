@@ -31,9 +31,10 @@ All outputs are under `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_g
    slim neurons_df (`cache/<session>_neurons_slim.pickle`) and `grating_tuning_cells.csv` (one row per `iscell`
    ROI: model-free tuning, depth and RS/OF tuning, the trial-level fit and the selections).
 3. `precompute_data/sftf_running_models.py` (NEMO): `prepare --trace dff --all-cells` (running frames) and
-   `prepare --still` (still frames) → `running_models/frames{,_still}/<session>.npz`; `fit` and `merge` →
-   `running_models/<session>_sftf_running_models.pickle`. The figure needs only the `base` model (selection of the
-   population curves); the other models feed the exploratory notebook.
+   `prepare --trace dff --all-cells --still` (still frames, not fitted) → `running_models/frames{,_still}/<session>.npz`;
+   `fit` and `merge` → `running_models/<session>_sftf_running_models.pickle`. The figure needs only the `base`
+   model (`fit SESSION ROI --models base`: selection of the population curves); the other models feed the
+   exploratory notebook (`--models gain gain_tf gain_sf rsg rsg_tf rsg_sf`, added to the same ROI results).
 4. `revisions/sftf/sftf_tf_shift.py` → `running_models/tf_shift.pickle` (exploratory notebook only).
 5. `figures/fig_reviewer_gratings.ipynb`: builds `cache/speed_curves_v2.pickle`, writes `fig_sftf_analysis.{pdf,png}`
    and the stats YAML.
@@ -68,8 +69,9 @@ a bound are kept: on the cells with in-range preferences the figure correlations
 - SF/TF tuned: one-sided Spearman p < 0.05 between held-out responses and predictions of the trial-level fit. The
   stricter held-out R² above the empirical null (as RS/OF in figure 2) was checked as a robustness test
   (2026-10-24): all correlations keep their sign.
-- RS/OF tuned: RS/OF held-out R² above the empirical-null threshold (95th percentile of the mirrored negative tail),
-  as figure 2.
+- RS/OF tuned: RS/OF held-out R² above the threshold of figure 2: 95th percentile of the mirrored negative tail of
+  the iscell ROIs of all figure 2 sessions (`fig2/results_all_rsof_closedloop.parquet`, 0.0015 on 2026-10-24),
+  not of the grating sessions alone (0.0009, which passed 648 instead of 501 grating cells).
 
 **Direction selectivity** (panels D, E). The fitted `dsi` parameter only scales the null-direction lobe: when the
 von Mises concentration κ goes to 0 the tuning is flat whatever `dsi` is, and the parameter drifts to its bounds. The
@@ -77,6 +79,12 @@ figure uses the selectivity implied by the fit, (pref − null) / (pref + null) 
 Kim, Znamenskiy et al. (2018) used the same model but a model-free DSI and a width criterion (σ_dir < 40°); both
 alternatives were compared (`agent_cache/sftf_dsi_comparison/`) and give the same conclusion. Panel E keeps the
 cells with an implied DSI above `DSI_THR` (0.5: null response at most a third of the preferred one).
+The D test is stratified by session (`sftf.stratified_median_difference`): difference of the medians, depth
+selective minus other, within each session, averaged over sessions weighted by their number of cells, with the depth
+labels permuted within sessions. A pooled Mann-Whitney test was confounded: the session with the most depth-selective
+cells (PZAH10.2f_S20230924) has the lowest DSI, so the pooled medians went the other way from 4 of the 6 sessions
+(2026-10-24). On synthetic data with a session effect only, the stratified test gave 5.5% false positives at
+p < 0.05 and the pooled test 100%.
 
 **Direction convention.** Grating `Angle` is the wave vector; the bars drift towards `Angle` + 180° (stimulus
 workflow `vis-stim-2d/run_SFTF.bonsai`, same in the 2023-09-11 version `fa05b40`, and BonVision). The grating is drawn

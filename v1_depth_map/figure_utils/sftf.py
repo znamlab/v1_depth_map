@@ -4,6 +4,7 @@
 - frame-level SF / TF tuning per running-speed bin (`speed_binned_responses`, `tf_curves_by_speed`,
   `population_tf_curves`, `sftf_model_kept_pairs`);
 - held-out population curves per speed bin and for still frames (`build_speed_curves`);
+- `stratified_median_difference`: group difference with labels permuted within sessions;
 - plotting (`plot_sftf_3x3_grid`, `plot_polar_direction_hist`, `plot_heldout_speed_curves_panel`);
 - `bootstrap_spearman`: hierarchical bootstrap of Spearman correlations over sessions.
 
@@ -387,7 +388,7 @@ def population_tf_curves(
 
 
 # ==============================================================================
-# Held-out population curves per running-speed bin (panels L-O)
+# Held-out population curves per running-speed bin (panels M-P)
 # ==============================================================================
 
 # running-speed bins (cm/s); the first starts at 5 cm/s, the still threshold
@@ -395,8 +396,9 @@ SPEED_EDGES_CM_S = [5, 11.31, 22.63, 45.25, 90.51]
 TF_SELECT_THRESHOLD = 0.5
 P_FREQ_TUNED = 0.05
 MIN_CELLS_PER_POINT = 10
-# version of the held-out speed curves in the summary cache: 2 = static curve as bin -1, halves by recording
-SPEED_CURVES_VERSION = 2
+# version of the held-out speed curves in the summary cache: 2 = static curve as bin -1, halves by recording;
+# 3 = cells with a peak <= 0 in either selection half dropped
+SPEED_CURVES_VERSION = 3
 
 
 def _freq_modulation_p(trials, resp, variable, threshold=TF_SELECT_THRESHOLD):
@@ -438,11 +440,54 @@ def _frame_halves(recording, recordings):
 
 
 def _align_to_peak(curves_sel, curves_out):
-    """Peak frequency index and normalisation from curves_sel applied to curves_out."""
+    """Peak frequency index and normalisation from curves_sel applied to curves_out.
+
+    Returns the peak index, the normalised curves_out and the peak value: a peak value <= 0 (a cell whose
+    selection half is below baseline everywhere) flips or blows up the normalised curves, so the caller drops it.
+    """
     mean_curve = np.nanmean(curves_sel, axis=1)
     peak = np.argmax(np.where(np.isnan(mean_curve), -np.inf, mean_curve), axis=1)
     peak_value = mean_curve[np.arange(len(peak)), peak]
-    return peak, curves_out / peak_value[:, None, None]
+    return peak, curves_out / peak_value[:, None, None], peak_value
+
+
+def stratified_median_difference(values, labels, strata, n_perm=20000, seed=0):
+    """Difference of medians between two groups within strata, with labels permuted within each stratum.
+
+    The statistic is the mean over strata of median(values[labels]) - median(values[~labels]), weighted by
+    the number of cells in each stratum (strata missing one group are skipped). Permuting the labels within
+    each stratum keeps its composition, so differences between strata (e.g. a session with many
+    depth-selective cells and low values overall) cannot produce a group difference, as they do in a pooled
+    test.
+
+    Returns:
+        dict: `diff` (observed statistic), `p` (two-sided, (1 + count) / (1 + n_perm)), `n_perm` and
+            `n_strata`.
+    """
+    rng = np.random.default_rng(seed)
+    values = np.asarray(values, float)
+    labels = np.asarray(labels, bool)
+    strata = np.asarray(strata)
+    obs, null, weights = [], [], []
+    for s in np.unique(strata):
+        v, lab = values[strata == s], labels[strata == s]
+        if lab.all() or not lab.any():
+            continue
+
+        def med_diff(m):
+            # median of v where m minus median where ~m, along the last axis
+            return np.nanmedian(np.where(m, v, np.nan), axis=-1) - np.nanmedian(
+                np.where(m, np.nan, v), axis=-1
+            )
+
+        obs.append(med_diff(lab))
+        null.append(med_diff(rng.permuted(np.tile(lab, (n_perm, 1)), axis=1)))
+        weights.append(len(v))
+    w = np.asarray(weights) / np.sum(weights)
+    diff = float(w @ np.asarray(obs))
+    null = w @ np.asarray(null)
+    p = (1 + np.sum(np.abs(null) >= abs(diff))) / (1 + n_perm)
+    return dict(diff=diff, p=float(p), n_perm=n_perm, n_strata=len(w))
 
 
 def bootstrap_spearman(x, y, sessions, n_boots=20000, seed=0):
@@ -514,7 +559,7 @@ def load_depth_example(cache_dir, session, roi, rebuild=False):
 
 
 def build_speed_curves(sftf_root, rebuild=False):
-    """Held-out TF and SF tuning curves per running-speed bin and for still frames (panels L-O).
+    """Held-out TF and SF tuning curves per running-speed bin and for still frames (panels M-P).
 
     Cells: significant on the frame-level `base` fit of `precompute_data/sftf_running_models.py`
     (held-out R² above the empirical-null threshold), and for each variable with a significant effect
@@ -524,7 +569,8 @@ def build_speed_curves(sftf_root, rebuild=False):
     For each half of the recordings (`_frame_halves`), the curves of the running frames of one half give
     each cell's peak (of the mean over speed bins) and its value; the curves of the other half, per speed
     bin (`SPEED_EDGES_CM_S`) and for the still frames (bin -1, "Static"), are aligned on that peak and
-    divided by that value. The two folds are averaged per cell.
+    divided by that value. The two folds are averaged per cell. Cells whose peak value is <= 0 in either
+    half are dropped (their count is printed and returned).
 
     Args:
         sftf_root (Path): `fig_reviewer_gratings` folder (`grating_tuning_cells.csv`, `cache/`,
@@ -535,7 +581,8 @@ def build_speed_curves(sftf_root, rebuild=False):
         dict: `heldout_means` (mean, SEM, count and bootstrap CI across cells per variable, depth
             group, speed bin and frequency relative to the peak; points with fewer than
             `MIN_CELLS_PER_POINT` cells dropped), `heldout_counts` ((cells, sessions, mice) per variable
-            and depth group), `mean_peaks` (mean peak position per speed bin) and `speed_labels`.
+            and depth group), `mean_peaks` (mean peak position per speed bin), `speed_labels` and
+            `n_nonpositive_peak` (cells dropped for a peak <= 0, per variable and depth group).
     """
     from cottage_analysis.analysis import common_utils
 
@@ -564,7 +611,7 @@ def build_speed_curves(sftf_root, rebuild=False):
     common_utils.add_rsq_significance(rs_fits, {"base": "base_test_rsq"}, verbose=False)
     pop_cells = rs_fits[rs_fits.base_test_rsq_sig]
 
-    heldout_rows, p_mod = [], []
+    heldout_rows, p_mod, nonpositive = [], [], []
     speed_labels = None
     for var in ("tf", "sf"):
         for session, sc in pop_cells.groupby("session"):
@@ -601,8 +648,13 @@ def build_speed_curves(sftf_root, rebuild=False):
                 )[0]
                 assert curves_still.shape[2] == curves_b.shape[2]
                 # peak and its value from the running half `a`, applied to the held-out half
-                peak, resp = _align_to_peak(
+                peak, resp, peak_value = _align_to_peak(
                     curves_a, np.concatenate([curves_b, curves_still], axis=1)
+                )
+                nonpositive.append(
+                    pd.DataFrame(
+                        dict(variable=var, session=session, roi=sc.roi.to_numpy())
+                    )[peak_value <= 0]
                 )
                 labels = np.asarray(list(speed_labels) + ["Static"])
                 bin_ids = np.r_[np.arange(len(speed_labels)), -1]
@@ -637,6 +689,33 @@ def build_speed_curves(sftf_root, rebuild=False):
             )
     p_mod = pd.concat(p_mod, ignore_index=True)
     freq_tuned = p_mod[p_mod.p < P_FREQ_TUNED][["variable", "session", "roi"]]
+    # drop the cells whose peak is <= 0 in either selection half
+    nonpositive = (
+        pd.concat(nonpositive, ignore_index=True)
+        .drop_duplicates()
+        .merge(freq_tuned, on=["variable", "session", "roi"])
+        .merge(
+            cells[["session", "roi", "depth_tuned"]], on=["session", "roi"], how="left"
+        )
+    )
+    n_nonpositive_peak = {
+        (var, is_dt): int(
+            ((nonpositive.variable == var) & (nonpositive.depth_tuned == is_dt)).sum()
+        )
+        for var in ("tf", "sf")
+        for is_dt in (True, False)
+    }
+    print(
+        "Cells dropped with a peak <= 0 in a selection half (variable, depth selective): "
+        f"{n_nonpositive_peak}"
+    )
+    freq_tuned = (
+        freq_tuned.merge(
+            nonpositive[["variable", "session", "roi"]], how="left", indicator=True
+        )
+        .query("_merge == 'left_only'")
+        .drop(columns="_merge")
+    )
 
     keys = ["variable", "depth_tuned", "speed_bin", "speed", "delta"]
     heldout_pop = (
@@ -680,6 +759,7 @@ def build_speed_curves(sftf_root, rebuild=False):
         heldout_counts=heldout_counts,
         mean_peaks=mean_peaks,
         speed_labels=speed_labels,
+        n_nonpositive_peak=n_nonpositive_peak,
     )
     pd.to_pickle(curves, cache)
     return curves
@@ -895,7 +975,7 @@ def plot_heldout_speed_curves_panel(
 ):
     """Plot held-out TF or SF tuning curves across running-speed bins for depth-selective or non-depth cells.
 
-    The still frames are the bin -1 of `heldout_means` (`load_fig3_sftf_data`), plotted in black if
+    The still frames are the bin -1 of `heldout_means` (`build_speed_curves`), plotted in black if
     `plot_static`.
     """
     fontsize_dict = fontsize_dict or {"title": 7, "label": 7, "tick": 5, "legend": 5}
