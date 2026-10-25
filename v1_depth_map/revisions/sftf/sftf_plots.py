@@ -8,8 +8,8 @@ on `ast_neuropil=False` traces and the cross-validated `neurons_df_sftf.pickle`,
   (`grating_plots.plot_sftf_tuning`);
 - the same for the fitted model, on the same colour scale (`grating_plots.plot_sftf_fit`).
 
-Also: SF x TF responses per running-speed bin, TF curves per speed bin, the gain-invariant preferred TF
-(`tf_centre_of_mass`, used by `sftf_tf_shift.py`) and population SF / TF maps by preferred depth.
+Also: SF x TF responses per running-speed bin, TF curves per speed bin and population SF / TF maps by preferred
+depth.
 """
 
 import matplotlib.pyplot as plt
@@ -277,25 +277,6 @@ def plot_tf_curves(ax, curves, cmap="viridis", fontsize_dict=None, ylabel="ΔF/F
     ax.set_ylabel(ylabel, fontsize=fontsize_dict["label"])
     ax.tick_params(labelsize=fontsize_dict["tick"])
     ax.spines[["top", "right"]].set_visible(False)
-
-
-def tf_centre_of_mass(curves, tf):
-    """Gain-invariant preferred TF: centre of mass in log2 TF of (curve - min of curve).
-
-    Subtracting the minimum and normalising by the sum makes the value independent of a
-    multiplicative gain (and of an additive offset) applied to the curve.
-
-    Args:
-        curves (..., n_tf): TF curves.
-        tf (n_tf,): temporal frequencies (Hz).
-
-    Returns:
-        (...,) centre of mass in log2 Hz, NaN for flat curves.
-    """
-    w = curves - np.nanmin(curves, axis=-1, keepdims=True)
-    w = np.where(np.isfinite(w), w, 0)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        return (w * np.log2(tf)).sum(axis=-1) / w.sum(axis=-1)
 
 
 def extract_sftf_population_data(cells_df, cache_dir):

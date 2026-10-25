@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-10-07 17:54:09.*
+*Compiled from figure notebook outputs at 2026-10-25 12:10:07.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 142 values were written by a notebook run.
+> ✅ All 184 values were written by a notebook run.
 
 ---
 
@@ -226,6 +226,55 @@ Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-10-06T1
 | `\statSuppNineGradientPvalCorrected` | `$p = 3.95e-09$` | 3.953748301453364e-09 | notebook | Significance of 3D RF depth gradient across visual space (corrected) |
 | `\statSuppNineGradientPvalUncorrected` | `$p = 0.0393$` | 0.039301936675758216 | notebook | Significance of depth gradient across visual space (uncorrected) |
 | `\statSuppNineAPCorrR` | `$r = -0.140$` | -0.1398648425132868 | notebook | Correlation between preferred depth and anterior-posterior location in V1 |
+
+## Figure: REVIEWER
+
+Source notebook: `fig_reviewer_gratings.ipynb` (notebook, generated 2026-10-25T12:09:42)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statRevGratNeurons` | `3,012` | 3012 | notebook | iscell neurons in the 6 grating sessions |
+| `\statRevGratSessions` | `6` | 6 | notebook | Sessions with drifting gratings |
+| `\statRevGratMice` | `2` | 2 | notebook | Mice with drifting gratings |
+| `\statRevGratDepthNeurons` | `693` | 693 | notebook | Depth-selective neurons |
+| `\statRevGratRsofThreshold` | `0.0015` | 0.001545755149447 | notebook | RS/OF held-out R² threshold of figure 2 (95th percentile of the empirical null, iscell ROIs of all sessions) |
+| `\statRevGratRsofNeurons` | `501` | 501 | notebook | RS/OF-tuned neurons (figure 2 threshold) in the grating sessions |
+| `\statRevGratPctDepth` | `23\%` | 23.007968127490038 | notebook | Percentage depth selective |
+| `\statRevGratSftfNeurons` | `1,442` | 1442 | notebook | SF/TF-tuned neurons, cross-validated |
+| `\statRevGratPctSftf` | `48\%` | 47.875166002656044 | notebook | Percentage SF/TF tuned |
+| `\statRevGratBothN` | `390` | 390 | notebook | Depth-selective and SF/TF-tuned neurons |
+| `\statRevGratPctBoth` | `13\%` | 12.94820717131474 | notebook | Percentage depth selective and SF/TF tuned |
+| `\statRevGratBothExpectedN` | `345` | 345.1645308608199 | notebook | Depth selective and SF/TF tuned expected if independent, computed per session and summed |
+| `\statRevGratPctBothExpected` | `11\%` | 11.459645778911684 | notebook | Percentage both expected if independent, computed per session |
+| `\statRevGratOverlapOR` | `1.43` | 1.4322701962557216 | notebook | Mantel-Haenszel pooled odds ratio over sessions, depth selective x SF/TF tuned |
+| `\statRevGratOverlapP` | `$p < 0.0001$` | 6.173630516681516e-05 | notebook | Mantel-Haenszel test of the pooled odds ratio over sessions |
+| `\statRevGratSpeedDepthN` | `390` | 390 | notebook | Neurons, preferred grating speed vs preferred depth (G) |
+| `\statRevGratSpeedDepthRho` | `-0.16` | -0.16452332247348567 | notebook | Spearman rho, preferred grating speed vs preferred depth (G) |
+| `\statRevGratSpeedDepthP` | `$p = 0.0069$` | 0.0069 | notebook | Hierarchical bootstrap (sessions) p, preferred grating speed vs preferred depth (G) |
+| `\statRevGratSpeedDepthPHolm` | `$p = 0.0276$` | 0.0276 | notebook | Holm-corrected p over the 5 pairs, preferred grating speed vs preferred depth (G) |
+| `\statRevGratTfDepthN` | `390` | 390 | notebook | Neurons, preferred TF vs preferred depth (H) |
+| `\statRevGratTfDepthRho` | `0.06` | 0.05987831945821009 | notebook | Spearman rho, preferred TF vs preferred depth (H) |
+| `\statRevGratTfDepthP` | `$p = 0.566$` | 0.5664 | notebook | Hierarchical bootstrap (sessions) p, preferred TF vs preferred depth (H) |
+| `\statRevGratTfDepthPHolm` | `$p = 1$` | 1.0 | notebook | Holm-corrected p over the 5 pairs, preferred TF vs preferred depth (H) |
+| `\statRevGratSfDepthN` | `390` | 390 | notebook | Neurons, preferred SF vs preferred depth (I) |
+| `\statRevGratSfDepthRho` | `0.36` | 0.35759638119038867 | notebook | Spearman rho, preferred SF vs preferred depth (I) |
+| `\statRevGratSfDepthP` | `$p = 0.0097$` | 0.0097 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred depth (I) |
+| `\statRevGratSfDepthPHolm` | `$p = 0.0291$` | 0.0291 | notebook | Holm-corrected p over the 5 pairs, preferred SF vs preferred depth (I) |
+| `\statRevGratSfOfN` | `333` | 333 | notebook | Neurons, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfOfRho` | `-0.41` | -0.4066807464295328 | notebook | Spearman rho, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfOfP` | `$p = 0.0012$` | 0.0012 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfOfPHolm` | `$p = 0.006$` | 0.005999999999999999 | notebook | Holm-corrected p over the 5 pairs, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfRsN` | `333` | 333 | notebook | Neurons, preferred SF vs preferred running speed (not shown) |
+| `\statRevGratSfRsRho` | `-0.13` | -0.1328735113133372 | notebook | Spearman rho, preferred SF vs preferred running speed (not shown) |
+| `\statRevGratSfRsP` | `$p = 0.581$` | 0.5807 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred running speed (not shown) |
+| `\statRevGratSfRsPHolm` | `$p = 1$` | 1.0 | notebook | Holm-corrected p over the 5 pairs, preferred SF vs preferred running speed (not shown) |
+| `\statRevGratDsiMedianDepth` | `0.14` | 0.14493252901840448 | notebook | Median implied DSI, SF/TF-tuned depth-selective neurons (E) |
+| `\statRevGratDsiMedianOther` | `0.19` | 0.18526940986028534 | notebook | Median implied DSI, SF/TF-tuned other neurons (E) |
+| `\statRevGratDsiDiff` | `0.008` | 0.008292042151438667 | notebook | Implied DSI, depth selective minus other: difference of the medians within each session, mean over sessions weighted by their number of cells (E) |
+| `\statRevGratDsiP` | `$p = 0.725$` | 0.7250637468126594 | notebook | Permutation p of the within-session DSI difference, depth labels permuted within sessions (20,000 permutations) (E) |
+| `\statRevGratDirTunedN` | `130` | 130 | notebook | Depth-selective neurons with implied DSI > 0.3 (F) |
+| `\statRevGratDirTunedOtherN` | `393` | 393 | notebook | Other neurons with implied DSI > 0.3 (F) |
+| `\statRevGratDirP` | `$p = 0.0561$` | 0.05611746208998853 | notebook | chi2 p, preferred drift direction (8 bins), depth selective vs other (F) |
 
 ---
 

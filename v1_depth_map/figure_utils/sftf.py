@@ -5,7 +5,8 @@
   `population_tf_curves`, `sftf_model_kept_pairs`);
 - held-out population curves per speed bin and for the slow frames (`build_speed_curves`);
 - `stratified_median_difference`: group difference with labels permuted within sessions;
-- plotting (`plot_sftf_3x3_grid`, `plot_polar_direction_hist`, `plot_heldout_speed_curves_panel`);
+- plotting (`plot_sftf_3x3_grid`, `plot_overlap_matrix`, `plot_polar_direction_hist`,
+  `plot_heldout_speed_curves_panel`);
 - `bootstrap_spearman`: hierarchical bootstrap of Spearman correlations over sessions.
 
 Exploratory plots (example neurons, population SF/TF maps by preferred depth) are in
@@ -429,8 +430,9 @@ MIN_CELLS_PER_POINT = 10
 # the fitted peak over the tested stimuli (`sftf_fit_peak`) instead of the selection half's peak; 5 = peak
 # position from all frames of the selection half (running and still pooled), not only the running frames;
 # 6 = last speed bin open-ended (> 45.25 cm/s, no longer capped at 90.51); 7 = treadmill bins from 2.83 cm/s and
-# the frames below 2.83 cm/s (any duration) instead of the still frames (< 5 cm/s for 1 s)
-SPEED_CURVES_VERSION = 7
+# the frames below 2.83 cm/s (any duration) instead of the still frames (< 5 cm/s for 1 s); 8 = dF/F divided by
+# the maximum of the fitted tuning over the tested stimuli (offset + peak), the offset no longer subtracted
+SPEED_CURVES_VERSION = 8
 
 
 def _freq_modulation_p(trials, resp, variable, threshold=TF_SELECT_THRESHOLD):
@@ -585,7 +587,7 @@ def load_depth_example(cache_dir, session, roi, rebuild=False):
 
 
 def build_speed_curves(sftf_root, rebuild=False):
-    """Held-out TF and SF tuning curves per running-speed bin and for the slow frames (panels L-O).
+    """Held-out TF and SF tuning curves per running-speed bin and for the slow frames (panels M-P).
 
     Cells: significant on the frame-level `base` fit of `precompute_data/sftf_running_models.py`
     (held-out R² above the empirical-null threshold), and for each variable with a significant effect
@@ -596,9 +598,9 @@ def build_speed_curves(sftf_root, rebuild=False):
     frames in the speed bins and slow frames, pooled) gives each cell's peak; the curves of the other half,
     per speed bin (`SPEED_EDGES_CM_S`) and for the slow frames (bin -1, `SLOW_LABEL`), are aligned on that
     peak, so that neither state defines the alignment. Responses
-    are the dF/F minus the offset of the trial-level fit, divided by the fitted peak above that offset over
-    the tested stimuli (`sftf_fit_peak`; fitted on all recordings, so the normalisation is not held out but
-    never close to 0). The two folds are averaged per cell.
+    are the dF/F divided by the maximum of the trial-level fit over the tested stimuli (offset + peak of
+    `sftf_fit_peak`; fitted on all recordings, so the normalisation is not held out but never close to 0).
+    The two folds are averaged per cell.
 
     Args:
         sftf_root (Path): `fig_reviewer_gratings` folder (`grating_tuning_cells.csv`, `cache/`,
@@ -690,12 +692,13 @@ def build_speed_curves(sftf_root, rebuild=False):
                     *slow_args, **kw, use=half_slow != h
                 )[0]
                 assert curves_slow.shape[2] == curves_b.shape[2] == curves_a.shape[2]
-                # peak from all frames of half `h`, applied to the held-out half; fit normalisation
+                # peak from all frames of half `h`, applied to the held-out half; divided by the
+                # fitted maximum
                 peak = _peak_index(curves_a)
                 resp = (
                     np.concatenate([curves_b, curves_slow], axis=1)
-                    - offset[:, None, None]
-                ) / fit_peak[:, None, None]
+                    / (offset + fit_peak)[:, None, None]
+                )
                 labels = np.asarray(list(speed_labels) + [SLOW_LABEL])
                 bin_ids = np.r_[np.arange(len(speed_labels)), -1]
                 idx = np.indices(resp.shape).reshape(3, -1)
@@ -929,6 +932,114 @@ def plot_sftf_3x3_grid(
     return polar_ax, cax
 
 
+# overlap matrix (panel D): one square per neuron, colourblind-safe magenta (depth) and blue (SF/TF) of
+# https://davidmathlogic.com/colorblind/ drawn at alpha 0.5 on white; a cell that is both has the colour of the two
+# overlapping (mean of the two stacking orders: 0.375 of each and 0.25 of white)
+_DEPTH_RGB, _SFTF_RGB = (
+    np.array([0xD8, 0x1B, 0x60]) / 255,
+    np.array([0x1E, 0x88, 0xE5]) / 255,
+)
+OVERLAP_CATEGORIES = {  # category: (legend label, colour), plotting order
+    "depth": ("Depth", tuple(0.5 * _DEPTH_RGB + 0.5)),
+    "both": ("Both", tuple(0.375 * (_DEPTH_RGB + _SFTF_RGB) + 0.25)),
+    "sftf": ("SF/TF", tuple(0.5 * _SFTF_RGB + 0.5)),
+    "neither": ("Neither", "#d9d9d9"),
+}
+
+
+def _square(col, row, size=1.0):
+    """Corners of the square of side `size` at (col, row)."""
+    return [(col, row), (col + size, row), (col + size, row + size), (col, row + size)]
+
+
+def plot_overlap_matrix(
+    ax, depth_tuned, sftf_tuned, legend_ax=None, fontsize_dict=None
+):
+    """One square per neuron, coloured by depth selectivity and SF/TF tuning, with the count of each group.
+
+    The squares fill the axes column by column in the order of `OVERLAP_CATEGORIES`, so that each group is
+    a block; the number of rows is chosen so that the grid has the aspect ratio of `ax`, and the slots after
+    the last neuron stay empty. The count and percentage of each group are written on its block.
+
+    Args:
+        ax: axes of the matrix.
+        depth_tuned, sftf_tuned (n_cells,) bool: selections.
+        legend_ax: axes for a one-row legend of the groups (none if None).
+        fontsize_dict (dict): "tick" for the counts and percentages, "legend" for the legend.
+
+    Returns:
+        counts (dict): number of neurons per group.
+    """
+    from matplotlib.collections import PolyCollection
+
+    fontsize_dict = fontsize_dict or {"tick": 5, "legend": 5}
+    depth_tuned, sftf_tuned = (
+        np.asarray(depth_tuned, bool),
+        np.asarray(sftf_tuned, bool),
+    )
+    category = np.select(
+        [depth_tuned & sftf_tuned, depth_tuned, sftf_tuned],
+        ["both", "depth", "sftf"],
+        "neither",
+    )
+    counts = {k: int((category == k).sum()) for k in OVERLAP_CATEGORIES}
+    n = len(category)
+    bbox = ax.get_window_extent()
+    n_rows = max(1, int(round(np.sqrt(n * bbox.height / bbox.width))))
+    n_cols = int(np.ceil(n / n_rows))
+    polys, colors = [], []
+    start = 0
+    for k, (_, color) in OVERLAP_CATEGORIES.items():
+        slots = np.arange(start, start + counts[k])
+        cols, rows = slots // n_rows, slots % n_rows  # column-major fill
+        polys += [_square(col, row) for col, row in zip(cols, rows)]
+        colors += [color] * counts[k]
+        if counts[k]:
+            # count and percentage (rounded half up) in the middle of the block (columns fully or
+            # partly in the group)
+            ax.text(
+                (slots[0] // n_rows + slots[-1] // n_rows + 1) / 2,
+                n_rows / 2,
+                f"{counts[k]:,}\n{int(np.floor(100 * counts[k] / n + 0.5))}%",
+                ha="center",
+                va="center",
+                fontsize=fontsize_dict["tick"],
+            )
+        start += counts[k]
+    # edges in the face colour, so that no seam shows between abutting squares
+    ax.add_collection(
+        PolyCollection(polys, facecolors=colors, edgecolors=colors, linewidths=0.1)
+    )
+    ax.set_xlim(0, n_cols)
+    ax.set_ylim(n_rows, 0)
+    ax.set_aspect("equal", anchor="W")
+    ax.axis("off")
+
+    if legend_ax is not None:
+        # one row: a square and the label of each group, at equal spacing
+        lb = legend_ax.get_window_extent()
+        width = lb.width / lb.height
+        step = width / len(OVERLAP_CATEGORIES)
+        for i, (label, color) in enumerate(OVERLAP_CATEGORIES.values()):
+            legend_ax.add_collection(
+                PolyCollection(
+                    [_square(i * step + 0.1, 0.1, 0.8)], facecolors=color, linewidths=0
+                )
+            )
+            legend_ax.text(
+                i * step + 1.15,
+                0.5,
+                label,
+                va="center",
+                fontsize=fontsize_dict["legend"],
+            )
+        legend_ax.set_xlim(0, width)
+        legend_ax.set_ylim(1, 0)
+        legend_ax.set_aspect("equal", anchor="W")
+        legend_ax.axis("off")
+    return counts
+
+
 def plot_polar_direction_hist(
     ax,
     values_deg,
@@ -981,13 +1092,14 @@ def plot_heldout_speed_curves_panel(
     fontsize_dict=None,
     peak_y=None,
     plot_slow=True,
+    slow_color="k",
     norm_to_own_peak=False,
     use_com=True,
     is_depth_tuned=True,
 ):
     """Plot held-out TF or SF tuning curves across running-speed bins for depth-selective or non-depth cells.
 
-    The slow frames are the bin -1 of `heldout_means` (`build_speed_curves`), plotted in black if
+    The slow frames are the bin -1 of `heldout_means` (`build_speed_curves`), plotted in `slow_color` if
     `plot_slow`.
     """
     fontsize_dict = fontsize_dict or {"title": 7, "label": 7, "tick": 5, "legend": 5}
@@ -1016,7 +1128,7 @@ def plot_heldout_speed_curves_panel(
                 (c_slow.ci_high - c_slow["mean"]) / slow_scale,
             ),
             fmt=".-",
-            color="k",
+            color=slow_color,
             markeredgecolor="w",
             markeredgewidth=0.3,
             linewidth=1.1,
@@ -1036,7 +1148,7 @@ def plot_heldout_speed_curves_panel(
                     peak_y,
                     marker="v",
                     ms=3,
-                    color="k",
+                    color=slow_color,
                     lw=0,
                     clip_on=False,
                 )

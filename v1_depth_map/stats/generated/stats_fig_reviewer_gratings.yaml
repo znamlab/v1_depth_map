@@ -1,7 +1,7 @@
 _meta:
   notebook: fig_reviewer_gratings
   figure: reviewer
-  generated_at: '2026-10-15T22:12:28'
+  generated_at: '2026-10-25T12:09:42'
   source: notebook
 metrics:
   n_neurons:
@@ -20,153 +20,213 @@ metrics:
     latex_macro: statRevGratMice
     description: Mice with drifting gratings
   n_depth:
-    raw: 660
-    formatted: '660'
+    raw: 693
+    formatted: '693'
     latex_macro: statRevGratDepthNeurons
-    description: Depth-selective neurons (A)
+    description: Depth-selective neurons
+  rsof_threshold:
+    raw: 0.001545755149447
+    formatted: '0.0015'
+    latex_macro: statRevGratRsofThreshold
+    description: RS/OF held-out R² threshold of figure 2 (95th percentile of the empirical
+      null, iscell ROIs of all sessions)
+  n_rsof:
+    raw: 501
+    formatted: '501'
+    latex_macro: statRevGratRsofNeurons
+    description: RS/OF-tuned neurons (figure 2 threshold) in the grating sessions
   pct_depth:
-    raw: 21.91235059760956
-    formatted: 22\%
+    raw: 23.007968127490038
+    formatted: 23\%
     latex_macro: statRevGratPctDepth
-    description: Percentage depth selective (A)
+    description: Percentage depth selective
   n_sftf:
     raw: 1442
     formatted: 1,442
     latex_macro: statRevGratSftfNeurons
-    description: SF/TF-tuned neurons, cross-validated (A)
+    description: SF/TF-tuned neurons, cross-validated
   pct_sftf:
     raw: 47.875166002656044
     formatted: 48\%
     latex_macro: statRevGratPctSftf
-    description: Percentage SF/TF tuned (A)
+    description: Percentage SF/TF tuned
+  n_both:
+    raw: 390
+    formatted: '390'
+    latex_macro: statRevGratBothN
+    description: Depth-selective and SF/TF-tuned neurons
   pct_both:
-    raw: 12.848605577689243
+    raw: 12.94820717131474
     formatted: 13\%
     latex_macro: statRevGratPctBoth
-    description: Percentage depth selective and SF/TF tuned (A)
+    description: Percentage depth selective and SF/TF tuned
+  n_both_expected:
+    raw: 345.1645308608199
+    formatted: '345'
+    latex_macro: statRevGratBothExpectedN
+    description: Depth selective and SF/TF tuned expected if independent, computed
+      per session and summed
   pct_both_expected:
-    raw: 10.490574223689572
-    formatted: 10\%
+    raw: 11.459645778911684
+    formatted: 11\%
     latex_macro: statRevGratPctBothExpected
-    description: Percentage both expected if independent (A)
-  rsof_threshold:
-    raw: 0.0013793915208235989
-    formatted: '0.0014'
-    latex_macro: statRevGratRsofThreshold
-    description: RS/OF test R² empirical-null threshold (95th percentile, as figure
-      2)
-  speed_of_n:
-    raw: 353
-    formatted: '353'
-    latex_macro: statRevGratSpeedOfN
-    description: SF/TF- and RS/OF-tuned neurons (B)
-  speed_of_rho:
-    raw: 0.17073690741785957
-    formatted: '0.17'
-    latex_macro: statRevGratSpeedOfRho
-    description: Spearman rho, preferred grating speed vs preferred optic flow (B)
-  speed_of_p:
-    raw: 0.176
-    formatted: $p = 0.176$
-    latex_macro: statRevGratSpeedOfP
-    description: Hierarchical bootstrap p (B)
-  speed_depth_n:
-    raw: 387
-    formatted: '387'
-    latex_macro: statRevGratSpeedDepthN
-    description: SF/TF-tuned depth-selective neurons (C)
-  speed_depth_rho:
-    raw: -0.17659226815001597
-    formatted: '-0.18'
-    latex_macro: statRevGratSpeedDepthRho
-    description: Spearman rho, preferred grating speed vs preferred depth (C)
-  speed_depth_p:
-    raw: 0.0032
-    formatted: $p = 0.0032$
-    latex_macro: statRevGratSpeedDepthP
-    description: Hierarchical bootstrap p (C)
-  n_tuned_depth:
-    raw: 387
-    formatted: '387'
-    latex_macro: statRevGratTunedDepthN
-    description: SF/TF-tuned depth-selective neurons (D, E)
-  n_dir_tuned:
-    raw: 139
-    formatted: '139'
-    latex_macro: statRevGratDirTunedN
-    description: Of which dsi > 0.6 (F)
-  responsive_pct_depth:
-    raw: 59.84848484848485
-    formatted: 60\%
-    latex_macro: statRevGratRespPctDepth
-    description: Percentage responsive, depth tuned
-  responsive_pct_other:
-    raw: 49.1921768707483
-    formatted: 49\%
-    latex_macro: statRevGratRespPctOther
-    description: Percentage responsive, not depth tuned
-  responsive_p:
-    raw: 1.614070584069728e-06
+    description: Percentage both expected if independent, computed per session
+  overlap_or:
+    raw: 1.4322701962557216
+    formatted: '1.43'
+    latex_macro: statRevGratOverlapOR
+    description: Mantel-Haenszel pooled odds ratio over sessions, depth selective
+      x SF/TF tuned
+  overlap_p:
+    raw: 6.173630516681516e-05
     formatted: $p < 0.0001$
-    latex_macro: statRevGratRespP
-    description: chi2 p, responsive depth tuned vs not
-  ori_selective_pct_depth:
-    raw: 24.848484848484848
-    formatted: 25\%
-    latex_macro: statRevGratOriSelPctDepth
-    description: Percentage ori_selective, depth tuned
-  ori_selective_pct_other:
-    raw: 25.977891156462583
-    formatted: 26\%
-    latex_macro: statRevGratOriSelPctOther
-    description: Percentage ori_selective, not depth tuned
-  ori_selective_p:
-    raw: 0.5918618461921301
-    formatted: $p = 0.592$
-    latex_macro: statRevGratOriSelP
-    description: chi2 p, ori_selective depth tuned vs not
-  dir_selective_pct_depth:
-    raw: 14.09090909090909
-    formatted: 14\%
-    latex_macro: statRevGratDirSelPctDepth
-    description: Percentage dir_selective, depth tuned
-  dir_selective_pct_other:
-    raw: 12.45748299319728
-    formatted: 12\%
-    latex_macro: statRevGratDirSelPctOther
-    description: Percentage dir_selective, not depth tuned
-  dir_selective_p:
-    raw: 0.2967259300450999
-    formatted: $p = 0.297$
-    latex_macro: statRevGratDirSelP
-    description: chi2 p, dir_selective depth tuned vs not
-  pref_ori_p:
-    raw: 0.7803027092253108
-    formatted: $p = 0.78$
-    latex_macro: statRevGratPrefOriP
-    description: chi2 p, preferred orientation depth tuned vs not
-  pref_dir_p:
-    raw: 0.7749929255417923
-    formatted: $p = 0.775$
-    latex_macro: statRevGratPrefDirP
-    description: chi2 p, preferred direction depth tuned vs not
-  gosi_p:
-    raw: 0.15710938776131453
-    formatted: $p = 0.157$
-    latex_macro: statRevGratGosiP
-    description: Mann-Whitney p, gOSI depth tuned vs not (SF/TF-tuned cells)
-  gdsi_p:
-    raw: 0.0013967639015673781
-    formatted: $p = 0.0014$
-    latex_macro: statRevGratGdsiP
-    description: Mann-Whitney p, gDSI depth tuned vs not (SF/TF-tuned cells)
-  ori_depth_n:
-    raw: 164
-    formatted: '164'
-    latex_macro: statRevGratOriDepthN
-    description: Depth-tuned orientation-selective neurons
-  ori_depth_p:
-    raw: 0.622269713175855
-    formatted: $p = 0.622$
-    latex_macro: statRevGratOriDepthP
-    description: Kruskal-Wallis p, preferred depth across orientation bins
+    latex_macro: statRevGratOverlapP
+    description: Mantel-Haenszel test of the pooled odds ratio over sessions
+  speedDepth_n:
+    raw: 390
+    formatted: '390'
+    latex_macro: statRevGratSpeedDepthN
+    description: Neurons, preferred grating speed vs preferred depth (G)
+  speedDepth_rho:
+    raw: -0.16452332247348567
+    formatted: '-0.16'
+    latex_macro: statRevGratSpeedDepthRho
+    description: Spearman rho, preferred grating speed vs preferred depth (G)
+  speedDepth_p:
+    raw: 0.0069
+    formatted: $p = 0.0069$
+    latex_macro: statRevGratSpeedDepthP
+    description: Hierarchical bootstrap (sessions) p, preferred grating speed vs preferred
+      depth (G)
+  speedDepth_p_holm:
+    raw: 0.0276
+    formatted: $p = 0.0276$
+    latex_macro: statRevGratSpeedDepthPHolm
+    description: Holm-corrected p over the 5 pairs, preferred grating speed vs preferred
+      depth (G)
+  tfDepth_n:
+    raw: 390
+    formatted: '390'
+    latex_macro: statRevGratTfDepthN
+    description: Neurons, preferred TF vs preferred depth (H)
+  tfDepth_rho:
+    raw: 0.05987831945821009
+    formatted: '0.06'
+    latex_macro: statRevGratTfDepthRho
+    description: Spearman rho, preferred TF vs preferred depth (H)
+  tfDepth_p:
+    raw: 0.5664
+    formatted: $p = 0.566$
+    latex_macro: statRevGratTfDepthP
+    description: Hierarchical bootstrap (sessions) p, preferred TF vs preferred depth
+      (H)
+  tfDepth_p_holm:
+    raw: 1.0
+    formatted: $p = 1$
+    latex_macro: statRevGratTfDepthPHolm
+    description: Holm-corrected p over the 5 pairs, preferred TF vs preferred depth
+      (H)
+  sfDepth_n:
+    raw: 390
+    formatted: '390'
+    latex_macro: statRevGratSfDepthN
+    description: Neurons, preferred SF vs preferred depth (I)
+  sfDepth_rho:
+    raw: 0.35759638119038867
+    formatted: '0.36'
+    latex_macro: statRevGratSfDepthRho
+    description: Spearman rho, preferred SF vs preferred depth (I)
+  sfDepth_p:
+    raw: 0.0097
+    formatted: $p = 0.0097$
+    latex_macro: statRevGratSfDepthP
+    description: Hierarchical bootstrap (sessions) p, preferred SF vs preferred depth
+      (I)
+  sfDepth_p_holm:
+    raw: 0.0291
+    formatted: $p = 0.0291$
+    latex_macro: statRevGratSfDepthPHolm
+    description: Holm-corrected p over the 5 pairs, preferred SF vs preferred depth
+      (I)
+  sfOf_n:
+    raw: 333
+    formatted: '333'
+    latex_macro: statRevGratSfOfN
+    description: Neurons, preferred SF vs preferred optic flow (J)
+  sfOf_rho:
+    raw: -0.4066807464295328
+    formatted: '-0.41'
+    latex_macro: statRevGratSfOfRho
+    description: Spearman rho, preferred SF vs preferred optic flow (J)
+  sfOf_p:
+    raw: 0.0012
+    formatted: $p = 0.0012$
+    latex_macro: statRevGratSfOfP
+    description: Hierarchical bootstrap (sessions) p, preferred SF vs preferred optic
+      flow (J)
+  sfOf_p_holm:
+    raw: 0.005999999999999999
+    formatted: $p = 0.006$
+    latex_macro: statRevGratSfOfPHolm
+    description: Holm-corrected p over the 5 pairs, preferred SF vs preferred optic
+      flow (J)
+  sfRs_n:
+    raw: 333
+    formatted: '333'
+    latex_macro: statRevGratSfRsN
+    description: Neurons, preferred SF vs preferred running speed (not shown)
+  sfRs_rho:
+    raw: -0.1328735113133372
+    formatted: '-0.13'
+    latex_macro: statRevGratSfRsRho
+    description: Spearman rho, preferred SF vs preferred running speed (not shown)
+  sfRs_p:
+    raw: 0.5807
+    formatted: $p = 0.581$
+    latex_macro: statRevGratSfRsP
+    description: Hierarchical bootstrap (sessions) p, preferred SF vs preferred running
+      speed (not shown)
+  sfRs_p_holm:
+    raw: 1.0
+    formatted: $p = 1$
+    latex_macro: statRevGratSfRsPHolm
+    description: Holm-corrected p over the 5 pairs, preferred SF vs preferred running
+      speed (not shown)
+  dsi_median_depth:
+    raw: 0.14493252901840448
+    formatted: '0.14'
+    latex_macro: statRevGratDsiMedianDepth
+    description: Median implied DSI, SF/TF-tuned depth-selective neurons (E)
+  dsi_median_other:
+    raw: 0.18526940986028534
+    formatted: '0.19'
+    latex_macro: statRevGratDsiMedianOther
+    description: Median implied DSI, SF/TF-tuned other neurons (E)
+  dsi_diff:
+    raw: 0.008292042151438667
+    formatted: '0.008'
+    latex_macro: statRevGratDsiDiff
+    description: 'Implied DSI, depth selective minus other: difference of the medians
+      within each session, mean over sessions weighted by their number of cells (E)'
+  dsi_p:
+    raw: 0.7250637468126594
+    formatted: $p = 0.725$
+    latex_macro: statRevGratDsiP
+    description: Permutation p of the within-session DSI difference, depth labels
+      permuted within sessions (20,000 permutations) (E)
+  dir_tuned_n_depth:
+    raw: 130
+    formatted: '130'
+    latex_macro: statRevGratDirTunedN
+    description: Depth-selective neurons with implied DSI > 0.3 (F)
+  dir_tuned_n_other:
+    raw: 393
+    formatted: '393'
+    latex_macro: statRevGratDirTunedOtherN
+    description: Other neurons with implied DSI > 0.3 (F)
+  dir_p:
+    raw: 0.05611746208998853
+    formatted: $p = 0.0561$
+    latex_macro: statRevGratDirP
+    description: chi2 p, preferred drift direction (8 bins), depth selective vs other
+      (F)
