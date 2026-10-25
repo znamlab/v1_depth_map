@@ -143,6 +143,11 @@ models removed.
 - SF × TF responses per running-speed bin, running-speed distribution, TF and SF curves by speed.
 - Running-speed model comparison (`base`, `rsg`, `rsg_tf`, `rsg_sf`; held-out R², shift slopes, depth-selective vs
   other with within-session permutations).
+- Running gain vs TF / SF preference shift (`shift_summary_overlay.{pdf,png}`, added 2026-10-25): slopes of the
+  log-linear `gain`, `gain_tf`, `gain_sf` models (octave per octave) for the cells of panels M–P, depth selective
+  over other, medians with a hierarchical bootstrap over sessions. Candidate summary panel for N and P, not in the
+  figure. On 2026-10-25 `running_models/` was replaced by the full 7-model skip-8 run (identical `base` columns; the
+  base-only copy is in `running_models_base_only_20261024/`).
 - Proportions of responsive / orientation- / direction-selective cells and their preferred orientation and direction.
 - TF × running-speed slope against preferred direction and against the shape of the RS/OF Gaussian.
 - RF shape vs grating tuning: `fig_reviewer_rf_sftf.ipynb` with `figure_utils/rf_shape.py` (flank geometry and
