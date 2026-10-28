@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-10-25 12:10:07.*
+*Compiled from figure notebook outputs at 2026-10-27 18:59:10.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 184 values were written by a notebook run.
+> ✅ All 190 values were written by a notebook run.
 
 ---
 
@@ -71,7 +71,7 @@ Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-09-2
 
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
-Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-09-19T17:39:50)
+Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-10-27T13:45:14)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -229,7 +229,7 @@ Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-10-06T1
 
 ## Figure: REVIEWER
 
-Source notebook: `fig_reviewer_gratings.ipynb` (notebook, generated 2026-10-25T12:09:42)
+Source notebook: `fig_reviewer_gratings.ipynb` (notebook, generated 2026-10-27T18:59:07)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -275,6 +275,12 @@ Source notebook: `fig_reviewer_gratings.ipynb` (notebook, generated 2026-10-25T1
 | `\statRevGratDirTunedN` | `130` | 130 | notebook | Depth-selective neurons with implied DSI > 0.3 (F) |
 | `\statRevGratDirTunedOtherN` | `393` | 393 | notebook | Other neurons with implied DSI > 0.3 (F) |
 | `\statRevGratDirP` | `$p = 0.0561$` | 0.05611746208998853 | notebook | chi2 p, preferred drift direction (8 bins), depth selective vs other (F) |
+| `\statRevGratSpeedCurvesTfN` | `218` | 218 | notebook | Depth-selective neurons, population TF curves per running-speed bin (M, O) |
+| `\statRevGratSpeedCurvesTfSessions` | `6` | 6 | notebook | Sessions, population TF curves per running-speed bin (M, O) |
+| `\statRevGratSpeedCurvesTfMice` | `2` | 2 | notebook | Mice, population TF curves per running-speed bin (M, O) |
+| `\statRevGratSpeedCurvesSfN` | `342` | 342 | notebook | Depth-selective neurons, population SF curves per running-speed bin (N, P) |
+| `\statRevGratSpeedCurvesSfSessions` | `6` | 6 | notebook | Sessions, population SF curves per running-speed bin (N, P) |
+| `\statRevGratSpeedCurvesSfMice` | `2` | 2 | notebook | Mice, population SF curves per running-speed bin (N, P) |
 
 ---
 

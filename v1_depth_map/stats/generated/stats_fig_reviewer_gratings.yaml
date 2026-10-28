@@ -1,7 +1,7 @@
 _meta:
   notebook: fig_reviewer_gratings
   figure: reviewer
-  generated_at: '2026-10-25T12:09:42'
+  generated_at: '2026-10-27T18:59:07'
   source: notebook
 metrics:
   n_neurons:
@@ -230,3 +230,35 @@ metrics:
     latex_macro: statRevGratDirP
     description: chi2 p, preferred drift direction (8 bins), depth selective vs other
       (F)
+  speed_curves_tf_n:
+    raw: 218
+    formatted: '218'
+    latex_macro: statRevGratSpeedCurvesTfN
+    description: Depth-selective neurons, population TF curves per running-speed bin
+      (M, O)
+  speed_curves_tf_sessions:
+    raw: 6
+    formatted: '6'
+    latex_macro: statRevGratSpeedCurvesTfSessions
+    description: Sessions, population TF curves per running-speed bin (M, O)
+  speed_curves_tf_mice:
+    raw: 2
+    formatted: '2'
+    latex_macro: statRevGratSpeedCurvesTfMice
+    description: Mice, population TF curves per running-speed bin (M, O)
+  speed_curves_sf_n:
+    raw: 342
+    formatted: '342'
+    latex_macro: statRevGratSpeedCurvesSfN
+    description: Depth-selective neurons, population SF curves per running-speed bin
+      (N, P)
+  speed_curves_sf_sessions:
+    raw: 6
+    formatted: '6'
+    latex_macro: statRevGratSpeedCurvesSfSessions
+    description: Sessions, population SF curves per running-speed bin (N, P)
+  speed_curves_sf_mice:
+    raw: 2
+    formatted: '2'
+    latex_macro: statRevGratSpeedCurvesSfMice
+    description: Mice, population SF curves per running-speed bin (N, P)

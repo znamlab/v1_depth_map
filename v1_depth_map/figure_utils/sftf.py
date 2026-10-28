@@ -19,6 +19,7 @@ import pandas as pd
 
 from cottage_analysis.analysis import spheres
 from cottage_analysis.pipelines import pipeline_utils
+from cottage_analysis.plotting.style import FONTSIZE_DICT
 
 PROJECT = "hey2_3d-vision_foodres_20220101"
 FILTER_TRACES = {"anatomical_only": 3, "ast_neuropil": False}
@@ -431,8 +432,9 @@ MIN_CELLS_PER_POINT = 10
 # position from all frames of the selection half (running and still pooled), not only the running frames;
 # 6 = last speed bin open-ended (> 45.25 cm/s, no longer capped at 90.51); 7 = treadmill bins from 2.83 cm/s and
 # the frames below 2.83 cm/s (any duration) instead of the still frames (< 5 cm/s for 1 s); 8 = dF/F divided by
-# the maximum of the fitted tuning over the tested stimuli (offset + peak), the offset no longer subtracted
-SPEED_CURVES_VERSION = 8
+# the maximum of the fitted tuning over the tested stimuli (offset + peak), the offset no longer subtracted;
+# 9 = cells selected by `sftf_tuned` instead of frame-level `base_test_rsq_sig`
+SPEED_CURVES_VERSION = 9
 
 
 def _freq_modulation_p(trials, resp, variable, threshold=TF_SELECT_THRESHOLD):
@@ -589,10 +591,10 @@ def load_depth_example(cache_dir, session, roi, rebuild=False):
 def build_speed_curves(sftf_root, rebuild=False):
     """Held-out TF and SF tuning curves per running-speed bin and for the slow frames (panels M-P).
 
-    Cells: significant on the frame-level `base` fit of `precompute_data/sftf_running_models.py`
-    (held-out R² above the empirical-null threshold), and for each variable with a significant effect
-    of TF (SF) at the kept SF (TF) / direction pairs (`_freq_modulation_p`, trial responses). Kept pairs
-    come from the trial-level SF/TF fit (`grating_tuning_cells.csv`, `sftf_model_kept_pairs`).
+    Cells: SF/TF-tuned (`sftf_tuned`, trial-level fit cross-validated with positive Spearman p < 0.05),
+    and for each variable with a significant effect of TF (SF) at the kept SF (TF) / direction pairs
+    (`_freq_modulation_p`, trial responses). Kept pairs come from the trial-level SF/TF fit
+    (`grating_tuning_cells.csv`, `sftf_model_kept_pairs`).
 
     For each half of the recordings (`_frame_halves`), the curve of all the frames of one half (running
     frames in the speed bins and slow frames, pooled) gives each cell's peak; the curves of the other half,
@@ -623,22 +625,7 @@ def build_speed_curves(sftf_root, rebuild=False):
         return pd.read_pickle(cache)
 
     cells = pd.read_csv(sftf_root / "grating_tuning_cells.csv")
-    pickle_files = sorted(
-        (sftf_root / "running_models").glob("*_sftf_running_models.pickle")
-    )
-    rs_fits = pd.concat(
-        [pd.read_pickle(f) for f in pickle_files if not f.name.startswith(".")],
-        ignore_index=True,
-    )
-    fit_cols = [c for c in cells.columns if c.startswith("fit_")]
-    rs_fits = rs_fits.merge(
-        cells[["session", "roi", "depth_tuned"] + fit_cols],
-        on=["session", "roi"],
-        how="left",
-        validate="one_to_one",
-    )
-    common_utils.add_rsq_significance(rs_fits, {"base": "base_test_rsq"}, verbose=False)
-    pop_cells = rs_fits[rs_fits.base_test_rsq_sig]
+    pop_cells = cells[cells.sftf_tuned]
 
     heldout_rows, p_mod = [], []
     speed_labels = None
@@ -780,14 +767,17 @@ def build_speed_curves(sftf_root, rebuild=False):
     return curves
 
 
-def save_with_vector_image(fig, image, vector_pdf, pdf_path, png_path=None, dpi=300):
-    """Save `fig` as PDF with a raster image replaced by its vector version, and as PNG.
+def save_with_vector_image(
+    fig, image, vector_pdf, pdf_path, png_path=None, svg_path=None, dpi=300
+):
+    """Save `fig` as PDF with a raster image replaced by its vector version, and as PNG / SVG.
 
     Matplotlib cannot place vector graphics in an axes: `image` (an `AxesImage` of a raster copy of
-    `vector_pdf`) is drawn in the PNG, hidden in the PDF, and the first page of `vector_pdf` is merged
-    onto the PDF at the same position and size (`pypdf`). Both files are cropped to the same tight
+    `vector_pdf`) is drawn in the PNG and SVG, hidden in the PDF, and the first page of `vector_pdf` is
+    merged onto the PDF at the same position and size (`pypdf`). All files are cropped to the same tight
     bounding box, as `bbox_inches="tight"`.
     """
+    from cottage_analysis.plotting import style
     from matplotlib.transforms import Bbox
     from pypdf import PdfReader, PdfWriter, Transformation
 
@@ -795,9 +785,11 @@ def save_with_vector_image(fig, image, vector_pdf, pdf_path, png_path=None, dpi=
     bbox = fig.get_tightbbox(renderer).padded(plt.rcParams["savefig.pad_inches"])
     extent = Bbox(image.get_window_extent(renderer).get_points() / fig.dpi)  # inches
     if png_path is not None:
-        fig.savefig(png_path, dpi=dpi, bbox_inches=bbox)
+        style.savefig(png_path, fig=fig, dpi=dpi, bbox_inches=bbox)
+    if svg_path is not None:
+        style.savefig(svg_path, fig=fig, dpi=dpi, bbox_inches=bbox)
     image.set_visible(False)
-    fig.savefig(pdf_path, bbox_inches=bbox)
+    style.savefig(pdf_path, fig=fig, bbox_inches=bbox)
     image.set_visible(True)
 
     page = PdfReader(pdf_path).pages[0]
@@ -830,7 +822,7 @@ def plot_sftf_3x3_grid(
     cbar_gap=0.005,
 ):
     """Plot the 8-direction SFxTF heatmaps around a central polar plot inside `box`."""
-    fontsize_dict = fontsize_dict or {"title": 7, "label": 7, "tick": 5, "legend": 5}
+    fontsize_dict = fontsize_dict or FONTSIZE_DICT
     x_b, y_b, w_b, h_b = box
     if vmax is None:
         vmax = float(np.round(np.nanmax(all_angles), 2))
@@ -852,10 +844,10 @@ def plot_sftf_3x3_grid(
 
     polar_ax = fig.add_axes(
         [
-            x_b + sub_w + gap_x + sub_w * 0.16,
-            y_b + sub_h + gap_y + sub_h * 0.16,
-            sub_w * 0.68,
-            sub_h * 0.68,
+            x_b + sub_w + gap_x + sub_w * 0.22,
+            y_b + sub_h + gap_y + sub_h * 0.22,
+            sub_w * 0.56,
+            sub_h * 0.56,
         ],
         projection="polar",
     )
@@ -867,13 +859,14 @@ def plot_sftf_3x3_grid(
     polar_ax.fill_between(dirs, dir_tuning, color="#4A90E2", alpha=0.7)
     polar_ax.set_ylim(0, vmax)
     polar_ax.set_yticks([vmax])
-    polar_ax.set_yticklabels([f"{vmax:g}"], fontsize=fontsize_dict["tick"] - 1.5)
+    polar_ax.set_yticklabels([f"{vmax:g}"], fontsize=fontsize_dict["tick"])
     polar_ax.set_xticks(np.deg2rad([0, 45, 90, 135, 180, 225, 270, 315]))
     polar_ax.set_xticklabels(
         [f"{int(d)}°" for d in [0, 45, 90, 135, 180, 225, 270, 315]],
-        fontsize=fontsize_dict["tick"] - 2,
+        fontsize=fontsize_dict["tick"],
     )
     polar_ax.tick_params(axis="x", pad=-4)
+    polar_ax.set_zorder(10)
 
     last_im = None
     for row in range(3):
@@ -898,7 +891,7 @@ def plot_sftf_3x3_grid(
             if col == 0:
                 ax_dir.set_yticks(range(len(tf_range)))
                 ax_dir.set_yticklabels(
-                    [f"{t:g}" for t in tf_range], fontsize=fontsize_dict["tick"] - 1
+                    [f"{t:g}" for t in tf_range], fontsize=fontsize_dict["tick"]
                 )
                 if row == 1:
                     ax_dir.set_ylabel(
@@ -912,7 +905,7 @@ def plot_sftf_3x3_grid(
                 ax_dir.set_xticks(range(len(sf_range)))
                 ax_dir.set_xticklabels(
                     [f"{s:g}" for s in sf_range],
-                    fontsize=fontsize_dict["tick"] - 1,
+                    fontsize=fontsize_dict["tick"],
                     rotation=90,
                 )
                 if col == 1:
@@ -972,7 +965,7 @@ def plot_overlap_matrix(
     """
     from matplotlib.collections import PolyCollection
 
-    fontsize_dict = fontsize_dict or {"tick": 5, "legend": 5}
+    fontsize_dict = fontsize_dict or FONTSIZE_DICT
     depth_tuned, sftf_tuned = (
         np.asarray(depth_tuned, bool),
         np.asarray(sftf_tuned, bool),
@@ -1052,7 +1045,7 @@ def plot_polar_direction_hist(
     fontsize_dict=None,
 ):
     """Plot polar histogram of preferred directions."""
-    fontsize_dict = fontsize_dict or {"title": 7, "label": 7, "tick": 5, "legend": 5}
+    fontsize_dict = fontsize_dict or FONTSIZE_DICT
     width = period / n_bins
     counts, _ = np.histogram(
         (values_deg + width / 2) % period, bins=n_bins, range=(0, period)
@@ -1102,7 +1095,7 @@ def plot_heldout_speed_curves_panel(
     The slow frames are the bin -1 of `heldout_means` (`build_speed_curves`), plotted in `slow_color` if
     `plot_slow`.
     """
-    fontsize_dict = fontsize_dict or {"title": 7, "label": 7, "tick": 5, "legend": 5}
+    fontsize_dict = fontsize_dict or FONTSIZE_DICT
     if colors is None:
         colors = plt.get_cmap("viridis")(np.linspace(0, 0.9, len(speed_labels)))
 
