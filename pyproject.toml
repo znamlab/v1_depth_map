@@ -35,6 +35,7 @@ dependencies = [
     "pyparsing<3.0.0",
     "cmcrameri>=1.10",
     "pypdf>=6.21.2",
+    "statsmodels>=0.15.0",
 ]
 
 [project.optional-dependencies]
