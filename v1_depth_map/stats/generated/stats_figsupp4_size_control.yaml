@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp4_size_control
   figure: supp
-  generated_at: '2026-09-20T12:45:41'
+  generated_at: '2026-10-29T11:11:36'
   source: notebook
 metrics:
   size_control_n_neurons:
@@ -35,7 +35,7 @@ metrics:
     latex_macro: statSuppSizeControlCorrRFiveTen
     description: 'Spearman correlation r: 5 vs 10 deg spheres'
   size_control_corr_pval_five_ten:
-    raw: 1.8162415814020279e-62
+    raw: 1.8162415814020117e-62
     formatted: $p_{correlation} < 0.0001$
     latex_macro: statSuppSizeControlCorrPvalFiveTen
     description: 'Spearman correlation p-value: 5 vs 10 deg spheres'
@@ -55,7 +55,7 @@ metrics:
     latex_macro: statSuppSizeControlCorrRFiveTwenty
     description: 'Spearman correlation r: 5 vs 20 deg spheres'
   size_control_corr_pval_five_twenty:
-    raw: 5.532267866321184e-59
+    raw: 5.532267866321066e-59
     formatted: $p_{correlation} < 0.0001$
     latex_macro: statSuppSizeControlCorrPvalFiveTwenty
     description: 'Spearman correlation p-value: 5 vs 20 deg spheres'
@@ -75,7 +75,7 @@ metrics:
     latex_macro: statSuppSizeControlCorrRTenTwenty
     description: 'Spearman correlation r: 10 vs 20 deg spheres'
   size_control_corr_pval_ten_twenty:
-    raw: 8.359022898283888e-62
+    raw: 8.359022898284035e-62
     formatted: $p_{correlation} < 0.0001$
     latex_macro: statSuppSizeControlCorrPvalTenTwenty
     description: 'Spearman correlation p-value: 10 vs 20 deg spheres'

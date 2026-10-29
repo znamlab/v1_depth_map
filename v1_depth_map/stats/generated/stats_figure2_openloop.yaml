@@ -1,17 +1,17 @@
 _meta:
   notebook: figure2_openloop
   figure: fig2
-  generated_at: '2026-10-01T18:06:58'
+  generated_at: '2026-10-29T11:10:33'
   source: notebook
 metrics:
   openloop_n_depth_neurons_total:
-    raw: 9429
-    formatted: 9,429
+    raw: 9462
+    formatted: 9,462
     latex_macro: statFigTwoOpenLoopTotalDepthNeurons
     description: Total depth-selective neurons in open-loop sessions (Methods L624)
   openloop_n_neurons:
-    raw: 3948
-    formatted: 3,948
+    raw: 3961
+    formatted: 3,961
     latex_macro: statFigTwoOpenLoopNeurons
     description: Depth-selective neurons compared between closed and open loop (Fig
       2H-J)
@@ -27,20 +27,20 @@ metrics:
     latex_macro: statFigTwoOpenLoopMice
     description: Mice contributing to the closed vs open loop comparison (Fig 2H-J)
   amplitude_ratio_median:
-    raw: 0.9844723486949924
+    raw: 0.9846067879944977
     formatted: '0.98'
     latex_macro: statFigTwoAmpRatioMedian
     description: Median ratio of peak response closed vs open loop, the triangle in
       Fig 2H
   amplitude_ratio_pval:
-    raw: 0.7427
-    formatted: $p = 0.743$
+    raw: 0.7352
+    formatted: $p = 0.735$
     latex_macro: statFigTwoAmpRatioPval
     description: Hierarchical bootstrap p-value of peak response closed vs open loop
       ratio
   rs_correlation_r:
-    raw: 0.46908924802504137
-    formatted: $r = 0.469$
+    raw: 0.46985350243277335
+    formatted: $r = 0.470$
     latex_macro: statFigTwoRSCorrR
     description: Correlation r of preferred running speed (closed vs open loop)
   rs_correlation_pval:
@@ -49,20 +49,20 @@ metrics:
     latex_macro: statFigTwoRSCorrPval
     description: Correlation p-value of preferred running speed (closed vs open loop)
   rs_ratio_median:
-    raw: 1.0456273579463469
-    formatted: '1.0456'
+    raw: 1.0453666277718614
+    formatted: '1.0454'
     latex_macro: statFigTwoRSRatioMedian
     description: Hierarchical bootstrap median of preferred running speed closed vs
       open loop ratio
   rs_ratio_pval:
-    raw: 0.2143
-    formatted: $p = 0.214$
+    raw: 0.2087
+    formatted: $p = 0.209$
     latex_macro: statFigTwoRSRatioPval
     description: Hierarchical bootstrap p-value of preferred running speed closed
       vs open loop ratio
   of_correlation_r:
-    raw: 0.5349328735076935
-    formatted: $r = 0.535$
+    raw: 0.5357179168521328
+    formatted: $r = 0.536$
     latex_macro: statFigTwoOFCorrR
     description: Correlation r of preferred optic flow speed (closed vs open loop)
   of_correlation_pval:

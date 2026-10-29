@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp7_simulation_control
   figure: supp
-  generated_at: '2026-09-20T12:46:44'
+  generated_at: '2026-10-29T10:29:15'
   source: notebook
 metrics:
   simul_free_n_neurons:

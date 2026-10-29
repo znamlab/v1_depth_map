@@ -1,7 +1,7 @@
 _meta:
   notebook: figure3_depth_cells
   figure: fig3
-  generated_at: '2026-10-27T13:45:14'
+  generated_at: '2026-10-29T11:45:00'
   source: notebook
 metrics:
   motorized_depth_tuned_neurons:
@@ -31,6 +31,11 @@ metrics:
     formatted: 266/285
     latex_macro: statFigThreeElongationCutoffRatio
     description: Fraction of neurons with elongation ratio > 1.4 (Fig 3K)
+  elongation_cutoff_pct:
+    raw: 93.33333333333333
+    formatted: 93\%
+    latex_macro: statFigThreeElongationCutoffPct
+    description: Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig 3K)
   elongation_n_neurons:
     raw: 266
     formatted: '266'

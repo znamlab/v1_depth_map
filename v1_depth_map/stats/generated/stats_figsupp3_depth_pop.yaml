@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp3_depth_pop
   figure: supp
-  generated_at: '2026-10-01T16:59:04'
+  generated_at: '2026-10-29T10:30:18'
   source: notebook
 metrics:
   GCaMP6f_n_mice:
@@ -74,30 +74,30 @@ metrics:
     latex_macro: statSuppDepthPopEightDepthMice
     description: Mice with 8 virtual depths in Fig S3L
   ndepths8_n_neurons:
-    raw: 7332
-    formatted: 7,332
+    raw: 7365
+    formatted: 7,365
     latex_macro: statSuppDepthPopEightDepthNeurons
     description: Depth-tuned neurons from 8-depth sessions in Fig S3L
   ndepths8_median_pref_depth_cm:
-    raw: 50.99836974229177
-    formatted: '51.0'
+    raw: 51.08802540847145
+    formatted: '51.1'
     latex_macro: statSuppDepthPopEightDepthMedianPrefDepth
     description: Median preferred depth (cm) of depth-tuned neurons, 8-depth sessions
       (Fig S3L)
   ndepths8_pref_depth_iqr_cm:
-    raw: 11.756201639994341-239.30110554619944
-    formatted: 11.8--239.3
+    raw: 11.764208272478564-239.54208863896528
+    formatted: 11.8--239.5
     latex_macro: statSuppDepthPopEightDepthPrefDepthIQR
     description: Interquartile range of preferred depth (cm), 8-depth sessions (Fig
       S3L)
   ks_stat_5_vs_8:
-    raw: 0.15884279334335005
-    formatted: $D = 0.159$
+    raw: 0.15981412343891632
+    formatted: $D = 0.160$
     latex_macro: statSuppDepthPopKsStat
     description: KS statistic, log preferred depth of 5- vs 8-depth sessions (Fig
       S3K-L)
   ks_pval_5_vs_8:
-    raw: 2.454273634222957e-118
+    raw: 3.59785207596945e-120
     formatted: $p < 0.0001$
     latex_macro: statSuppDepthPopKsPval
     description: KS test p-value, log preferred depth of 5- vs 8-depth sessions (Fig

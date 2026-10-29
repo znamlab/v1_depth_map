@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp10_gratings
   figure: supp
-  generated_at: '2026-10-27T18:59:07'
+  generated_at: '2026-10-29T10:33:25'
   source: notebook
 metrics:
   n_neurons:
@@ -25,14 +25,14 @@ metrics:
     latex_macro: statRevGratDepthNeurons
     description: Depth-selective neurons
   rsof_threshold:
-    raw: 0.001545755149447
-    formatted: '0.0015'
+    raw: 0.001582344287087
+    formatted: '0.0016'
     latex_macro: statRevGratRsofThreshold
     description: RS/OF held-out R² threshold of figure 2 (95th percentile of the empirical
       null, iscell ROIs of all sessions)
   n_rsof:
-    raw: 501
-    formatted: '501'
+    raw: 495
+    formatted: '495'
     latex_macro: statRevGratRsofNeurons
     description: RS/OF-tuned neurons (figure 2 threshold) in the grating sessions
   pct_depth:
@@ -149,40 +149,40 @@ metrics:
     description: Holm-corrected p over the 5 pairs, preferred SF vs preferred depth
       (I)
   sfOf_n:
-    raw: 333
-    formatted: '333'
+    raw: 330
+    formatted: '330'
     latex_macro: statRevGratSfOfN
     description: Neurons, preferred SF vs preferred optic flow (J)
   sfOf_rho:
-    raw: -0.4066807464295328
+    raw: -0.41277760035347594
     formatted: '-0.41'
     latex_macro: statRevGratSfOfRho
     description: Spearman rho, preferred SF vs preferred optic flow (J)
   sfOf_p:
-    raw: 0.0012
-    formatted: $p = 0.0012$
+    raw: 0.0005
+    formatted: $p = 0.0005$
     latex_macro: statRevGratSfOfP
     description: Hierarchical bootstrap (sessions) p, preferred SF vs preferred optic
       flow (J)
   sfOf_p_holm:
-    raw: 0.005999999999999999
-    formatted: $p = 0.006$
+    raw: 0.0025
+    formatted: $p = 0.0025$
     latex_macro: statRevGratSfOfPHolm
     description: Holm-corrected p over the 5 pairs, preferred SF vs preferred optic
       flow (J)
   sfRs_n:
-    raw: 333
-    formatted: '333'
+    raw: 330
+    formatted: '330'
     latex_macro: statRevGratSfRsN
     description: Neurons, preferred SF vs preferred running speed (not shown)
   sfRs_rho:
-    raw: -0.1328735113133372
-    formatted: '-0.13'
+    raw: -0.14444308662301544
+    formatted: '-0.14'
     latex_macro: statRevGratSfRsRho
     description: Spearman rho, preferred SF vs preferred running speed (not shown)
   sfRs_p:
-    raw: 0.5807
-    formatted: $p = 0.581$
+    raw: 0.5347
+    formatted: $p = 0.535$
     latex_macro: statRevGratSfRsP
     description: Hierarchical bootstrap (sessions) p, preferred SF vs preferred running
       speed (not shown)

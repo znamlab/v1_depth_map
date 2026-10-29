@@ -1,12 +1,12 @@
 _meta:
   notebook: figsupp1_vis_stim_sync
   figure: supp
-  generated_at: '2026-09-19T23:53:49'
+  generated_at: '2026-10-29T10:38:22'
   source: notebook
 metrics:
   display_lag_mean_ms:
-    raw: 26.631505885895553
-    formatted: $26.6 \pm 1.4~\mathrm{ms}$
+    raw: 26.44813839794971
+    formatted: $26.4 \pm 0.1~\mathrm{ms}$
     latex_macro: statSuppDisplayLag
     description: Average display lag between wheel movement and monitor update (5-colour
       photodiode cohort)

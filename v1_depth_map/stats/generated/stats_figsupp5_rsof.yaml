@@ -1,11 +1,11 @@
 _meta:
   notebook: figsupp5_rsof
   figure: supp
-  generated_at: '2026-10-01T18:07:52'
+  generated_at: '2026-10-29T10:27:26'
   source: notebook
 metrics:
   rsof_corr_of_depth_r:
-    raw: -0.5947295645149252
+    raw: -0.5947648086725792
     formatted: $r = -0.595$
     latex_macro: statSuppRSOFCorrOFDepthR
     description: Correlation between preferred depth and optic flow speed (Fig S5I)
@@ -15,20 +15,20 @@ metrics:
     latex_macro: statSuppRSOFCorrOFDepthPval
     description: P-value of correlation between preferred depth and optic flow speed
   rsof_corr_rs_depth_all_r:
-    raw: -0.055057358507232014
-    formatted: $r = -0.055$
+    raw: -0.055584477357071276
+    formatted: $r = -0.056$
     latex_macro: statSuppRSOFCorrRSDepthAllR
     description: Correlation between preferred depth and running speed for all neurons
       (Fig S5J)
   rsof_corr_rs_depth_all_pval:
-    raw: 0.5534
-    formatted: $p = 0.553$
+    raw: 0.5573
+    formatted: $p = 0.557$
     latex_macro: statSuppRSOFCorrRSDepthAllPval
     description: P-value of correlation between preferred depth and running speed
       for all neurons
   rsof_corr_rs_depth_bin1_r:
-    raw: 0.5065385736128153
-    formatted: $r = 0.507$
+    raw: 0.5057541777608879
+    formatted: $r = 0.506$
     latex_macro: statSuppRSOFCorrRSDepthBinOneR
     description: Correlation between preferred depth and running speed (OF 1-10 deg/s)
   rsof_corr_rs_depth_bin1_pval:
@@ -37,7 +37,7 @@ metrics:
     latex_macro: statSuppRSOFCorrRSDepthBinOnePval
     description: P-value of correlation (OF 1-10 deg/s)
   rsof_corr_rs_depth_bin2_r:
-    raw: 0.395974503563562
+    raw: 0.39553368232649366
     formatted: $r = 0.396$
     latex_macro: statSuppRSOFCorrRSDepthBinTwoR
     description: Correlation between preferred depth and running speed (OF 10-100
@@ -48,8 +48,8 @@ metrics:
     latex_macro: statSuppRSOFCorrRSDepthBinTwoPval
     description: P-value of correlation (OF 10-100 deg/s)
   rsof_corr_rs_depth_bin3_r:
-    raw: 0.363561848340317
-    formatted: $r = 0.364$
+    raw: 0.3606019098035661
+    formatted: $r = 0.361$
     latex_macro: statSuppRSOFCorrRSDepthBinThreeR
     description: Correlation between preferred depth and running speed (OF 100-1000
       deg/s)

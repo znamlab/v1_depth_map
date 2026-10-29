@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp8_multidepth_receptive_fields
   figure: supp
-  generated_at: '2026-10-07T17:45:53'
+  generated_at: '2026-10-29T10:42:27'
   source: notebook
 metrics:
   rf_corr_n_neurons:
@@ -78,13 +78,13 @@ metrics:
     latex_macro: statSuppEightSigRFMiceTotal
     description: Number of mice, single- and multi-depth sessions (Fig S8E)
   sig_rf_n_neurons_total:
-    raw: 28966
-    formatted: 28,966
+    raw: 28999
+    formatted: 28,999
     latex_macro: statSuppEightSigRFNeuronsTotal
     description: Depth-tuned neurons, single- and multi-depth sessions (Fig S8E)
   sig_rf_n_sig_neurons_total:
-    raw: 17954
-    formatted: 17,954
+    raw: 17983
+    formatted: 17,983
     latex_macro: statSuppEightSigRFSigNeuronsTotal
     description: Depth-tuned neurons with significant RFs, single- and multi-depth
       sessions (Fig S8E)

@@ -1,12 +1,12 @@
 _meta:
   notebook: figsupp9_v1_depth_map
   figure: supp
-  generated_at: '2026-10-06T18:20:48'
+  generated_at: '2026-10-29T10:26:36'
   source: notebook
 metrics:
   rf_n_neurons_total:
-    raw: 16945
-    formatted: 16,945
+    raw: 16974
+    formatted: 16,974
     latex_macro: statSuppNineRFNeuronsTotal
     description: Total depth-selective neurons with significant receptive fields
   rf_n_sessions_total:
@@ -15,48 +15,48 @@ metrics:
     latex_macro: statSuppNineRFSessionsTotal
     description: Total sessions contributing to RF mapping
   rf_near_uncorrected:
-    raw: 4125
-    formatted: 4,125
+    raw: 4132
+    formatted: 4,132
     latex_macro: statSuppNineNearUncorrected
     description: Neurons preferring near depths (<20 cm) uncorrected
   rf_mid_uncorrected:
-    raw: 8088
-    formatted: 8,088
+    raw: 8100
+    formatted: 8,100
     latex_macro: statSuppNineMidUncorrected
     description: Neurons preferring intermediate depths (20-100 cm) uncorrected
   rf_far_uncorrected:
-    raw: 4732
-    formatted: 4,732
+    raw: 4742
+    formatted: 4,742
     latex_macro: statSuppNineFarUncorrected
     description: Neurons preferring far depths (>100 cm) uncorrected
   rf_near_corrected:
-    raw: 3313
-    formatted: 3,313
+    raw: 3315
+    formatted: 3,315
     latex_macro: statSuppNineNearCorrected
     description: Neurons preferring near depths (<20 cm) corrected for viewing angle
   rf_mid_corrected:
-    raw: 7275
-    formatted: 7,275
+    raw: 7288
+    formatted: 7,288
     latex_macro: statSuppNineMidCorrected
     description: Neurons preferring intermediate depths (20-100 cm) corrected for
       viewing angle
   rf_far_corrected:
-    raw: 6357
-    formatted: 6,357
+    raw: 6371
+    formatted: 6,371
     latex_macro: statSuppNineFarCorrected
     description: Neurons preferring far depths (>100 cm) corrected for viewing angle
   gradient_pval_corrected:
-    raw: 3.953748301453364e-09
-    formatted: $p = 3.95e-09$
+    raw: 4.9001111528122825e-09
+    formatted: $p = 4.90e-09$
     latex_macro: statSuppNineGradientPvalCorrected
     description: Significance of 3D RF depth gradient across visual space (corrected)
   gradient_pval_uncorrected:
-    raw: 0.039301936675758216
-    formatted: $p = 0.0393$
+    raw: 0.040557886156214376
+    formatted: $p = 0.0406$
     latex_macro: statSuppNineGradientPvalUncorrected
     description: Significance of depth gradient across visual space (uncorrected)
   ap_correlation_r:
-    raw: -0.1398648425132868
+    raw: -0.13975497571941636
     formatted: $r = -0.140$
     latex_macro: statSuppNineAPCorrR
     description: Correlation between preferred depth and anterior-posterior location

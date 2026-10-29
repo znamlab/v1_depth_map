@@ -1,7 +1,7 @@
 _meta:
   notebook: figure4_receptive_fields
   figure: fig4
-  generated_at: '2026-10-06T14:23:56'
+  generated_at: '2026-10-29T10:53:24'
   source: notebook
 metrics:
   pop_n_neurons:
@@ -20,8 +20,8 @@ metrics:
     latex_macro: statFigFourPopMice
     description: Mice contributing neurons (Fig 4E)
   rf_dist_n_neurons:
-    raw: 16945
-    formatted: 16,945
+    raw: 16974
+    formatted: 16,974
     latex_macro: statFigFourRFDistNeurons
     description: Depth-tuned neurons with significant RFs in pairwise distance analysis
       (Fig 4I-K)
@@ -36,8 +36,8 @@ metrics:
     latex_macro: statFigFourRFDistMice
     description: Mice in pairwise distance analysis (Fig 4I-K)
   rf_dist_n_pairs:
-    raw: 6536044
-    formatted: 6,536,044
+    raw: 6536536
+    formatted: 6,536,536
     latex_macro: statFigFourRFDistPairs
     description: Neuron pairs more than 10 um apart, within the binned range (Fig
       4I-K)
