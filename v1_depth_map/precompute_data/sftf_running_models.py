@@ -1,6 +1,6 @@
 """Does running speed shift the preferred SF / TF of grating responses? Frame-level model comparison.
 
-For the reviewer grating analysis (`figures/fig_reviewer_gratings.ipynb`). Fits four versions of the
+For the drifting grating analysis (`figures/figsupp10_gratings.ipynb`). Fits four versions of the
 SF/TF/direction model of `fit_gaussian_blob.grating_tuning` to single imaging frames of the SFTF
 recordings, with the preferred log SF and log TF allowed to depend linearly on log running speed:
 

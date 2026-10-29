@@ -6,9 +6,9 @@ Reviewer comment:
 > such as orientation. Are these multiplexed, or are they separate sub-populations? [...] it seems possible
 > to derive orientation selectivity of the recorded neurons during (near) stationary epochs.
 
-The figure answering it is `figures/fig_reviewer_gratings.ipynb`; this folder holds the exploratory analyses, the
+The figure answering it is `figures/figsupp10_gratings.ipynb`; this folder holds the exploratory analyses, the
 scripts that only they use, and the notes. Results are in the notebook outputs and in
-`stats/generated/stats_fig_reviewer_gratings.yaml`, not here. The review of 2026-10-24 and its decisions are tracked
+`stats/generated/stats_figsupp10_gratings.yaml`, not here. The review of 2026-10-24 and its decisions are tracked
 in [REVIEW_FOLLOWUP.md](REVIEW_FOLLOWUP.md) (temporary).
 
 ## Data
@@ -23,7 +23,7 @@ in [REVIEW_FOLLOWUP.md](REVIEW_FOLLOWUP.md) (temporary).
 
 ## Pipeline (rerun order)
 
-All outputs are under `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_gratings/`.
+Cache outputs are under `<processed>/v1_manuscript_figures/ver_rev1/cache_gratings/`, and figure outputs under `<processed>/v1_manuscript_figures/ver_rev1/figsupp10_gratings/`.
 
 1. `neurons_df_sftf.pickle` per session: `precompute_data/rerun_depth_sftf.py` (+ `.sbatch`, NEMO). How it is made
    and what it contains: [NEURONS_DF_SFTF.md](NEURONS_DF_SFTF.md).
@@ -35,7 +35,7 @@ All outputs are under `<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_g
    `fit` and `merge` → `running_models/<session>_sftf_running_models.pickle`. The figure needs only the `base`
    model (`fit SESSION ROI --models base`: selection of the population curves); the other models feed the
    exploratory notebook (`--models gain gain_tf gain_sf rsg rsg_tf rsg_sf`, added to the same ROI results).
-4. `figures/fig_reviewer_gratings.ipynb`: builds `cache/speed_curves_v8.pickle`, writes `fig_sftf_analysis.{pdf,png}`
+4. `figures/figsupp10_gratings.ipynb`: builds `cache/speed_curves_v9.pickle`, writes `figsupp10_gratings.{pdf,png,svg}`
    and the stats YAML.
 5. `revisions/sftf/sftf_exploratory_analysis.ipynb` (optional).
 

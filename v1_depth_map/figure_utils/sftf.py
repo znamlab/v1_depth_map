@@ -1,4 +1,4 @@
-"""Drifting-grating (SF/TF) helpers for the reviewer grating figure (`figures/fig_reviewer_gratings.ipynb`).
+"""Drifting-grating (SF/TF) helpers for Figure S10 (`figures/figsupp10_gratings.ipynb`).
 
 - depth-protocol trials and the panel B example (`load_depth_trials`, `load_depth_example`);
 - frame-level SF / TF tuning per running-speed bin (`speed_binned_responses`, `tf_curves_by_speed`,
@@ -605,7 +605,7 @@ def build_speed_curves(sftf_root, rebuild=False):
     The two folds are averaged per cell.
 
     Args:
-        sftf_root (Path): `fig_reviewer_gratings` folder (`grating_tuning_cells.csv`, `cache/`,
+        sftf_root (Path): `cache_gratings` folder (`grating_tuning_cells.csv`, `cache/`,
             `running_models/` with `frames/`, `frames_slow/` and the merged fits).
         rebuild (bool): recompute instead of reading the cache.
 

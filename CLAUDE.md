@@ -44,8 +44,8 @@ cortex" (Znamenskiy lab, Crick), currently in revision for *Science*.
 - `v1_depth_map/paths.py`: `FIGURES_VERSION` (currently `"_rev1"`) and `get_figures_roots()`.
   Notebooks read/write under `<processed>/v1_manuscript_figures/ver_rev1/`. Never hardcode
   output paths.
-- `v1_depth_map/figures/`: one notebook per manuscript figure (`figure1..4_*`, `figsupp1..9_*`)
-  plus reviewer figures (`fig_reviewer_*`). `unused_*` notebooks are skipped by the pipeline.
+- `v1_depth_map/figures/`: one notebook per manuscript figure (`figure1..4_*`, `figsupp1..10_*`)
+  plus exploratory/reviewer figures (`fig_reviewer_*`). `unused_*` notebooks are skipped by the pipeline.
   Notebooks start with `style.setup_figure_fonts()` and save via `style.savefig(..., fig=...)`;
   sizes come from `style.FONTSIZE_DICT`. A `reload` flag controls rebuilding cached pickles.
 - `v1_depth_map/figure_utils/`: helper modules used by the notebooks (RF, RF distance, RS/OF,

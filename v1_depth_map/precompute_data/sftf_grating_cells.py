@@ -1,7 +1,7 @@
 """One row per `iscell` ROI of the six drifting-grating sessions: grating tuning, depth and RS/OF tuning.
 
-Input of `figures/fig_reviewer_gratings.ipynb` (and of `revisions/sftf/`). Writes, under the figure folder
-`<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_gratings/`:
+Input of `figures/figsupp10_gratings.ipynb` (and of `revisions/sftf/`). Writes, under the cache folder
+`<processed>/v1_manuscript_figures/ver_rev1/cache_gratings/`:
 
 - `cache/<session>_sftf_trials.pickle`: trial table of the SFTF recordings and the (n_trials, n_rois) mean
   dF/F of each trial over `[onset + SKIP, next_onset)` volumes. Trials are split where the parameter-log time
@@ -228,7 +228,7 @@ def figure2_rsof_threshold(flm):
 
 def main(rebuild=False):
     flm = flz.get_flexilims_session(PROJECT)
-    _, save_root = get_figures_roots(flm, fig_subdir="fig_reviewer_gratings")
+    _, save_root = get_figures_roots(flm, fig_subdir="cache_gratings")
     cache = save_root / "cache"
     cache.mkdir(parents=True, exist_ok=True)
 

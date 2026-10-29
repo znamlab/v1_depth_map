@@ -128,7 +128,7 @@ metrics:
 | `figsupp2_speed.ipynb` | `supp` | `statSuppEye*` | Pupil / gaze tracking sessions and mice |
 | `figsupp3_depth_pop.ipynb` | `supp` | `statSuppDepthPop*` | Mice, sessions and median % depth-tuned neurons per genotype (Fig S3J); per-cohort n, preferred-depth median/IQR and 5- vs 8-depth KS test (Fig S3K-L) |
 | `figsupp4_size_control.ipynb` | `supp` | `statSuppSizeControl*` | Stimulus size invariance |
-| `fig_reviewer_gratings.ipynb` | `reviewer` | `statRevGrat*` | Drifting gratings: cell counts, overlap of depth-selective and SF/TF-tuned cells (per-session expectation, Mantel-Haenszel), the 9 SF / TF / speed correlations with Holm p, implied DSI (D) and preferred drift direction (E) |
+| `figsupp10_gratings.ipynb` | `supp` | `statRevGrat*` | Drifting gratings: cell counts, overlap of depth-selective and SF/TF-tuned cells (per-session expectation, Mantel-Haenszel), the 9 SF / TF / speed correlations with Holm p, implied DSI (D) and preferred drift direction (E) |
 
 ---
 

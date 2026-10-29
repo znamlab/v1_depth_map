@@ -121,9 +121,9 @@ Run folder for the October 2026 rerun: `/camp/home/blota/code/sftf_crossval_run`
 
 ## Reanalysis for the reviewer (2026-10-07)
 
-`figures/fig_reviewer_gratings.ipynb` does not read `neurons_df_sftf.pickle`. It refits with the same
+`figures/figsupp10_gratings.ipynb` does not read `neurons_df_sftf.pickle`. It refits with the same
 function and settings and caches the results in
-`<processed>/v1_manuscript_figures/ver_rev1/fig_reviewer_gratings/cache/<session>_sftf_fit.pickle`, with
+`<processed>/v1_manuscript_figures/ver_rev1/cache_gratings/cache/<session>_sftf_fit.pickle`, with
 the same 11 columns plus `session` and `roi`. Its trial table differs from `generate_trials_df` in three
 ways:
 - traces are loaded through `generate_imaging_df` with `{"anatomical_only": 3, "ast_neuropil": False}`,

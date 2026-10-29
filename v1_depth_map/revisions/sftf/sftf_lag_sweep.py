@@ -8,7 +8,7 @@ only (RS > RS_THR), held-out R² leaving one recording out. Each session is sync
 from the same arrays.
 
 Cells (`select`): the N_CELLS SF/TF-tuned cells with the highest held-out R² of the trial-level SF/TF fit
-(`fit_sftf_test_rsq` of `fig_reviewer_gratings/grating_tuning_cells.csv`), a criterion with no frame lag, so the
+(`fit_sftf_test_rsq` of `cache_gratings/grating_tuning_cells.csv`), a criterion with no frame lag, so the
 selection does not favour any lag. Listed in CELLS_CSV, which travels with the code.
 
 Steps, so that cells can be fitted as separate jobs (`sftf_lag_sweep.sbatch`):
@@ -18,7 +18,7 @@ Steps, so that cells can be fitted as separate jobs (`sftf_lag_sweep.sbatch`):
     fit SESSION ROI      all lags of one cell -> OUT_DIR/rois/<session>_<roi>.pickle (skipped if it exists)
     merge                -> OUT_DIR/sftf_lag_sweep.csv, one row per cell and lag, with the parameters and
                          held-out R² of each model (`<model>_...` columns); copied to
-                         `fig_reviewer_gratings/lag_sweep/` of the figures folder (data drive), read by
+                         `cache_gratings/lag_sweep/` of the figures folder (data drive), read by
                          `revisions/rf_spike_tau/lag_choice.ipynb`
 
 Usage:
@@ -53,7 +53,7 @@ def select(n_cells=N_CELLS):
     from v1_depth_map.paths import get_figures_roots
 
     flm = flz.get_flexilims_session(srm.PROJECT)
-    _, root = get_figures_roots(flm, fig_subdir="fig_reviewer_gratings")
+    _, root = get_figures_roots(flm, fig_subdir="cache_gratings")
     cells = pd.read_csv(root / "grating_tuning_cells.csv")
     cells = (
         cells[cells.sftf_tuned]
