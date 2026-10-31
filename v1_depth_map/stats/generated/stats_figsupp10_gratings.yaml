@@ -28,8 +28,8 @@ metrics:
     raw: 0.001582344287087
     formatted: '0.0016'
     latex_macro: statRevGratRsofThreshold
-    description: RS/OF held-out R² threshold of figure 2 (95th percentile of the empirical
-      null, iscell ROIs of all sessions)
+    description: "RS/OF held-out R\xB2 threshold of figure 2 (95th percentile of the\
+      \ empirical null, iscell ROIs of all sessions)"
   n_rsof:
     raw: 495
     formatted: '495'
@@ -262,3 +262,8 @@ metrics:
     formatted: '2'
     latex_macro: statRevGratSpeedCurvesSfMice
     description: Mice, population SF curves per running-speed bin (N, P)
+  n_sftf_other:
+    raw: 1052
+    formatted: 1,052
+    latex_macro: statRevGratOtherSftfNeurons
+    description: SF/TF-tuned neurons that are not depth selective (Fig S10E)

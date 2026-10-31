@@ -98,3 +98,9 @@ metrics:
     description: 'Additive and Conjunctive models outperforming isolated speed and
       ratio models (Fig 2E): the largest of the 6 hierarchical-bootstrap p-values
       that claim rests on, floored at the 1/20,000 resolution limit'
+  conjunctive_rsq_threshold:
+    raw: 0.001582344287087
+    formatted: '0.0016'
+    latex_macro: statFigTwoConjunctiveThreshold
+    description: "Empirical null R\xB2 threshold for the 2D conjunctive model (Methods\
+      \ L638)"

@@ -11,6 +11,7 @@ Welcome to the analysis tracking hub for the `v1_depth_map` project. These docum
 | **03** | [**03_notebook_figures.md**](./03_notebook_figures.md) | Figures Jupyter notebooks execution status, runtimes, memory, errors, and notebook-level tasks |
 | **04** | [**04_manuscript_figures.md**](./04_manuscript_figures.md) | Final figure assembly status (Main Figures 1–5, Supplementary Figures S1–S8), SVGs/PDFs, vector layout |
 | **05** | [**05_manuscript_statistics.md**](./05_manuscript_statistics.md) | Manuscript numbers & statistics pipeline: notebook emission, YAML manifests, LaTeX macros |
+| **06** | [**06_manuscript_numbers_tracking.md**](./06_manuscript_numbers_tracking.md) | Audit & tracking manifest of all numbers cited in the manuscript vs compiled stats |
 
 ---
 

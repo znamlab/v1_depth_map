@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-10-29 11:44:49.*
+*Compiled from figure notebook outputs at 2026-10-31 11:06:45.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 191 values were written by a notebook run.
+> ✅ All 196 values were written by a notebook run.
 
 ---
 
@@ -27,6 +27,8 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-10-
 | `\statFigOneMultidaySessions` | `19` | 19 | notebook | Number of sessions across consecutive days |
 | `\statFigOneMultidayPairs` | `374` | 374 | notebook | Consecutive day neuron pairs tracked |
 | `\statFigOneMultidayTrackedNeurons` | `234` | 234 | notebook | Unique neurons tracked across consecutive days |
+| `\statFigOneMaleMice` | `1` | 1 | notebook | Male mice recorded in layer 2/3 of V1 (Methods L527) |
+| `\statFigOneFemaleMice` | `6` | 6 | notebook | Female mice recorded in layer 2/3 of V1 (Methods L527) |
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
@@ -68,6 +70,7 @@ Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-10-2
 | `\statFigTwoPvalRsOfRatioVsConjunctive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by RS/OF vs Conjunctive: median difference -0.292, 95% CI [-0.363, -0.239], 20,000 resamples (Fig 2E) |
 | `\statFigTwoPvalAdditiveVsConjunctive` | `$p = 0.206$` | 0.2057 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Additive vs Conjunctive: median difference -0.046, 95% CI [-0.120, 0.027], 20,000 resamples (Fig 2E) |
 | `\statFigTwoModelComparisonPval` | `$p < 0.0001$` | 5e-05 | notebook | Additive and Conjunctive models outperforming isolated speed and ratio models (Fig 2E): the largest of the 6 hierarchical-bootstrap p-values that claim rests on, floored at the 1/20,000 resolution limit |
+| `\statFigTwoConjunctiveThreshold` | `0.0016` | 0.001582344287087 | notebook | Empirical null R² threshold for the 2D conjunctive model (Methods L638) |
 
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
@@ -153,6 +156,7 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:3
 | `\statRevGratSpeedCurvesSfN` | `342` | 342 | notebook | Depth-selective neurons, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfSessions` | `6` | 6 | notebook | Sessions, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfMice` | `2` | 2 | notebook | Mice, population SF curves per running-speed bin (N, P) |
+| `\statRevGratOtherSftfNeurons` | `1,052` | 1052 | notebook | SF/TF-tuned neurons that are not depth selective (Fig S10E) |
 
 Source notebook: `figsupp1_vis_stim_sync.ipynb` (notebook, generated 2026-10-29T10:38:22)
 
@@ -280,6 +284,7 @@ Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-10-29T1
 | `\statSuppNineGradientPvalCorrected` | `$p = 4.90e-09$` | 4.9001111528122825e-09 | notebook | Significance of 3D RF depth gradient across visual space (corrected) |
 | `\statSuppNineGradientPvalUncorrected` | `$p = 0.0406$` | 0.040557886156214376 | notebook | Significance of depth gradient across visual space (uncorrected) |
 | `\statSuppNineAPCorrR` | `$r = -0.140$` | -0.13975497571941636 | notebook | Correlation between preferred depth and anterior-posterior location in V1 |
+| `\statSuppNineAPCorrPval` | `$p < 0.0001$` | 1e-74 | notebook | p-value of correlation between preferred depth and anterior-posterior location in V1 |
 
 ---
 

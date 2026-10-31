@@ -62,6 +62,7 @@ def _stubs(name):
             neurons_df_multiday=neurons_df_multiday,
             df_pivot_multiday=pd.DataFrame(day_values, columns=[1, 2, 3, 4, 5]),
             x_vals=list(range(345)),
+            mouse_list=pd.DataFrame({"sex": ["male"] + ["female"] * 6}),
         )
     if name == "figure2_openloop":
         return dict(
@@ -119,6 +120,7 @@ def _stubs(name):
             model_labels=model_labels,
             model_comparison_pvals=model_comparison_pvals,
             n_boots=20000,
+            thresholds={"g2d": 0.0016},
         )
     if name == "figure3_depth_cells":
         return dict(

@@ -59,3 +59,13 @@ metrics:
     formatted: '234'
     latex_macro: statFigOneMultidayTrackedNeurons
     description: Unique neurons tracked across consecutive days
+  n_mice_male:
+    raw: 1
+    formatted: '1'
+    latex_macro: statFigOneMaleMice
+    description: Male mice recorded in layer 2/3 of V1 (Methods L527)
+  n_mice_female:
+    raw: 6
+    formatted: '6'
+    latex_macro: statFigOneFemaleMice
+    description: Female mice recorded in layer 2/3 of V1 (Methods L527)
