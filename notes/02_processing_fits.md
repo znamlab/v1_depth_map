@@ -153,6 +153,8 @@ under `/Volumes/BlackPasspo/v1_depth_map/processed/<project>/<mouse>/<session>/`
 | Pre-tightened bounds `neurons_df` | `neurons_df.pickle.pre_g2d_treadmill_trial_average_plateau_paramrange_refit_20260828_backup` | Preserved before tightened bounds refit |
 | Wide-range fit pickles (4 motor sessions) | `paramrange_backup_wide_range_20260828/` | Includes `param_range_backup.json` |
 | Pre-2026-08-20 size-control outputs | `stale_pre_20260820/` | 3 hey2 sessions |
+| Pre-stationary-fix decoder results (84 hey2 sessions) | `/Volumes/BlackPasspo/v1_depth_map/processed/backups/decoder_results_pre_still_fix_20261031/<mouse>/<session>/decoder_results.pickle` (absolute) | Old "Still" bin (~7 s of smoothed samples) and zero-placeholder `y_preds_all`; replaced 2026-10-31 by the methods definition (max raw RS over preceding 1 s < 5 cm/s, `find_stationary_samples`, cottage_analysis cb5e66e) with [regenerate_production_still.py](../v1_depth_map/precompute_data/regenerate_production_still.py): no refit, predictions rebuilt from the per-fold outputs, accuracy and confusion matrices unchanged; median closed-loop stationary n 1418 -> 2531, accuracy 0.135 -> 0.151 (`still_regeneration.csv` in the backup folder) |
+| Pre-stationary-fix decoder results on NEMO (same 84 sessions) | `decoder_results.pickle.pre_still_fix_20261031_backup` | Regenerated on NEMO with `regenerate_production_still.sbatch` (run dir `ver_rev1/still_regen/`); identical stationary bins to the local run |
 
 ---
 

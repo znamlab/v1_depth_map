@@ -1,6 +1,6 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-10-31 11:06:45.*
+*Compiled from figure notebook outputs at 2026-10-31 17:17:01.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
@@ -12,7 +12,7 @@ these values cannot drift out of sync with the figures.
 
 ## Figure 1: Virtual Depth Selectivity & Experience Independence
 
-Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-10-29T10:35:56)
+Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-10-31T17:16:57)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -20,6 +20,8 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-10-
 | `\statFigOneFiveDepthSessions` | `25` | 25 | notebook | Sessions with 5 virtual depths (6 cm to 600 cm) |
 | `\statFigOneEightDepthSessions` | `59` | 59 | notebook | Sessions with 8 virtual depths (5 cm to 640 cm) |
 | `\statFigOneTotalMice` | `7` | 7 | notebook | Total mice recorded in layer 2/3 of V1 |
+| `\statFigOneMaleMice` | `1` | 1 | notebook | Male mice recorded in layer 2/3 of V1 (Methods L527) |
+| `\statFigOneFemaleMice` | `6` | 6 | notebook | Female mice recorded in layer 2/3 of V1 (Methods L527) |
 | `\statFigOneTotalNeurons` | `59,937` | 59937 | notebook | Total layer 2/3 excitatory neurons recorded |
 | `\statFigOneDepthNeurons` | `27,127` | 27127 | notebook | Neurons exhibiting significant depth selectivity |
 | `\statFigOnePctDepthNeurons` | `45.3\%` | 45.25918881492233 | notebook | Percentage of layer 2/3 neurons with depth selectivity |
@@ -27,8 +29,6 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-10-
 | `\statFigOneMultidaySessions` | `19` | 19 | notebook | Number of sessions across consecutive days |
 | `\statFigOneMultidayPairs` | `374` | 374 | notebook | Consecutive day neuron pairs tracked |
 | `\statFigOneMultidayTrackedNeurons` | `234` | 234 | notebook | Unique neurons tracked across consecutive days |
-| `\statFigOneMaleMice` | `1` | 1 | notebook | Male mice recorded in layer 2/3 of V1 (Methods L527) |
-| `\statFigOneFemaleMice` | `6` | 6 | notebook | Female mice recorded in layer 2/3 of V1 (Methods L527) |
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
