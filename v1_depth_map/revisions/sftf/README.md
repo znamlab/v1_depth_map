@@ -40,7 +40,7 @@ Cache outputs are under `<processed>/v1_manuscript_figures/ver_rev1/cache_gratin
 5. `revisions/sftf/sftf_exploratory_analysis.ipynb` (optional).
 
 Code: `figure_utils/sftf.py` (figure helpers, held-out speed curves), `revisions/sftf/sftf_plots.py` (exploratory
-plots). Panel A schematic: `figures/schematic_gratings.pdf` (vector, cropped from the Illustrator figure) and its PNG
+plots). Panel A schematic: `figures/schematics/schematic_gratings.pdf` (vector, cropped from the Illustrator figure) and its PNG
 preview, merged into the figure PDF by `sftf.save_with_vector_image`.
 
 ## Definitions and choices
