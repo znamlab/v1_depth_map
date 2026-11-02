@@ -62,6 +62,8 @@ def _stubs(name):
             neurons_df_multiday=neurons_df_multiday,
             df_pivot_multiday=pd.DataFrame(day_values, columns=[1, 2, 3, 4, 5]),
             x_vals=list(range(345)),
+            rho_md=np.float64(0.71),
+            pval_md=np.float64(0.0),
             mouse_list=pd.DataFrame({"sex": ["male"] + ["female"] * 6}),
         )
     if name == "figure2_openloop":
@@ -125,6 +127,8 @@ def _stubs(name):
     if name == "figure3_depth_cells":
         return dict(
             n_pop_k=271,
+            r_f=np.float64(0.42),
+            pval_f=np.float64(0.0021),
             n_pop=285,
             n_elong=266,
             n_sessions=4,
@@ -216,14 +220,23 @@ def _stubs(name):
             )
         ]
         multi = neurons_df[neurons_df["is_depth_tuned"]]
+        corr_df = pd.DataFrame(
+            {
+                "session": ["PZAH17.1e_S1"] * 50 + ["PZAG16.3c_S1"] * 50,
+                "rf_corr": rng.uniform(0.1, 0.6, 100),
+                "rf_ipsi_corr": rng.uniform(-0.1, 0.2, 100),
+            }
+        )
         return dict(
             all_sig=list(selected.groupby("session", sort=False)["rf_sig"].mean()),
             all_sig_m=list(multi.groupby("session", sort=False)["rf_sig"].mean()),
             neurons_df_single=neurons_df_single,
             neurons_df=neurons_df,
+            corr_df=corr_df,
             # panel F: RF peak depths (m) of the plotted neurons, returned by the panel
             peak_depth_df=pd.DataFrame(
                 {
+                    "session": ["PZAH17.1e_S1"] * 300 + ["PZAG16.3c_S1"] * 303,
                     "rf_preferred_depth_closedloop": rng.uniform(0.02, 20, 603),
                     "rf_preferred_depth_closedloop_multidepth": rng.uniform(
                         0.02, 20, 603

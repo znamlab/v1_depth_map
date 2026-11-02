@@ -1,7 +1,7 @@
 _meta:
   notebook: figure3_depth_cells
   figure: fig3
-  generated_at: '2026-10-29T11:45:00'
+  generated_at: '2026-11-02T11:53:42'
   source: notebook
 metrics:
   motorized_depth_tuned_neurons:
@@ -10,6 +10,18 @@ metrics:
     latex_macro: statFigThreeMotorizedDepthNeurons
     description: Depth-tuned neurons compared between free locomotion and motorized
       wheel (Fig 3F)
+  motorized_depth_r:
+    raw: 0.7717072962114766
+    formatted: $r = 0.772$
+    latex_macro: statFigThreeMotorizedDepthR
+    description: Spearman correlation of preferred depth (free locomotion) vs RS/OF
+      ratio (motorized wheel) (Fig 3F)
+  motorized_depth_pval:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statFigThreeMotorizedDepthPval
+    description: Hierarchical bootstrap p-value over mice and sessions of the Fig
+      3F correlation
   polar_n_neurons:
     raw: 285
     formatted: '285'
@@ -35,7 +47,8 @@ metrics:
     raw: 93.33333333333333
     formatted: 93\%
     latex_macro: statFigThreeElongationCutoffPct
-    description: Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig 3K)
+    description: Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig
+      3K)
   elongation_n_neurons:
     raw: 266
     formatted: '266'

@@ -1,18 +1,18 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-11-02 10:44:36.*
+*Compiled from figure notebook outputs at 2026-11-02 11:53:46.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 196 values were written by a notebook run.
+> ✅ All 200 values were written by a notebook run.
 
 ---
 
 ## Figure 1: Virtual Depth Selectivity & Experience Independence
 
-Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-10-31T17:16:57)
+Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-11-02T11:51:36)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -29,6 +29,8 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-10-
 | `\statFigOneMultidaySessions` | `19` | 19 | notebook | Number of sessions across consecutive days |
 | `\statFigOneMultidayPairs` | `374` | 374 | notebook | Consecutive day neuron pairs tracked |
 | `\statFigOneMultidayTrackedNeurons` | `234` | 234 | notebook | Unique neurons tracked across consecutive days |
+| `\statFigOneMultidayPrefDepthR` | `$r = 0.819$` | 0.818982070394985 | notebook | Spearman correlation of preferred depth on day N vs day N+1 (Fig 1P) |
+| `\statFigOneMultidayPrefDepthPval` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap p-value over mice and sessions of day N vs day N+1 preferred depth correlation (Fig 1P) |
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
@@ -74,11 +76,13 @@ Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-10-2
 
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
-Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-10-29T11:45:00)
+Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-02T11:53:42)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
 | `\statFigThreeMotorizedDepthNeurons` | `285` | 285 | notebook | Depth-tuned neurons compared between free locomotion and motorized wheel (Fig 3F) |
+| `\statFigThreeMotorizedDepthR` | `$r = 0.772$` | 0.7717072962114766 | notebook | Spearman correlation of preferred depth (free locomotion) vs RS/OF ratio (motorized wheel) (Fig 3F) |
+| `\statFigThreeMotorizedDepthPval` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap p-value over mice and sessions of the Fig 3F correlation |
 | `\statFigThreePolarNeurons` | `285` | 285 | notebook | Neurons with significant 2D-Gaussian fit on motorized wheel (Fig 3K) |
 | `\statFigThreePolarSessions` | `4` | 4 | notebook | Sessions in motorized wheel elongation analysis (Fig 3K) |
 | `\statFigThreePolarMice` | `4` | 4 | notebook | Mice in motorized wheel elongation analysis (Fig 3K) |

@@ -155,6 +155,10 @@ def plot_expected_depth_vs_treadmill(
     stat_type="pearson",
     suffix="",
     depth_suffix=None,
+    n_boots=20000,
+    resample_cols=["mouse", "session"],
+    r_val=None,
+    p_val=None,
     **kwargs,
 ):
     """
@@ -206,15 +210,41 @@ def plot_expected_depth_vs_treadmill(
             )
             r_str = f"$r^2$ = {r_value**2:.2f}"
             p_val_to_format = p_value
-        elif stat_type == "spearman":
-            r_val, p_val = stats.spearmanr(x[mask], y[mask])
+        elif stat_type in ("spearman", "hierarchical_bootstrap"):
+            if stat_type == "hierarchical_bootstrap":
+                if r_val is None or p_val is None:
+                    from cottage_analysis.analysis import common_utils
+
+                    stat_df = df.copy()
+                    stat_df["_x_log"] = x
+                    stat_df["_y_log"] = y
+                    r_arr, dist = common_utils.hierarchical_bootstrap_stats(
+                        stat_df[mask],
+                        n_boots=n_boots,
+                        xcol=["_x_log"],
+                        resample_cols=resample_cols,
+                        ycol=["_y_log"],
+                        correlation=True,
+                        plot=False,
+                    )
+                    r_val = r_arr[0]
+                    p_val_to_format = common_utils.calculate_pval_from_bootstrap(
+                        dist, value=0
+                    )
+                else:
+                    p_val_to_format = p_val
+            else:
+                if r_val is None or p_val is None:
+                    r_val, p_val = stats.spearmanr(x[mask], y[mask])
+                p_val_to_format = p_val
             r_str = f"Spearman $r$ = {r_val:.2f}"
-            p_val_to_format = p_val
             # Still need slope for the fit line if requested
             if plot_fit:
                 slope, intercept, _, _, _ = stats.linregress(x[mask], y[mask])
 
-        if p_val_to_format < 0.001:
+        if p_val_to_format == 0:
+            p_str = "$p < 0.0001$"
+        elif p_val_to_format < 0.001:
             exponent = int(np.floor(np.log10(p_val_to_format)))
             coeff = p_val_to_format / 10**exponent
             p_str = f"$p = {coeff:.1f} \\times 10^{{{exponent}}}$"
@@ -258,7 +288,11 @@ def plot_expected_depth_vs_treadmill(
     ax.set_yticklabels(ticks)
     ax.tick_params(axis="both", labelsize=fontsize_dict["tick"])
 
-    return sc, {"x": x, "y": y}
+    plotted_data = {"x": x, "y": y}
+    if plot_stats:
+        plotted_data["r"] = r_val
+        plotted_data["p"] = p_val_to_format
+    return sc, plotted_data
 
 
 def plot_treadmill_vs_closedloop_comparison(
