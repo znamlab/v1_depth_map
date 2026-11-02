@@ -34,11 +34,11 @@ metrics:
     description: Median Pearson r between single- and multi-depth ipsilateral RF volumes
       (Fig S8D)
   rf_corr_mannwhitney_p:
-    raw: 2.7965434629083562e-182
-    formatted: $p = 2.80 \times 10^{-182}$
+    raw: 0.0
+    formatted: $p < 0.0001$
     latex_macro: statSuppEightRFCorrPval
-    description: Mann-Whitney U test p-value, contralateral vs ipsilateral RF correlations
-      (Fig S8D)
+    description: Hierarchical bootstrap p-value over mice and sessions, contralateral
+      vs ipsilateral RF correlations (Fig S8D)
   sig_rf_n_sessions_single:
     raw: 84
     formatted: '84'
@@ -101,11 +101,11 @@ metrics:
     description: Spearman correlation of multi- vs single-depth RF peak depth (Fig
       S8F)
   peak_depth_spearman_p:
-    raw: 1.3521543842892003e-84
-    formatted: $p = 1.35 \times 10^{-84}$
+    raw: 0.0
+    formatted: $p < 0.0001$
     latex_macro: statSuppEightPeakDepthPval
-    description: p-value of the Spearman correlation of multi- vs single-depth RF
-      peak depth (Fig S8F)
+    description: Hierarchical bootstrap p-value over mice and sessions of multi- vs
+      single-depth RF peak depth (Fig S8F)
   peak_depth_median_ratio:
     raw: 0.9392100406025342
     formatted: '0.939'

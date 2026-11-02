@@ -1,6 +1,6 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-10-31 17:17:01.*
+*Compiled from figure notebook outputs at 2026-11-02 10:44:36.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
@@ -253,7 +253,7 @@ Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generat
 | `\statSuppEightRFCorrMice` | `4` | 4 | notebook | Number of mice in the RF correlation comparison (Fig S8D) |
 | `\statSuppEightRFCorrMedianContra` | `$r = 0.334$` | 0.33399676894859875 | notebook | Median Pearson r between single- and multi-depth contralateral RF volumes (Fig S8D) |
 | `\statSuppEightRFCorrMedianIpsi` | `$r = 0.031$` | 0.030534735341280744 | notebook | Median Pearson r between single- and multi-depth ipsilateral RF volumes (Fig S8D) |
-| `\statSuppEightRFCorrPval` | `$p = 2.80 \times 10^{-182}$` | 2.7965434629083562e-182 | notebook | Mann-Whitney U test p-value, contralateral vs ipsilateral RF correlations (Fig S8D) |
+| `\statSuppEightRFCorrPval` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap p-value over mice and sessions, contralateral vs ipsilateral RF correlations (Fig S8D) |
 | `\statSuppEightSigRFSessionsSingle` | `84` | 84 | notebook | Number of single-depth sessions (Fig S8E) |
 | `\statSuppEightSigRFMedianSingle` | `46.4\%` | 0.464367816091954 | notebook | Median proportion of depth-tuned neurons with significant RFs across single-depth sessions (Fig S8E) |
 | `\statSuppEightSigRFSessionsMulti` | `5` | 5 | notebook | Number of multi-depth sessions (Fig S8E) |
@@ -265,7 +265,7 @@ Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generat
 | `\statSuppEightSigRFSigNeuronsTotal` | `17,983` | 17983 | notebook | Depth-tuned neurons with significant RFs, single- and multi-depth sessions (Fig S8E) |
 | `\statSuppEightPeakDepthNeurons` | `1,009` | 1009 | notebook | Depth-tuned neurons with significant multi-depth RFs in the peak depth comparison (Fig S8F) |
 | `\statSuppEightPeakDepthR` | `$r = 0.561$` | 0.5606615682902318 | notebook | Spearman correlation of multi- vs single-depth RF peak depth (Fig S8F) |
-| `\statSuppEightPeakDepthPval` | `$p = 1.35 \times 10^{-84}$` | 1.3521543842892003e-84 | notebook | p-value of the Spearman correlation of multi- vs single-depth RF peak depth (Fig S8F) |
+| `\statSuppEightPeakDepthPval` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap p-value over mice and sessions of multi- vs single-depth RF peak depth (Fig S8F) |
 | `\statSuppEightPeakDepthMedianRatio` | `0.939` | 0.9392100406025342 | notebook | Median ratio of multi- to single-depth RF peak depth (Fig S8F) |
 | `\statSuppEightPeakDepthRatioIQR` | `0.669--1.506` | [0.6687090402716057, 1.5061576016632765] | notebook | Interquartile range of the multi- to single-depth RF peak depth ratio (Fig S8F) |
 
