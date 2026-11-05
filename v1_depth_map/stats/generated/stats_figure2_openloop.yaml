@@ -1,7 +1,7 @@
 _meta:
   notebook: figure2_openloop
   figure: fig2
-  generated_at: '2026-10-29T11:10:33'
+  generated_at: '2026-11-04T18:06:36'
   source: notebook
 metrics:
   openloop_n_depth_neurons_total:
@@ -86,3 +86,35 @@ metrics:
     formatted: '27'
     latex_macro: statFigTwoDecoderEightDepthSessions
     description: Sessions with 8 depths for confusion matrices (Fig 2L)
+  decoder_n_mice:
+    raw: 7
+    formatted: '7'
+    latex_macro: statFigTwoDecoderMice
+    description: Mice contributing to the closed vs open loop decoder comparison (Fig
+      2K)
+  decoder_error_diff_median:
+    raw: 0.3495463830189586
+    formatted: '0.35'
+    latex_macro: statFigTwoDecoderErrDiffMedian
+    description: Median across sessions of open minus closed loop decoding error,
+      octaves (Fig 2K)
+  decoder_error_diff_ci:
+    raw:
+    - 0.1366436414438883
+    - 0.4963389375001652
+    formatted: 0.14--0.50
+    latex_macro: statFigTwoDecoderErrDiffCI
+    description: Hierarchical bootstrap 95% CI of the median open minus closed loop
+      decoding error, octaves
+  decoder_error_diff_pval:
+    raw: 0.0004
+    formatted: $p = 0.0004$
+    latex_macro: statFigTwoDecoderErrDiffPval
+    description: Hierarchical bootstrap p-value (mice, sessions) of open minus closed
+      loop decoding error
+  decoder_error_closed_lower_n:
+    raw: 30
+    formatted: '30'
+    latex_macro: statFigTwoDecoderErrClosedLowerN
+    description: Sessions with lower decoding error in closed than open loop (Fig
+      2K)

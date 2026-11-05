@@ -84,6 +84,12 @@ def _stubs(name):
             pval=np.float64(0.6238),
             r_of=np.array([0.7101559]),
             pval_of=np.float64(0.002),
+            # decoder error bootstrap: median open - closed (octaves), CI, p, counts
+            r_err=np.array([0.35]),
+            ci_err=np.array([0.2, 0.5]),
+            pval_err=np.float64(0.0),
+            n_err_closed_lower=30,
+            n_dec_mice=12,
         )
     if name == "figure2_rsof_integration":
         models = ["grs", "gof", "gratio", "gadd", "g2d"]

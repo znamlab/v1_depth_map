@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-11-02 11:53:46.*
+*Compiled from figure notebook outputs at 2026-11-04 18:06:41.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 200 values were written by a notebook run.
+> ✅ All 205 values were written by a notebook run.
 
 ---
 
@@ -34,7 +34,7 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-11-
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
-Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-10-29T11:10:33)
+Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-11-04T18:06:36)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -53,6 +53,11 @@ Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-10-29T11:10:
 | `\statFigTwoDecoderTotalSessions` | `34` | 34 | notebook | Sessions for closed vs open loop SVM decoding (Fig 2K) |
 | `\statFigTwoDecoderFiveDepthSessions` | `7` | 7 | notebook | Sessions with 5 depths in the decoder comparison (Fig 2K) |
 | `\statFigTwoDecoderEightDepthSessions` | `27` | 27 | notebook | Sessions with 8 depths for confusion matrices (Fig 2L) |
+| `\statFigTwoDecoderMice` | `7` | 7 | notebook | Mice contributing to the closed vs open loop decoder comparison (Fig 2K) |
+| `\statFigTwoDecoderErrDiffMedian` | `0.35` | 0.3495463830189586 | notebook | Median across sessions of open minus closed loop decoding error, octaves (Fig 2K) |
+| `\statFigTwoDecoderErrDiffCI` | `0.14--0.50` | [0.1366436414438883, 0.4963389375001652] | notebook | Hierarchical bootstrap 95% CI of the median open minus closed loop decoding error, octaves |
+| `\statFigTwoDecoderErrDiffPval` | `$p = 0.0004$` | 0.0004 | notebook | Hierarchical bootstrap p-value (mice, sessions) of open minus closed loop decoding error |
+| `\statFigTwoDecoderErrClosedLowerN` | `30` | 30 | notebook | Sessions with lower decoding error in closed than open loop (Fig 2K) |
 
 Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-10-29T10:46:05)
 

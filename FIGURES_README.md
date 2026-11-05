@@ -16,7 +16,7 @@ This table is dynamically updated by the pipeline agent.
 | figsupp9_rf_distance.ipynb | ✅ Success | 0.2 | 0.90 |
 | figsupp9_v1_depth_map.ipynb | ✅ Success | 0.2 | 1.61 |
 | figure1_depth_selectivity.ipynb | ✅ Success | 3.1 | 2.53 |
-| figure2_openloop.ipynb | ✅ Success | 17.0 | 4.01 |
+| figure2_openloop.ipynb | ✅ Success | 17.3 | 3.41 |
 | figure2_rsof_integration.ipynb | ✅ Success | 3.0 | 5.40 |
 | figure3_depth_cells.ipynb | ✅ Success | 2.1 | 4.15 |
 | figure4_receptive_fields.ipynb | ✅ Success | 7.5 | 3.53 |
