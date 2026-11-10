@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-from cottage_analysis.analysis import spheres
+from cottage_analysis.analysis import common_utils, spheres
 from cottage_analysis.pipelines import pipeline_utils
 from cottage_analysis.plotting.style import FONTSIZE_DICT
 
@@ -258,8 +258,9 @@ def tf_curves_by_speed(
     The pairs kept are either specified directly via `kept_pairs`, computed from the SFTF model
     parameters `popt`, or chosen as those whose mean response (over TF and all frames of all bins)
     is at least `threshold` x that of the best pair. For each bin, the curve is the mean over kept
-    pairs of the condition mean at each TF, with the SEM across pairs. With `variable="sf"`, the
-    roles of SF and TF are swapped.
+    pairs of the condition mean at each TF. The spread (SEM and bootstrapped 95% CI of the mean)
+    is across trials (each trial averaged over its frames) when `binned` has a `trial` column,
+    otherwise across kept pairs. With `variable="sf"`, the roles of SF and TF are swapped.
 
     Args:
         binned: output of `speed_binned_responses`.
@@ -270,8 +271,8 @@ def tf_curves_by_speed(
 
     Returns:
         (DataFrame, list): one row per bin and frequency (`bin`, `TemporalFrequency` or
-            `SpatialFrequency`, `mean`, `sem`, `n_pairs`), and the kept (other frequency, Angle)
-            pairs.
+            `SpatialFrequency`, `mean`, `sem`, `ci_low`, `ci_high`, `n_trials` or `n_pairs`),
+            and the kept (other frequency, Angle) pairs.
     """
     freq = FREQ_COLS[variable]
     other = FREQ_COLS["sf" if variable == "tf" else "tf"]
@@ -307,11 +308,16 @@ def tf_curves_by_speed(
     for label, df in binned:
         sel = df[pd.MultiIndex.from_frame(df[keys]).isin(kept)]
         if "trial" in sel.columns:
-            trial_resp = sel.groupby([freq, "trial"])[0].mean().reset_index()
-            per_f = trial_resp.groupby(freq)[0].agg(["mean", "sem", "count"])
+            units = sel.groupby([freq, "trial"])[0].mean()
         else:
-            cond = sel.groupby(keys + [freq])[0].mean()
-            per_f = cond.groupby(freq).agg(["mean", "sem", "count"])
+            units = sel.groupby(keys + [freq])[0].mean()
+        grouped = units.groupby(level=freq)
+        per_f = grouped.agg(["mean", "sem", "count"])
+        ci = grouped.apply(
+            lambda v: common_utils.get_bootstrap_ci(v.to_numpy(), sig_level=0.05)
+        )
+        per_f["ci_low"] = [float(c[0][0]) for c in ci]
+        per_f["ci_high"] = [float(c[1][0]) for c in ci]
         rows.append(
             per_f.rename(
                 columns={"count": "n_trials" if "trial" in sel.columns else "n_pairs"}
