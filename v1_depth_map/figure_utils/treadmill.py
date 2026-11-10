@@ -28,6 +28,8 @@ def plot_treadmill_protocol(
     xlim=(0, 61),
     ylim=(-0.05, 0.8),
     fontsize_dict=None,
+    analyzed_frames_kwargs=None,
+    analyzed_frames_style="scatter",
 ):
     """
     Plots the treadmill protocol including running speed data and stimulus
@@ -59,6 +61,15 @@ def plot_treadmill_protocol(
             Defaults to (-0.05, 0.8).
         fontsize_dict (dict, optional): Dictionary with font size settings.
             Defaults to None.
+        analyzed_frames_kwargs (dict, optional): Keyword arguments for the
+            analyzed frames, passed to `ax.scatter` or `ax.plot` depending on
+            `analyzed_frames_style`. Defaults to None (style-specific defaults).
+        analyzed_frames_style (str, optional): "scatter" draws one marker per
+            analyzed frame; "line" draws them as a line (NaN gaps at excluded
+            frames break it), which with `solid_capstyle="butt"` starts exactly at
+            the first analyzed frame instead of overhanging by half a marker. An
+            isolated single analyzed frame has no segment and is not visible in
+            "line" mode. Defaults to "scatter".
     Returns:
         tuple: (fig, ax)
     """
@@ -66,6 +77,26 @@ def plot_treadmill_protocol(
         trials_df_no_cut = trials_df
     if fontsize_dict is None:
         fontsize_dict = {"label": 7, "tick": 5, "legend": 5}
+    if analyzed_frames_style not in ("scatter", "line"):
+        raise ValueError(
+            f"analyzed_frames_style must be 'scatter' or 'line', "
+            f"got {analyzed_frames_style!r}"
+        )
+    if analyzed_frames_kwargs is None:
+        if analyzed_frames_style == "scatter":
+            analyzed_frames_kwargs = dict(
+                color="dodgerblue",
+                s=2,
+                marker="|",
+                zorder=20,
+            )
+        else:
+            analyzed_frames_kwargs = dict(
+                color="dodgerblue",
+                lw=2,
+                solid_capstyle="butt",
+                zorder=20,
+            )
     # Prepare data
     data = None
     of = None
@@ -128,15 +159,13 @@ def plot_treadmill_protocol(
         ax.plot(time_axis, excluded_data, color="grey", lw=2, label="Excluded Frames")
     else:
         ax.plot(time_axis, data, color="k", lw=1, clip_on=False)
-    ax.scatter(
-        time_axis,
-        used_data,
-        s=5,
-        color="dodgerblue",
-        zorder=20,
-        # lw=2,
-        label="Analysed Frames",
-    )
+
+    if analyzed_frames_style == "scatter":
+        ax.scatter(
+            time_axis, used_data, label="Analysed Frames", **analyzed_frames_kwargs
+        )
+    else:
+        ax.plot(time_axis, used_data, label="Analysed Frames", **analyzed_frames_kwargs)
 
     has_of = ~np.isnan(of)
     ax.fill_between(

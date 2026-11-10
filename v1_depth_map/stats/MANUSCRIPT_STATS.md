@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-11-04 18:06:41.*
+*Compiled from figure notebook outputs at 2026-11-10 17:23:44.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 205 values were written by a notebook run.
+> ✅ All 211 values were written by a notebook run.
 
 ---
 
@@ -81,7 +81,7 @@ Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-10-2
 
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
-Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-02T11:53:42)
+Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-10T16:40:10)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -93,9 +93,15 @@ Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-02T11:
 | `\statFigThreePolarMice` | `4` | 4 | notebook | Mice in motorized wheel elongation analysis (Fig 3K) |
 | `\statFigThreeElongationCutoffRatio` | `266/285` | 266/285 | notebook | Fraction of neurons with elongation ratio > 1.4 (Fig 3K) |
 | `\statFigThreeElongationCutoffPct` | `93\%` | 93.33333333333333 | notebook | Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig 3K) |
-| `\statFigThreeElongatedNeurons` | `266` | 266 | notebook | Neurons with elongated ellipses for orientation distribution (Fig 3L) |
-| `\statFigThreeVonMisesK` | `3` | 3 | notebook | Best axial von Mises mixture number of components (Fig 3L) |
-| `\statFigThreeVonMisesComponents` | `$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)` | $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%) | notebook | Component centers and mixture weights for orientation distribution (Fig 3L) |
+| `\statFigThreeElongatedNeurons` | `266` | 266 | notebook | Neurons with elongated ellipses for orientation distribution (Fig 3M) |
+| `\statFigThreeVonMisesK` | `3` | 3 | notebook | Best axial von Mises mixture number of components (Fig 3M) |
+| `\statFigThreeVonMisesComponents` | `$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)` | $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%) | notebook | Component centers and mixture weights for orientation distribution (Fig 3M) |
+| `\statFigThreePrefRSBelowRangeN` | `33/285` | 33 | notebook | Neurons with preferred RS below the tested motor speeds (3.81-61 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSBelowRangePct` | `12\%` | 11.578947368421053 | notebook | Percentage of neurons with preferred RS below the tested motor speeds (Fig 3G) |
+| `\statFigThreePrefRSWithinRangeN` | `134/285` | 134 | notebook | Neurons with preferred RS within the tested motor speeds (3.81-61 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSWithinRangePct` | `47\%` | 47.01754385964912 | notebook | Percentage of neurons with preferred RS within the tested motor speeds (Fig 3G) |
+| `\statFigThreePrefRSAboveRangeN` | `118/285` | 118 | notebook | Neurons with preferred RS above the tested motor speeds (3.81-61 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSAboveRangePct` | `41\%` | 41.40350877192983 | notebook | Percentage of neurons with preferred RS above the tested motor speeds (Fig 3G) |
 
 ## Figure 4: Three-Dimensional Receptive Fields
 
@@ -113,7 +119,7 @@ Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-10-2
 
 ## Supplementary Figures & Methods: Controls & Experimental Specs
 
-Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:33:25)
+Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-11-10T17:00:06)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -126,6 +132,7 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:3
 | `\statRevGratPctDepth` | `23\%` | 23.007968127490038 | notebook | Percentage depth selective |
 | `\statRevGratSftfNeurons` | `1,442` | 1442 | notebook | SF/TF-tuned neurons, cross-validated |
 | `\statRevGratPctSftf` | `48\%` | 47.875166002656044 | notebook | Percentage SF/TF tuned |
+| `\statRevGratOtherSftfNeurons` | `1,052` | 1052 | notebook | SF/TF-tuned neurons that are not depth selective (Fig S10E) |
 | `\statRevGratBothN` | `390` | 390 | notebook | Depth-selective and SF/TF-tuned neurons |
 | `\statRevGratPctBoth` | `13\%` | 12.94820717131474 | notebook | Percentage depth selective and SF/TF tuned |
 | `\statRevGratBothExpectedN` | `345` | 345.1645308608199 | notebook | Depth selective and SF/TF tuned expected if independent, computed per session and summed |
@@ -165,7 +172,6 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:3
 | `\statRevGratSpeedCurvesSfN` | `342` | 342 | notebook | Depth-selective neurons, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfSessions` | `6` | 6 | notebook | Sessions, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfMice` | `2` | 2 | notebook | Mice, population SF curves per running-speed bin (N, P) |
-| `\statRevGratOtherSftfNeurons` | `1,052` | 1052 | notebook | SF/TF-tuned neurons that are not depth selective (Fig S10E) |
 
 Source notebook: `figsupp1_vis_stim_sync.ipynb` (notebook, generated 2026-10-29T10:38:22)
 
@@ -240,7 +246,7 @@ Source notebook: `figsupp5_rsof.ipynb` (notebook, generated 2026-10-29T10:27:26)
 | `\statSuppRSOFCorrRSDepthBinThreeR` | `$r = 0.361$` | 0.3606019098035661 | notebook | Correlation between preferred depth and running speed (OF 100-1000 deg/s) |
 | `\statSuppRSOFCorrRSDepthBinThreePval` | `$p < 0.0001$` | 0.0 | notebook | P-value of correlation (OF 100-1000 deg/s) |
 
-Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-10-29T10:29:15)
+Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-11-10T17:20:06)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
