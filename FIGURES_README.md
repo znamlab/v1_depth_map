@@ -18,5 +18,5 @@ This table is dynamically updated by the pipeline agent.
 | figure1_depth_selectivity.ipynb | ✅ Success | 3.1 | 2.53 |
 | figure2_openloop.ipynb | ✅ Success | 17.3 | 3.41 |
 | figure2_rsof_integration.ipynb | ✅ Success | 3.0 | 5.40 |
-| figure3_depth_cells.ipynb | ✅ Success | 2.1 | 4.15 |
+| figure3_depth_cells.ipynb | ✅ Success | 2.4 | 2.13 |
 | figure4_receptive_fields.ipynb | ✅ Success | 7.5 | 3.53 |

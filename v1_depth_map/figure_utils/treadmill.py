@@ -870,7 +870,10 @@ def compute_treadmill_rsof_bins(trials_df_tm):
     of_bin_middle = np.diff(of_logbin) / 2 + of_logbin[:-1]
     tick_dict = dict(
         rs_tick_select=rs_bin_middle,
-        rs_tick_values=(2**rs_bin_middle).astype(int),
+        # label the motor speed bins with the motor speeds themselves (3.81 ... 61 ->
+        # 4, 8, 15, 30, 61), not the bin centres, which double from the slowest one
+        # (4, 8, 16, 32, 64); the extra bin below keeps its centre
+        rs_tick_values=np.r_[int(2 ** rs_bin_middle[0]), motor_speeds.astype(int)],
         of_tick_select=of_bin_middle,
         of_tick_values=(2**of_bin_middle).astype(int),
     )

@@ -1,6 +1,6 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-11-10 17:23:44.*
+*Compiled from figure notebook outputs at 2026-11-11 14:56:43.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
@@ -81,7 +81,7 @@ Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-10-2
 
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
-Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-10T16:40:10)
+Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-11T14:56:39)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -96,12 +96,12 @@ Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-10T16:
 | `\statFigThreeElongatedNeurons` | `266` | 266 | notebook | Neurons with elongated ellipses for orientation distribution (Fig 3M) |
 | `\statFigThreeVonMisesK` | `3` | 3 | notebook | Best axial von Mises mixture number of components (Fig 3M) |
 | `\statFigThreeVonMisesComponents` | `$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)` | $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%) | notebook | Component centers and mixture weights for orientation distribution (Fig 3M) |
-| `\statFigThreePrefRSBelowRangeN` | `33/285` | 33 | notebook | Neurons with preferred RS below the tested motor speeds (3.81-61 cm/s) (Fig 3G) |
-| `\statFigThreePrefRSBelowRangePct` | `12\%` | 11.578947368421053 | notebook | Percentage of neurons with preferred RS below the tested motor speeds (Fig 3G) |
-| `\statFigThreePrefRSWithinRangeN` | `134/285` | 134 | notebook | Neurons with preferred RS within the tested motor speeds (3.81-61 cm/s) (Fig 3G) |
-| `\statFigThreePrefRSWithinRangePct` | `47\%` | 47.01754385964912 | notebook | Percentage of neurons with preferred RS within the tested motor speeds (Fig 3G) |
-| `\statFigThreePrefRSAboveRangeN` | `118/285` | 118 | notebook | Neurons with preferred RS above the tested motor speeds (3.81-61 cm/s) (Fig 3G) |
-| `\statFigThreePrefRSAboveRangePct` | `41\%` | 41.40350877192983 | notebook | Percentage of neurons with preferred RS above the tested motor speeds (Fig 3G) |
+| `\statFigThreePrefRSBelowRangeN` | `40/285` | 40 | notebook | Neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSBelowRangePct` | `14\%` | 14.035087719298245 | notebook | Percentage of neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSWithinRangeN` | `111/285` | 111 | notebook | Neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s), i.e. non-monotonic in running speed (Fig 3G) |
+| `\statFigThreePrefRSWithinRangePct` | `39\%` | 38.94736842105263 | notebook | Percentage of neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s), i.e. non-monotonic in running speed (Fig 3G) |
+| `\statFigThreePrefRSAboveRangeN` | `134/285` | 134 | notebook | Neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSAboveRangePct` | `47\%` | 47.01754385964912 | notebook | Percentage of neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G) |
 
 ## Figure 4: Three-Dimensional Receptive Fields
 
@@ -119,7 +119,7 @@ Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-10-2
 
 ## Supplementary Figures & Methods: Controls & Experimental Specs
 
-Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-11-10T17:00:06)
+Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:33:25)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -132,7 +132,6 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-11-10T17:0
 | `\statRevGratPctDepth` | `23\%` | 23.007968127490038 | notebook | Percentage depth selective |
 | `\statRevGratSftfNeurons` | `1,442` | 1442 | notebook | SF/TF-tuned neurons, cross-validated |
 | `\statRevGratPctSftf` | `48\%` | 47.875166002656044 | notebook | Percentage SF/TF tuned |
-| `\statRevGratOtherSftfNeurons` | `1,052` | 1052 | notebook | SF/TF-tuned neurons that are not depth selective (Fig S10E) |
 | `\statRevGratBothN` | `390` | 390 | notebook | Depth-selective and SF/TF-tuned neurons |
 | `\statRevGratPctBoth` | `13\%` | 12.94820717131474 | notebook | Percentage depth selective and SF/TF tuned |
 | `\statRevGratBothExpectedN` | `345` | 345.1645308608199 | notebook | Depth selective and SF/TF tuned expected if independent, computed per session and summed |
@@ -172,6 +171,7 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-11-10T17:0
 | `\statRevGratSpeedCurvesSfN` | `342` | 342 | notebook | Depth-selective neurons, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfSessions` | `6` | 6 | notebook | Sessions, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfMice` | `2` | 2 | notebook | Mice, population SF curves per running-speed bin (N, P) |
+| `\statRevGratOtherSftfNeurons` | `1,052` | 1052 | notebook | SF/TF-tuned neurons that are not depth selective (Fig S10E) |
 
 Source notebook: `figsupp1_vis_stim_sync.ipynb` (notebook, generated 2026-10-29T10:38:22)
 

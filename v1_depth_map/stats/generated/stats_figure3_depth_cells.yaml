@@ -1,7 +1,7 @@
 _meta:
   notebook: figure3_depth_cells
   figure: fig3
-  generated_at: '2026-11-10T16:40:10'
+  generated_at: '2026-11-11T14:56:39'
   source: notebook
 metrics:
   motorized_depth_tuned_neurons:
@@ -67,38 +67,38 @@ metrics:
     description: Component centers and mixture weights for orientation distribution
       (Fig 3M)
   pref_rs_below_range_n:
-    raw: 33
-    formatted: 33/285
+    raw: 40
+    formatted: 40/285
     latex_macro: statFigThreePrefRSBelowRangeN
-    description: Neurons with preferred RS below the tested motor speeds (3.81-61
-      cm/s) (Fig 3G)
+    description: 'Neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s
+      bin or below 3.81 cm/s) (Fig 3G)'
   pref_rs_below_range_pct:
-    raw: 11.578947368421053
-    formatted: 12\%
+    raw: 14.035087719298245
+    formatted: 14\%
     latex_macro: statFigThreePrefRSBelowRangePct
-    description: Percentage of neurons with preferred RS below the tested motor speeds
-      (Fig 3G)
+    description: 'Percentage of neurons with preferred RS in the lowest bins (<5.39
+      cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G)'
   pref_rs_within_range_n:
+    raw: 111
+    formatted: 111/285
+    latex_macro: statFigThreePrefRSWithinRangeN
+    description: Neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s),
+      i.e. non-monotonic in running speed (Fig 3G)
+  pref_rs_within_range_pct:
+    raw: 38.94736842105263
+    formatted: 39\%
+    latex_macro: statFigThreePrefRSWithinRangePct
+    description: Percentage of neurons with preferred RS in the 3 middle bins (5.39-43.13
+      cm/s), i.e. non-monotonic in running speed (Fig 3G)
+  pref_rs_above_range_n:
     raw: 134
     formatted: 134/285
-    latex_macro: statFigThreePrefRSWithinRangeN
-    description: Neurons with preferred RS within the tested motor speeds (3.81-61
-      cm/s) (Fig 3G)
-  pref_rs_within_range_pct:
+    latex_macro: statFigThreePrefRSAboveRangeN
+    description: 'Neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s
+      bin or above 61 cm/s) (Fig 3G)'
+  pref_rs_above_range_pct:
     raw: 47.01754385964912
     formatted: 47\%
-    latex_macro: statFigThreePrefRSWithinRangePct
-    description: Percentage of neurons with preferred RS within the tested motor speeds
-      (Fig 3G)
-  pref_rs_above_range_n:
-    raw: 118
-    formatted: 118/285
-    latex_macro: statFigThreePrefRSAboveRangeN
-    description: Neurons with preferred RS above the tested motor speeds (3.81-61
-      cm/s) (Fig 3G)
-  pref_rs_above_range_pct:
-    raw: 41.40350877192983
-    formatted: 41\%
     latex_macro: statFigThreePrefRSAboveRangePct
-    description: Percentage of neurons with preferred RS above the tested motor speeds
-      (Fig 3G)
+    description: 'Percentage of neurons with preferred RS in the highest bins (>43.13
+      cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G)'

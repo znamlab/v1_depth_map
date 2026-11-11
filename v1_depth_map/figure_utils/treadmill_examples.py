@@ -41,6 +41,12 @@ from v1_depth_map.figure_utils.treadmill import compute_treadmill_rsof_bins
 
 TM_MOTOR_SPEEDS = np.array([3.81, 7.62, 15.25, 30.5, 61.0])  # cm/s
 TM_OF_LEVELS = np.array([1, 4, 16, 64, 256, 1024])  # deg/s
+# Bounds on the preferred RS / OF of the trial-average g2d fits: the tested grid padded by
+# one min-sigma, exp(0.5), on each side (TREADMILL_PARAM_RANGE in
+# precompute_data/fit_revision_treadmill.py; slowest motor speed 61 / 16 = 3.8125 cm/s)
+FIT_PAD = np.exp(0.5)
+FIT_RS_BOUNDS = (61.0 / 16 / FIT_PAD, 61.0 * FIT_PAD)  # 2.31, 100.57 cm/s
+FIT_OF_BOUNDS = (1.0 / FIT_PAD, 1024.0 * FIT_PAD)  # 0.61, 1688.29 deg/s
 # depths tested on the wheel: RS / OF over the motor speed x OF grid (cm)
 GRID_DEPTHS_CM = TM_MOTOR_SPEEDS[None, :] / np.radians(TM_OF_LEVELS)[:, None]
 MAX_RS2MOTOR_DIFF = 0.3  # as the depth and RS/OF fits
@@ -69,15 +75,15 @@ LAYOUT = dict(
     mat_vgap=0.12,  # between matrix rows
     mat_h=1.65,  # matrix height; the stack is centred on the depth grid
 )
+SCATTER_GID = "fig3g_pref_scatter"  # gid of the panel G population scatter
 MAT_CBAR_FRAC = 0.5  # matrix colour bar height relative to the matrix (bottom-aligned)
 CBAR_FRAC = 0.36  # colour bar height relative to the scatter
 MAT_RS_OCT, MAT_OF_OCT = 5, 12  # matrix extent in octaves (motor speed, OF)
 MARG_H = 0.9  # thickness of the marginal histograms
 MARG_GAP = 0.12  # scatter to marginal
 HIST_W_FRAC = 1.3  # OF-by-RS column width relative to an example panel
-BAR_HALF_IN = 0.45  # in-range bar half-width, in steps between sampled values (log)
-BAR_HALF_OUT = 0.15  # out-of-range bar half-width
-BAR_GAP = 0.08  # minimum gap next to the out-of-range bars, in steps
+BAR_SPACE = 0.03  # half the gap between adjacent bars, in steps (log)
+BAR_GAP = 0.08  # gap between the tested range and the out-of-range bars, in steps
 LIM_PAD = 1.2  # axis limit beyond the most extreme value (room for a dot radius)
 
 
@@ -185,61 +191,114 @@ def preference_table(neurons_df, ta_suffix):
 
 
 # --------------------------------------------------------------------------- panels
-def marginal_bars(levels, values):
-    """Bar geometry of a marginal on a log axis with sampled `levels`.
+def marginal_counts(levels, values):
+    """Counts for the bars [levels..., below range, above range]: values within the
+    sampled range go to the nearest level (in log), values below / above it are grouped
+    in one bin each."""
+    v = np.asarray(values, float)
+    lv = np.sort(np.asarray(levels, float))
+    inside = (v >= lv[0]) & (v <= lv[-1])
+    idx = np.abs(np.log(v[inside])[:, None] - np.log(lv)).argmin(1)
+    return np.r_[
+        np.bincount(idx, minlength=len(lv)), (v < lv[0]).sum(), (v > lv[-1]).sum()
+    ]
 
-    In-range bars are centred on the levels and nearly touch. Values below / above the
-    range are fits at the fit bound: their bar is centred on the most extreme value
-    (where they pile up on the scatter) and narrower, and the end in-range bar is trimmed
-    on its outer side to leave a gap. Returns (centres, lefts, rights, lim) for the bars
-    [levels..., below, above] and the axis limits.
+
+def marginal_bars(levels, values, bounds):
+    """Bar geometry of a marginal on a log axis with sampled `levels` and fit `bounds`.
+
+    Each bar spans its bin (`marginal_counts`): the level bins are bounded by the log
+    midpoints between levels and by the range ends, so the end bins are half as wide and
+    their level sits on the bar's outer edge. The below / above range bars run from the
+    fit bound to the range end, minus a gap. Returns (ticks, lefts, rights, lim) for the
+    bars [levels..., below, above]; ticks are the levels and the two fit bounds (the
+    outer end of the out-of-range bars, where at-bound fits sit on the scatter).
     """
     lv = np.sort(np.asarray(levels, float))
     v = np.asarray(values, float)
+    lo_b, hi_b = bounds
     step = np.exp(np.median(np.diff(np.log(lv))))
-    half_in, half_out, gap = step**BAR_HALF_IN, step**BAR_HALF_OUT, step**BAR_GAP
-    low_pos = v.min() if (v < lv[0]).any() else lv[0] / step
-    high_pos = v.max() if (v > lv[-1]).any() else lv[-1] * step
-    centres = np.r_[lv, low_pos, high_pos]
-    lefts = np.r_[lv / half_in, low_pos / half_out, high_pos / half_out]
-    rights = np.r_[lv * half_in, low_pos * half_out, high_pos * half_out]
-    lefts[0] = max(lefts[0], rights[-2] * gap)  # trim the end bars on their outer side
-    rights[len(lv) - 1] = min(rights[len(lv) - 1], lefts[-1] / gap)
-    lim = (min(lefts.min(), v.min() / LIM_PAD), max(rights.max(), v.max() * LIM_PAD))
-    return centres, lefts, rights, lim
+    space, gap = step**BAR_SPACE, step**BAR_GAP
+    edges = np.r_[lv[0], np.sqrt(lv[:-1] * lv[1:]), lv[-1]]
+    in_lefts, in_rights = edges[:-1] * space, edges[1:] / space
+    in_lefts[0], in_rights[-1] = edges[0], edges[-1]  # flush with the range ends
+    lefts = np.r_[in_lefts, lo_b, lv[-1] * gap]
+    rights = np.r_[in_rights, lv[0] / gap, hi_b]
+    ticks = np.r_[lv, lo_b, hi_b]
+    lim = (
+        min(lefts.min(), v.min()) / LIM_PAD,
+        max(rights.max(), v.max()) * LIM_PAD,
+    )
+    return ticks, lefts, rights, lim
 
 
-def plot_marginal(ax, values, levels, lim, orientation, fontsize_dict=FONTSIZE_DICT):
-    """Marginal histogram of the scatter on its log axis: one wide bar per sampled value
+def break_axis_at_range(ax, spine, levels, values, bounds):
+    """Break a log axis between the sampled range and the below / above range bins: the
+    spine spans the sampled range, and each out-of-range bin gets its own segment,
+    spanning its marginal bar and ending on the fit bound tick. Call after the spine is
+    positioned (despine offset)."""
+    lv = np.sort(np.asarray(levels, float))
+    _, lefts, rights, _ = marginal_bars(lv, values, bounds)
+    sp = ax.spines[spine]
+    sp.set_bounds(lv[0], lv[-1])
+    # projecting caps so the end ticks meet the spine in a full corner (a butt cap stops
+    # at the tick centre, leaving a notch of half the line width)
+    sp.set_capstyle("projecting")
+    for k in (-2, -1):  # below, above
+        seg = [lefts[k], rights[k]]
+        xy = (seg, [0, 0]) if spine in ("bottom", "top") else ([0, 0], seg)
+        ax.plot(
+            *xy,
+            transform=sp.get_spine_transform(),
+            color=sp.get_edgecolor(),
+            lw=sp.get_linewidth(),
+            solid_capstyle="projecting",
+            clip_on=False,
+        )
+
+
+def bound_tick_labels(levels, bounds, fmt):
+    """Tick labels [lower bound, levels..., upper bound] for the scatter axes: the fit
+    bound ticks end the below / above range bins, labelled "<" and ">" without a value
+    (the bins hold everything beyond the tested range, not just the bound)."""
+    return ["<"] + [fmt(v) for v in levels] + [">"]
+
+
+def plot_marginal(
+    ax, values, levels, bounds, lim, orientation, fontsize_dict=FONTSIZE_DICT
+):
+    """Marginal histogram of the scatter on its log axis: one bar per sampled value
     (values within the sampled range go to the nearest one, in log); values below / above
-    the range (fits at the fit bounds) are grouped in one narrower bar each."""
+    the range are grouped in one bar each. Bars span their bins (`marginal_bars`)."""
     v = np.asarray(values, float)
     lv = np.sort(np.asarray(levels, float))
-    lo, hi = lv[0], lv[-1]
-    _, lefts, rights, _ = marginal_bars(lv, v)
-    inside = (v >= lo) & (v <= hi)
-    idx = np.abs(np.log(v[inside])[:, None] - np.log(lv)).argmin(1)
-    counts = np.r_[np.bincount(idx, minlength=len(lv)), (v < lo).sum(), (v > hi).sum()]
+    ticks, lefts, rights, _ = marginal_bars(lv, v, bounds)
+    # value axis as on the scatter (same ticks, incl. the fit bounds), unlabelled
+    value_ticks = np.r_[ticks[-2], lv, ticks[-1]]
+    counts = marginal_counts(lv, v)
     top = int(np.ceil(counts.max() / 10) * 10)  # first multiple of 10 above the max
     if orientation == "vertical":  # above the scatter, shares its x axis
         ax.bar(lefts, counts, width=rights - lefts, align="edge", color="0.6", lw=0)
         ax.set_xscale("log")
         ax.set_xlim(lim)
         ax.set_ylim(0, top)
-        ax.xaxis.set_visible(False)
-        ax.spines[["top", "right", "bottom"]].set_visible(False)
-        count_axis = ax.yaxis
+        ax.spines[["top", "right"]].set_visible(False)
+        count_axis, value_axis, value_spine = ax.yaxis, ax.xaxis, "bottom"
     else:  # right of the scatter, shares its y axis; count axis on top
         ax.barh(lefts, counts, height=rights - lefts, align="edge", color="0.6", lw=0)
         ax.set_yscale("log")
         ax.set_ylim(lim)
         ax.set_xlim(0, top)
-        ax.yaxis.set_visible(False)
-        ax.spines[["bottom", "right", "left"]].set_visible(False)
+        ax.spines[["bottom", "right"]].set_visible(False)
         ax.spines["top"].set_position(("outward", 4))  # clear of the top bar
-        count_axis = ax.xaxis
+        count_axis, value_axis, value_spine = ax.xaxis, ax.yaxis, "left"
         ax.xaxis.tick_top()
         ax.xaxis.set_label_position("top")
+    value_axis.set_ticks(value_ticks, labels=[""] * len(value_ticks))
+    value_axis.set_minor_locator(plt.NullLocator())
+    # spine offset as on the scatter (despine offset=2), trimmed to the outer ticks
+    ax.spines[value_spine].set_position(("outward", 2))
+    break_axis_at_range(ax, value_spine, lv, v, bounds)
     centres = np.sqrt(lefts * rights)  # bar centres on the log axis
     for centre, n in zip(centres, counts):  # number of cells at the end of each bar
         vertical = orientation == "vertical"
@@ -256,7 +315,7 @@ def plot_marginal(ax, values, levels, lim, orientation, fontsize_dict=FONTSIZE_D
         )
     count_axis.set_ticks([0, top])
     ax.tick_params(labelsize=fontsize_dict["tick"], length=1.5, pad=1)
-    count_axis.set_label_text("Cell #", fontsize=fontsize_dict["tick"])
+    count_axis.set_label_text("Number\nof cells", fontsize=fontsize_dict["label"])
     count_axis.labelpad = 1
     return counts
 
@@ -366,7 +425,10 @@ def plot_example_matrix(
         of_bins=of_bins,
         tick_dict=tick_dict,
     )
-    vmax = max(np.ceil(np.nanmax(mat) * 100) / 100, 0.01)
+    # colour scale top: the cell max rounded up to 2 significant figures
+    mat_max = max(float(np.nanmax(mat)), 1e-3)
+    step = 10 ** (np.floor(np.log10(mat_max)) - 1)
+    vmax = float(np.round(np.ceil(np.round(mat_max / step, 6)) * step, 10))
     ax.images[0].set_clim(0, vmax)
     ax.set_aspect("equal", adjustable="box", anchor="NW")  # equal length per octave
     ax.tick_params(labelsize=fontsize_dict["tick"], length=1.5, pad=1)
@@ -388,8 +450,16 @@ def plot_example_matrix(
     )
     ax.set_xlim(xlim)
     ax.set_ylim(ylim)
+    # colour bar MAT_CBAR_FRAC of the matrix as drawn (the equal aspect shrinks it inside
+    # its nominal box), bottom-aligned with it
+    ax.apply_aspect()
+    pos, cpos = ax.get_position(), cax.get_position()
+    cax.set_position([cpos.x0, pos.y0, cpos.width, pos.height * MAT_CBAR_FRAC])
     cbar = fig.colorbar(ax.images[0], cax=cax)
-    cbar.set_ticks([0, vmax], labels=["0", f"{vmax:g}"])
+    vmax_label = np.format_float_positional(
+        vmax, precision=2, unique=True, fractional=False, trim="-"
+    )
+    cbar.set_ticks([0, vmax], labels=["0", vmax_label])
     cbar.ax.tick_params(labelsize=fontsize_dict["tick"], length=1, pad=1)
     cbar.outline.set_linewidth(0.5)
 
@@ -433,6 +503,13 @@ def plot_of_by_rs(add_axes_cm, x, y, w, h, ex, color="k", fontsize_dict=FONTSIZE
             fontsize_dict=fontsize_dict,
             clip_on=False,
         )
+        # speed label "RS: 16" (bin centre) -> the bin's motor speed, "15 cm/s"
+        motor = TM_MOTOR_SPEEDS[
+            np.abs(np.log(TM_MOTOR_SPEEDS / np.sqrt(b_s * b_e))).argmin()
+        ]
+        for t in a.texts:
+            if t.get_text().startswith("RS: "):
+                t.set_text(f"{motor:.0f} cm/s")
         for line in list(a.lines):  # drop the grey y=0 axhline drawn by plot_rsof_slice
             if list(line.get_xdata()) == [0, 1] and list(line.get_ydata()) == [0, 0]:
                 line.remove()
@@ -499,8 +576,8 @@ def _geometry(scatter_df, n_rows, n_cols):
     L = LAYOUT
     grid_h = n_rows * L["ex_h"] + (n_rows - 1) * L["ex_vgap"]
     grid_w = n_cols * L["ex_w"] + (n_cols - 1) * L["ex_hgap"]
-    rs_lim = marginal_bars(TM_MOTOR_SPEEDS, scatter_df["pref_rs"])[3]
-    of_lim = marginal_bars(TM_OF_LEVELS, scatter_df["pref_of"])[3]
+    rs_lim = marginal_bars(TM_MOTOR_SPEEDS, scatter_df["pref_rs"], FIT_RS_BOUNDS)[3]
+    of_lim = marginal_bars(TM_OF_LEVELS, scatter_df["pref_of"], FIT_OF_BOUNDS)[3]
     # matrices: x tick labels only on the bottom row, cell names inside, equal length
     # per octave on both axes; the stack is centred vertically on the depth grid
     mat_h = L["mat_h"]
@@ -594,26 +671,39 @@ def plot_treadmill_examples_block(
         alpha=0.6,
         linewidths=0,
         rasterized=True,
+        gid=SCATTER_GID,  # lets the notebook find it to save a vector version
     )
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlim(*g["rs_lim"])
     ax.set_ylim(*g["of_lim"])
-    ax.set_xticks(TM_MOTOR_SPEEDS, [f"{v:.0f}" for v in TM_MOTOR_SPEEDS])
-    ax.set_yticks(TM_OF_LEVELS, [f"{v:g}" for v in TM_OF_LEVELS])
+    # sampled values plus one tick at each fit bound (outer end of the out-of-range bins)
+    ax.set_xticks(
+        np.r_[FIT_RS_BOUNDS[0], TM_MOTOR_SPEEDS, FIT_RS_BOUNDS[1]],
+        bound_tick_labels(TM_MOTOR_SPEEDS, FIT_RS_BOUNDS, lambda v: f"{v:.0f}"),
+    )
+    ax.set_yticks(
+        np.r_[FIT_OF_BOUNDS[0], TM_OF_LEVELS, FIT_OF_BOUNDS[1]],
+        bound_tick_labels(TM_OF_LEVELS, FIT_OF_BOUNDS, lambda v: f"{v:g}"),
+    )
     ax.minorticks_off()
     ax.tick_params(labelsize=fontsize_dict["tick"], length=1.5, pad=1)
     ax.set_xlabel(
         "Preferred running speed (cm/s)", fontsize=fontsize_dict["label"], labelpad=1
     )
     ax.set_ylabel(
-        "Preferred optic flow (°/s)", fontsize=fontsize_dict["label"], labelpad=1
+        "Preferred optic flow speed (°/s)", fontsize=fontsize_dict["label"], labelpad=1
     )
     sns.despine(ax=ax, offset=2, trim=True)
+    break_axis_at_range(
+        ax, "bottom", TM_MOTOR_SPEEDS, scatter_df["pref_rs"], FIT_RS_BOUNDS
+    )
+    break_axis_at_range(ax, "left", TM_OF_LEVELS, scatter_df["pref_of"], FIT_OF_BOUNDS)
     plot_marginal(
         add_axes_cm(L["left"], y_top, g["sc_w"], MARG_H),
         scatter_df["pref_rs"],
         TM_MOTOR_SPEEDS,
+        FIT_RS_BOUNDS,
         g["rs_lim"],
         "vertical",
         fontsize_dict,
@@ -622,6 +712,7 @@ def plot_treadmill_examples_block(
         add_axes_cm(L["left"] + g["sc_w"] + MARG_GAP, scat_y, MARG_H, g["scat_h"]),
         scatter_df["pref_of"],
         TM_OF_LEVELS,
+        FIT_OF_BOUNDS,
         g["of_lim"],
         "horizontal",
         fontsize_dict,
@@ -644,11 +735,20 @@ def plot_treadmill_examples_block(
             < 0.35
             for _, r2 in example_prefs.iloc[:i].iterrows()
         )
+        # keep the label inside the axes (clear of the marginal ticks): to the left of
+        # points near the right edge, below points near the top or next to an earlier one
+        fx, fy = (ax.transScale + ax.transLimits).transform(
+            (row["pref_rs"], row["pref_of"])
+        )
+        left = fx > 0.9 or (close and fy > 0.9)
+        below = fy > 0.9 or close
         ax.annotate(
             str(i + 1),
             (row["pref_rs"], row["pref_of"]),
-            xytext=(2, -6) if close else (2, 2),
+            xytext=(-2 if left else 2, -2 if below else 2),
             textcoords="offset points",
+            ha="right" if left else "left",
+            va="top" if below else "bottom",
             fontsize=fontsize_dict["tick"],
         )
     # colour bar, bottom-aligned with the scatter
@@ -691,7 +791,7 @@ def plot_treadmill_examples_block(
     text_cm(
         g["x_depth"] + g["grid_w"] / 2,
         xlabel_y,
-        "Depth (cm)",
+        "Virtual depth (cm)",
         ha="center",
         va="top",
         fontsize=fontsize_dict["label"],
