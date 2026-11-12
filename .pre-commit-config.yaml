@@ -34,6 +34,6 @@ repos:
       hooks:
       - id: codespell
         # notebooks committed with their figures (base64 images) and SVG schematics (embedded data)
-        exclude: 'revisions/rf_spike_tau/(tau_estimation|lag_choice)\.ipynb|\.svg$'
+        exclude: 'revisions/rf_spike_tau/(tau_estimation|lag_choice)\.ipynb|revisions/treadmill_controls/fig_reviewer_.*\.ipynb|\.svg$'
         additional_dependencies:
         - tomli
