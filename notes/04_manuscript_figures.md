@@ -37,7 +37,7 @@ This document tracks the assembly status of all Main and Supplementary figures f
 
 | Notebook | Description | Status |
 | :--- | :--- | :--- |
-| [`unused_single_depth_receptive_fields.ipynb`](../v1_depth_map/figures/unused_single_depth_receptive_fields.ipynb) | RFs and retinotopy under the single-depth protocol (`SpheresPermTubeReward`) | 💤 Unused - superseded by the single-vs-multi comparison in Fig S8. Kept for reference; skipped by `run_figures_pipeline.py` unless named with `--notebooks` |
+| [`unused_single_depth_receptive_fields.ipynb`](../v1_depth_map/additional_analysis/unused_single_depth_receptive_fields.ipynb) | RFs and retinotopy under the single-depth protocol (`SpheresPermTubeReward`) | 💤 Unused - in the pre-revision manuscript's RF figure; superseded by multi-depth Fig 4 and the single-vs-multi comparison in Fig S8. Kept for reference; moved to `additional_analysis/`, outside `run_figures_pipeline.py` |
 
 ---
 

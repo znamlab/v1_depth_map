@@ -32,8 +32,9 @@ cortex" (Znamenskiy lab, Crick), currently in revision for *Science*.
 - Local env: `uv` with `.venv` (`uv run ...`). On NEMO: conda env `v1_depth_map`.
 - Tests (no data needed): `uv run pytest v1_depth_map/stats/tests/`
 - Lint/format: ruff (pre-commit also runs nbstripout, codespell, end-of-file/whitespace fixers).
-  Notebooks are committed with outputs stripped, except the two `rf_spike_tau` notebooks
-  that keep their figures.
+  Notebooks are committed with outputs stripped, except those with `"keep_output": true` in
+  their metadata (`rf_spike_tau/`, `treadmill_controls/fig_reviewer_*`); these are also
+  excluded from codespell in `.pre-commit-config.yaml`.
 - Run all figure notebooks with memory supervision, then compile stats:
   `python run_figures_pipeline.py [--notebooks NAME.ipynb] [--timeout S]`. Executed copies are
   discarded; status goes to `FIGURES_README.md`.
@@ -44,8 +45,9 @@ cortex" (Znamenskiy lab, Crick), currently in revision for *Science*.
 - `v1_depth_map/paths.py`: `FIGURES_VERSION` (currently `"_rev1"`) and `get_figures_roots()`.
   Notebooks read/write under `<processed>/v1_manuscript_figures/ver_rev1/`. Never hardcode
   output paths.
-- `v1_depth_map/figures/`: one notebook per manuscript figure (`figure1..4_*`, `figsupp1..10_*`)
-  plus exploratory/reviewer figures (`fig_reviewer_*`). `unused_*` notebooks are skipped by the pipeline.
+- `v1_depth_map/figures/`: only the notebooks that draw manuscript figures (`figure1..4_*`,
+  `figsupp1..10_*`), plus `schematics/`. Reviewer-only figures (`fig_reviewer_*`) go in the
+  matching `revisions/<topic>/` folder; dropped figures go in `additional_analysis/`.
   Notebooks start with `style.setup_figure_fonts()` and save via `style.savefig(..., fig=...)`;
   sizes come from `style.FONTSIZE_DICT`. A `reload` flag controls rebuilding cached pickles.
 - `v1_depth_map/figure_utils/`: helper modules used by the notebooks (RF, RF distance, RS/OF,
