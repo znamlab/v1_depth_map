@@ -11,7 +11,7 @@ This table is dynamically updated by the pipeline agent.
 | figsupp4_size_control.ipynb | ✅ Success | 1.0 | 2.26 |
 | figsupp5_rsof.ipynb | ✅ Success | 0.8 | 1.82 |
 | figsupp6_openloop.ipynb | ✅ Success | 1.0 | 2.35 |
-| figsupp7_simulation_control.ipynb | ✅ Success | 0.9 | 3.48 |
+| figsupp7_simulation_control.ipynb | ✅ Success | 1.0 | 2.42 |
 | figsupp8_multidepth_receptive_fields.ipynb | ✅ Success | 2.7 | 4.29 |
 | figsupp9_rf_distance.ipynb | ✅ Success | 0.2 | 0.90 |
 | figsupp9_v1_depth_map.ipynb | ✅ Success | 0.2 | 1.61 |
@@ -19,4 +19,4 @@ This table is dynamically updated by the pipeline agent.
 | figure2_openloop.ipynb | ✅ Success | 17.3 | 3.41 |
 | figure2_rsof_integration.ipynb | ✅ Success | 3.0 | 5.40 |
 | figure3_depth_cells.ipynb | ✅ Success | 2.4 | 2.13 |
-| figure4_receptive_fields.ipynb | ✅ Success | 7.5 | 3.53 |
+| figure4_receptive_fields.ipynb | ✅ Success | 8.3 | 3.88 |

@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-11-11 14:56:43.*
+*Compiled from figure notebook outputs at 2026-11-12 12:48:54.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 211 values were written by a notebook run.
+> ✅ All 213 values were written by a notebook run.
 
 ---
 
@@ -105,13 +105,15 @@ Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-11T14:
 
 ## Figure 4: Three-Dimensional Receptive Fields
 
-Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-10-29T10:53:24)
+Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-11-11T21:16:24)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
 | `\statFigFourPopNeurons` | `1,009` | 1009 | notebook | Depth-tuned neurons with significant multi-depth RFs (Fig 4E) |
 | `\statFigFourPopSessions` | `5` | 5 | notebook | Multi-depth sessions contributing neurons (Fig 4E) |
 | `\statFigFourPopMice` | `4` | 4 | notebook | Mice contributing neurons (Fig 4E) |
+| `\statFigFourPopR` | `$r = 0.518$` | 0.5181550035619307 | notebook | Spearman correlation of RF vs trial-averaged preferred depth (Fig 4E) |
+| `\statFigFourPopPval` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap p-value over mice and sessions of RF vs trial-averaged preferred depth correlation (Fig 4E) |
 | `\statFigFourRFDistNeurons` | `16,974` | 16974 | notebook | Depth-tuned neurons with significant RFs in pairwise distance analysis (Fig 4I-K) |
 | `\statFigFourRFDistSessions` | `84` | 84 | notebook | Sessions in pairwise distance analysis (Fig 4I-K) |
 | `\statFigFourRFDistMice` | `7` | 7 | notebook | Mice in pairwise distance analysis (Fig 4I-K) |
@@ -246,16 +248,16 @@ Source notebook: `figsupp5_rsof.ipynb` (notebook, generated 2026-10-29T10:27:26)
 | `\statSuppRSOFCorrRSDepthBinThreeR` | `$r = 0.361$` | 0.3606019098035661 | notebook | Correlation between preferred depth and running speed (OF 100-1000 deg/s) |
 | `\statSuppRSOFCorrRSDepthBinThreePval` | `$p < 0.0001$` | 0.0 | notebook | P-value of correlation (OF 100-1000 deg/s) |
 
-Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-11-10T17:20:06)
+Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-11-12T12:48:49)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
 | `\statSuppSimulFreeNeurons` | `316` | 316 | notebook | Free locomotion simulated neurons (Fig S7C) |
 | `\statSuppSimulFreeElongatedRatio` | `297/316` | 297/316 | notebook | Free locomotion simulated neurons with elongation > 1.4 ratio |
 | `\statSuppSimulFreeElongatedPct` | `94\%` | 93.9873417721519 | notebook | Free locomotion simulated neurons with elongation > 1.4 percentage |
-| `\statSuppSimulMotorNeurons` | `295` | 295 | notebook | Motorized wheel simulated neurons (Fig S7D) |
-| `\statSuppSimulMotorElongatedRatio` | `20/295` | 20/295 | notebook | Motorized wheel simulated neurons with elongation > 1.4 ratio |
-| `\statSuppSimulMotorElongatedPct` | `7\%` | 6.779661016949152 | notebook | Motorized wheel simulated neurons with elongation > 1.4 percentage |
+| `\statSuppSimulMotorNeurons` | `285` | 285 | notebook | Motorized wheel simulated neurons (Fig S7D) |
+| `\statSuppSimulMotorElongatedRatio` | `25/285` | 25/285 | notebook | Motorized wheel simulated neurons with elongation > 1.4 ratio |
+| `\statSuppSimulMotorElongatedPct` | `9\%` | 8.771929824561402 | notebook | Motorized wheel simulated neurons with elongation > 1.4 percentage |
 | `\statSuppSimulSessions` | `4` | 4 | notebook | Sessions included in simulation control (Fig S7) |
 | `\statSuppSimulMice` | `4` | 4 | notebook | Mice included in simulation control (Fig S7) |
 
