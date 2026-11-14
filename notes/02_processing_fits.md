@@ -90,6 +90,13 @@ All sessions below have `neurons_df` from `ast_neuropil=False` traces, with dept
 The four **motor** sessions (`PZAG16.3b_S20250401`, `PZAG16.3c_S20250401`, `PZAG17.3a_S20250402`,
 `PZAH17.1e_S20250403`) carry the `_treadmill*` columns.
 
+> [!WARNING]
+> `PZAG16.3b_S20250401` was **not in V1** (found 2026-11-14). It is flagged on flexilims
+> (`exclude_reason = "not V1"`) and listed in `revisions/revision_sessions.EXCLUDED_SESSIONS`;
+> `load_treadmill_population_neurons_df`, the trial-average/decoder session lists and the methods
+> dataset table skip it. Its fits stay on disk but no treadmill analysis may use it: the treadmill
+> population is 3 sessions, 3 mice.
+
 ### Project: `hey2_3d-vision_foodres_20220101` (size control)
 
 `PZAH10.2d_S20230822`, `PZAH10.2f_S20230815`, `PZAH10.2f_S20230907` — all present, all from ast:False traces.

@@ -32,6 +32,9 @@ import pandas as pd
 import flexiznam as flz
 from cottage_analysis.io_module import suite2p as s2p_io
 from v1_depth_map.revisions.revision_sessions import sessions as REVISION_SESSIONS
+from v1_depth_map.revisions.revision_sessions import (
+    EXCLUDED_SESSIONS as NOT_V1_SESSIONS,
+)
 
 PROJECTS = {
     "Original": "hey2_3d-vision_foodres_20220101",
@@ -63,7 +66,8 @@ EXPERIMENT_LABELS = {
 
 # Day 1 of PZAH17.1e crashed and sync between vis stim and recording is broken
 # (also dropped from the multi-day panels of Fig 1)
-EXCLUDED_SESSIONS = ["PZAH17.1e_S20250304"]
+# PZAG16.3b_S20250401 (treadmill) was not in V1 (`revision_sessions.EXCLUDED_SESSIONS`)
+EXCLUDED_SESSIONS = ["PZAH17.1e_S20250304", *NOT_V1_SESSIONS]
 
 
 def _revision_experiment_key(protocol: str) -> str:

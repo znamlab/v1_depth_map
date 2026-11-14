@@ -38,3 +38,10 @@ sessions = {
     "PZAH17.1e_S20250305": "spheretube_2",
     "PZAH17.1e_S20250304": "spheretube_1",
 }
+
+# Sessions that must not enter any V1 analysis, with the reason. They are also flagged on
+# flexilims (session attribute `exclude_reason`, the convention `get_session_list` reads),
+# but are repeated here so a stale offline database cannot let them back in.
+EXCLUDED_SESSIONS = {
+    "PZAG16.3b_S20250401": "not V1",
+}

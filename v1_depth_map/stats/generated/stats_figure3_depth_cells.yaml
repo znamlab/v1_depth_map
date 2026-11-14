@@ -1,18 +1,18 @@
 _meta:
   notebook: figure3_depth_cells
   figure: fig3
-  generated_at: '2026-11-11T14:56:39'
+  generated_at: '2026-11-14T09:32:50'
   source: notebook
 metrics:
   motorized_depth_tuned_neurons:
-    raw: 285
-    formatted: '285'
+    raw: 248
+    formatted: '248'
     latex_macro: statFigThreeMotorizedDepthNeurons
     description: Depth-tuned neurons compared between free locomotion and motorized
       wheel (Fig 3F)
   motorized_depth_r:
-    raw: 0.7717072962114766
-    formatted: $r = 0.772$
+    raw: 0.7515473317927669
+    formatted: $r = 0.752$
     latex_macro: statFigThreeMotorizedDepthR
     description: Spearman correlation of preferred depth (free locomotion) vs RS/OF
       ratio (motorized wheel) (Fig 3F)
@@ -23,35 +23,35 @@ metrics:
     description: Hierarchical bootstrap p-value over mice and sessions of the Fig
       3F correlation
   polar_n_neurons:
-    raw: 285
-    formatted: '285'
+    raw: 248
+    formatted: '248'
     latex_macro: statFigThreePolarNeurons
     description: Neurons with significant 2D-Gaussian fit on motorized wheel (Fig
       3K)
   polar_n_sessions:
-    raw: 4
-    formatted: '4'
+    raw: 3
+    formatted: '3'
     latex_macro: statFigThreePolarSessions
     description: Sessions in motorized wheel elongation analysis (Fig 3K)
   polar_n_mice:
-    raw: 4
-    formatted: '4'
+    raw: 3
+    formatted: '3'
     latex_macro: statFigThreePolarMice
     description: Mice in motorized wheel elongation analysis (Fig 3K)
   elongation_cutoff_ratio:
-    raw: 266/285
-    formatted: 266/285
+    raw: 230/248
+    formatted: 230/248
     latex_macro: statFigThreeElongationCutoffRatio
     description: Fraction of neurons with elongation ratio > 1.4 (Fig 3K)
   elongation_cutoff_pct:
-    raw: 93.33333333333333
+    raw: 92.74193548387096
     formatted: 93\%
     latex_macro: statFigThreeElongationCutoffPct
     description: Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig
       3K)
   elongation_n_neurons:
-    raw: 266
-    formatted: '266'
+    raw: 230
+    formatted: '230'
     latex_macro: statFigThreeElongatedNeurons
     description: Neurons with elongated ellipses for orientation distribution (Fig
       3M)
@@ -61,44 +61,44 @@ metrics:
     latex_macro: statFigThreeVonMisesK
     description: Best axial von Mises mixture number of components (Fig 3M)
   von_mises_components:
-    raw: $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)
-    formatted: $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)
+    raw: $19^\circ$ (59\%), $52^\circ$ (24\%), $90^\circ$ (17\%)
+    formatted: $19^\circ$ (59\%), $52^\circ$ (24\%), $90^\circ$ (17\%)
     latex_macro: statFigThreeVonMisesComponents
     description: Component centers and mixture weights for orientation distribution
       (Fig 3M)
   pref_rs_below_range_n:
-    raw: 40
-    formatted: 40/285
+    raw: 41
+    formatted: 41/248
     latex_macro: statFigThreePrefRSBelowRangeN
     description: 'Neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s
       bin or below 3.81 cm/s) (Fig 3G)'
   pref_rs_below_range_pct:
-    raw: 14.035087719298245
-    formatted: 14\%
+    raw: 16.532258064516128
+    formatted: 17\%
     latex_macro: statFigThreePrefRSBelowRangePct
     description: 'Percentage of neurons with preferred RS in the lowest bins (<5.39
       cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G)'
   pref_rs_within_range_n:
-    raw: 111
-    formatted: 111/285
+    raw: 103
+    formatted: 103/248
     latex_macro: statFigThreePrefRSWithinRangeN
     description: Neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s),
       i.e. non-monotonic in running speed (Fig 3G)
   pref_rs_within_range_pct:
-    raw: 38.94736842105263
-    formatted: 39\%
+    raw: 41.53225806451613
+    formatted: 42\%
     latex_macro: statFigThreePrefRSWithinRangePct
     description: Percentage of neurons with preferred RS in the 3 middle bins (5.39-43.13
       cm/s), i.e. non-monotonic in running speed (Fig 3G)
   pref_rs_above_range_n:
-    raw: 134
-    formatted: 134/285
+    raw: 104
+    formatted: 104/248
     latex_macro: statFigThreePrefRSAboveRangeN
     description: 'Neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s
       bin or above 61 cm/s) (Fig 3G)'
   pref_rs_above_range_pct:
-    raw: 47.01754385964912
-    formatted: 47\%
+    raw: 41.935483870967744
+    formatted: 42\%
     latex_macro: statFigThreePrefRSAboveRangePct
     description: 'Percentage of neurons with preferred RS in the highest bins (>43.13
       cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G)'

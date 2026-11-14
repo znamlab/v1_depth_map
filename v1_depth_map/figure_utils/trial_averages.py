@@ -37,9 +37,10 @@ from cottage_analysis.pipelines import pipeline_utils
 from cottage_analysis.summary_analysis import get_session_list
 
 # Kept in sync with cottage_analysis.pipelines.fit_rsof_trial_average
-PROJECTS = ["ccyp_l5_3d_vision", "colasa_3d-vision_revisions"]
+PROJECTS = ["colasa_3d-vision_revisions"]
 SESSIONS_TO_EXCLUDE = {
     "PZAG22.1b_S20260220": "1000 more frames than triggers in the treadmill recording",
+    "PZAG16.3b_S20250401": "not V1",
 }
 
 # Canonical running mask, matching fit_rs_of_tuning(trial_average=True) as run by

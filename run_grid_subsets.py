@@ -54,8 +54,8 @@ GRIDS = {
 }
 
 # ── Session lists ─────────────────────────────────────────────────────────────
-PROJECTS = ["ccyp_l5_3d_vision", "colasa_3d-vision_revisions"]
-SESSIONS_TO_EXCLUDE = {"PZAG22.1b_S20260220"}
+PROJECTS = ["colasa_3d-vision_revisions"]
+SESSIONS_TO_EXCLUDE = {"PZAG22.1b_S20260220", "PZAG16.3b_S20250401"}  # sync bug, not V1
 
 # ── Fixed decoder parameters (match existing pipeline) ────────────────────────
 FILTER_DATASETS = {"anatomical_only": 3, "ast_neuropil": False}

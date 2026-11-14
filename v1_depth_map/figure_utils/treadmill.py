@@ -6,6 +6,7 @@ from pathlib import Path
 
 import flexiznam as flz
 from cottage_analysis.analysis import common_utils
+from v1_depth_map.revisions.revision_sessions import EXCLUDED_SESSIONS
 
 # Column suffix of the simulated fits run with the real trial-average plateau
 # configuration (`precompute_data/fit_revision_simulation.py`), as opposed to the per-frame
@@ -426,7 +427,9 @@ def load_treadmill_population_neurons_df(
 ):
     """Load and filter the population `neurons_df` for treadmill-protocol sessions.
 
-    Finds every session in the project that ran the treadmill protocol, loads and
+    Finds every session in the project that ran the treadmill protocol (except those
+    in `revision_sessions.EXCLUDED_SESSIONS` or with an `exclude_reason` on flexilims,
+    e.g. "not V1"), loads and
     concatenates their `neurons_df` (and, if `load_simulated`, the matching
     simulated-response dataframes), flags depth- and RS/OF-tuned neurons, and adds
     ellipse/Gaussian-fit-derived columns for both the closed-loop and treadmill fits.
@@ -475,6 +478,14 @@ def load_treadmill_population_neurons_df(
     for _, mouse_data in mice.iterrows():
         sessions = all_sessions[all_sessions.origin_id == mouse_data.id]
         for session_name, sess_data in sessions.iterrows():
+            # Sessions excluded by hand (e.g. FOV not in V1): listed in
+            # `revision_sessions.EXCLUDED_SESSIONS` and/or flagged on flexilims.
+            exclude_reason = EXCLUDED_SESSIONS.get(
+                session_name, sess_data.get("exclude_reason")
+            )
+            if isinstance(exclude_reason, str) and exclude_reason.strip():
+                print(f"Excluding session {session_name}: {exclude_reason}")
+                continue
             recordings = flz.get_children(
                 parent_id=sess_data.id,
                 flexilims_session=flm_sess_rev,
