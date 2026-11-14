@@ -389,3 +389,65 @@ def generate_latex_compact(df_compact: pd.DataFrame, use_booktabs: bool = False)
     lines.append(r"\end{tabular}")
     lines.append(r"\end{table}")
     return "\n".join(lines)
+
+
+def export_dataset_table_stats(
+    df_compact: pd.DataFrame,
+    df_sessions: pd.DataFrame | None = None,
+) -> Path:
+    """Export Table S1 compact dataset summary metrics to the stats pipeline."""
+    from v1_depth_map.stats import export_figure_stats
+
+    exp_specs = {
+        "Closed loop": (
+            "closed_loop",
+            "ClosedLoop",
+            "closed loop experiments (Table S1)",
+        ),
+        "Treadmill (motorized)": (
+            "motorized_wheel",
+            "Motorized",
+            "motorized wheel experiments (Table S1)",
+        ),
+        "Open loop": ("open_loop", "OpenLoop", "open loop experiments (Table S1)"),
+        "SF/TF (drifting gratings)": (
+            "drifting_gratings",
+            "Gratings",
+            "drifting gratings experiments (Table S1)",
+        ),
+        "Multi-day tracking": (
+            "multiday",
+            "Multiday",
+            "multi-day tracking experiments (Table S1)",
+        ),
+        "Multi-depth RF": (
+            "multidepth_rf",
+            "Multidepth",
+            "multi-depth RF experiments (Table S1)",
+        ),
+    }
+
+    stats_data = {}
+    for _, row in df_compact.iterrows():
+        exp_name = row["Experiment"]
+        if exp_name not in exp_specs:
+            continue
+        key_prefix, macro_stem, desc_label = exp_specs[exp_name]
+        n_neurons = int(row["Neurons"])
+        stats_data[f"{key_prefix}_neurons"] = {
+            "raw": n_neurons,
+            "formatted": f"{n_neurons:,}",
+            "latex_macro": f"statTableSOne{macro_stem}Neurons",
+            "description": f"Total recorded neurons in {desc_label}",
+        }
+
+    if df_sessions is not None:
+        total_unique = int(_unique_session_neurons(df_sessions).sum())
+        stats_data["total_recorded_neurons"] = {
+            "raw": total_unique,
+            "formatted": f"{total_unique:,}",
+            "latex_macro": "statTableSOneTotalRecordedNeurons",
+            "description": "Total unique recorded neurons across all experiments (Table S1)",
+        }
+
+    return export_figure_stats("methods_dataset_tables", stats_data, figure="supp")

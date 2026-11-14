@@ -231,9 +231,16 @@ def _staleness_warnings(record: Dict[str, Any]) -> List[str]:
         )
         return warnings
 
-    notebook = NOTEBOOKS_DIR / f"{meta.get('notebook', record['name'])}.ipynb"
+    nb_name = f"{meta.get('notebook', record['name'])}.ipynb"
+    notebook = NOTEBOOKS_DIR / nb_name
+    if not notebook.exists():
+        alt = STATS_DIR.parent / "figure_utils" / nb_name
+        if alt.exists():
+            notebook = alt
+        else:
+            return warnings
     generated_at = meta.get("generated_at")
-    if not notebook.exists() or not generated_at:
+    if not generated_at:
         return warnings
     try:
         stamp = datetime.fromisoformat(str(generated_at))
