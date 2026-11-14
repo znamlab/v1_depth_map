@@ -562,6 +562,76 @@ def bootstrap_spearman(x, y, sessions, n_boots=20000, seed=0):
     )
 
 
+def bootstrap_median(values, sessions, n_boots=20000, seed=0, null_values=(0,)):
+    """Median of `values`, 95% CI and p-values from a hierarchical bootstrap over sessions.
+
+    As `bootstrap_spearman`, mice are not resampled. `null_values`: values the median is tested
+    against (two-sided bootstrap p, `calculate_pval_from_bootstrap`).
+
+    Returns:
+        dict: `n`, `n_sessions`, `n_mice`, `median`, `ci` (2.5 and 97.5 percentiles of the bootstrap
+            medians) and `p` ({null value: p}).
+    """
+    import contextlib
+    import io
+    from cottage_analysis.analysis import common_utils
+
+    df_boot = pd.DataFrame(
+        dict(x=np.asarray(values, float), session=np.asarray(sessions))
+    )
+    df_boot = df_boot[np.isfinite(df_boot.x)].reset_index(drop=True)
+    np.random.seed(seed)
+    with contextlib.redirect_stderr(io.StringIO()):
+        _, dist = common_utils.hierarchical_bootstrap_stats(
+            df_boot, n_boots, ["x"], ["session"], plot=False
+        )
+    return dict(
+        n=len(df_boot),
+        n_sessions=df_boot.session.nunique(),
+        n_mice=df_boot.session.str.split("_").str[0].nunique(),
+        median=float(np.median(df_boot.x)),
+        ci=np.percentile(dist[:, 0], [2.5, 97.5]),
+        p={
+            v: float(common_utils.calculate_pval_from_bootstrap(dist[:, 0], value=v))
+            for v in null_values
+        },
+    )
+
+
+def speed_curve_cells(sftf_root):
+    """Cells of the population speed curves (panels M-P), per variable.
+
+    Same selection as `build_speed_curves`: SF/TF-tuned cells (`sftf_tuned`) with a significant effect of
+    TF (SF) at the kept SF (TF) / direction pairs (`_freq_modulation_p` on the trial responses,
+    p < `P_FREQ_TUNED`). Depth-selective cells are the ones plotted.
+
+    Returns:
+        pd.DataFrame: `variable` ("tf" or "sf"), `session`, `roi`, `depth_tuned` and `p` (frequency
+            modulation p-value), one row per selected cell and variable.
+    """
+    cells = pd.read_csv(sftf_root / "grating_tuning_cells.csv")
+    pop_cells = cells[cells.sftf_tuned]
+    rows = []
+    for session, sc in pop_cells.groupby("session"):
+        t_sess = pd.read_pickle(sftf_root / "cache" / f"{session}_sftf_trials.pickle")
+        for var in ("tf", "sf"):
+            rows.append(
+                pd.DataFrame(
+                    dict(
+                        variable=var,
+                        session=session,
+                        roi=sc.roi.to_numpy(),
+                        depth_tuned=sc.depth_tuned.to_numpy(),
+                        p=_freq_modulation_p(
+                            t_sess["trials"], t_sess["dff"][:, sc.roi.to_numpy()], var
+                        ),
+                    )
+                )
+            )
+    out = pd.concat(rows, ignore_index=True)
+    return out[out.p < P_FREQ_TUNED].reset_index(drop=True)
+
+
 def load_depth_example(cache_dir, session, roi, rebuild=False):
     """Closed-loop depth trials and neurons_df row of one example ROI (panel B), cached in `cache_dir`.
 

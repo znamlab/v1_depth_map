@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp10_gratings
   figure: supp
-  generated_at: '2026-10-29T10:33:25'
+  generated_at: '2026-11-12T17:30:06'
   source: notebook
 metrics:
   n_neurons:
@@ -28,8 +28,8 @@ metrics:
     raw: 0.001582344287087
     formatted: '0.0016'
     latex_macro: statRevGratRsofThreshold
-    description: "RS/OF held-out R\xB2 threshold of figure 2 (95th percentile of the\
-      \ empirical null, iscell ROIs of all sessions)"
+    description: RS/OF held-out R² threshold of figure 2 (95th percentile of the empirical
+      null, iscell ROIs of all sessions)
   n_rsof:
     raw: 495
     formatted: '495'
@@ -50,6 +50,11 @@ metrics:
     formatted: 48\%
     latex_macro: statRevGratPctSftf
     description: Percentage SF/TF tuned
+  n_sftf_other:
+    raw: 1052
+    formatted: 1,052
+    latex_macro: statRevGratOtherSftfNeurons
+    description: SF/TF-tuned neurons that are not depth selective (Fig S10E)
   n_both:
     raw: 390
     formatted: '390'
@@ -262,8 +267,163 @@ metrics:
     formatted: '2'
     latex_macro: statRevGratSpeedCurvesSfMice
     description: Mice, population SF curves per running-speed bin (N, P)
-  n_sftf_other:
-    raw: 1052
-    formatted: 1,052
-    latex_macro: statRevGratOtherSftfNeurons
-    description: SF/TF-tuned neurons that are not depth selective (Fig S10E)
+  sf_shift_other_median:
+    raw: -0.016338236190125206
+    formatted: '-0.02'
+    latex_macro: statRevGratSfShiftOtherMedian
+    description: Median SF preference shift with running speed (gain_sf model slope,
+      octave per octave), other (not depth-selective) neurons of the SF speed curves
+  sf_shift_other_ci_low:
+    raw: -0.03535350168148298
+    formatted: '-0.04'
+    latex_macro: statRevGratSfShiftOtherCiLow
+    description: 95% CI low, hierarchical bootstrap (sessions), SF preference shift
+      with running speed (gain_sf model slope, octave per octave), other (not depth-selective)
+      neurons of the SF speed curves
+  sf_shift_other_ci_high:
+    raw: 0.0038495423725570664
+    formatted: '0.00'
+    latex_macro: statRevGratSfShiftOtherCiHigh
+    description: 95% CI high, hierarchical bootstrap (sessions), SF preference shift
+      with running speed (gain_sf model slope, octave per octave), other (not depth-selective)
+      neurons of the SF speed curves
+  sf_shift_other_p0:
+    raw: 0.1244
+    formatted: $p = 0.124$
+    latex_macro: statRevGratSfShiftOtherPZero
+    description: Hierarchical bootstrap (sessions) p vs 0, SF preference shift with
+      running speed (gain_sf model slope, octave per octave), other (not depth-selective)
+      neurons of the SF speed curves
+  sf_shift_other_p1:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statRevGratSfShiftOtherPOne
+    description: Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running
+      speed), SF preference shift with running speed (gain_sf model slope, octave
+      per octave), other (not depth-selective) neurons of the SF speed curves
+  sf_shift_other_n:
+    raw: 918
+    formatted: '918'
+    latex_macro: statRevGratSfShiftOtherN
+    description: Neurons, SF preference shift with running speed (gain_sf model slope,
+      octave per octave), other (not depth-selective) neurons of the SF speed curves
+  sf_shift_depth_median:
+    raw: 0.0004167616647319094
+    formatted: '0.00'
+    latex_macro: statRevGratSfShiftDepthMedian
+    description: Median SF preference shift with running speed (gain_sf model slope,
+      octave per octave), depth-selective neurons of the SF speed curves
+  sf_shift_depth_ci_low:
+    raw: -0.025369193804987273
+    formatted: '-0.03'
+    latex_macro: statRevGratSfShiftDepthCiLow
+    description: 95% CI low, hierarchical bootstrap (sessions), SF preference shift
+      with running speed (gain_sf model slope, octave per octave), depth-selective
+      neurons of the SF speed curves
+  sf_shift_depth_ci_high:
+    raw: 0.041613010167198386
+    formatted: '0.04'
+    latex_macro: statRevGratSfShiftDepthCiHigh
+    description: 95% CI high, hierarchical bootstrap (sessions), SF preference shift
+      with running speed (gain_sf model slope, octave per octave), depth-selective
+      neurons of the SF speed curves
+  sf_shift_depth_p0:
+    raw: 0.9753
+    formatted: $p = 0.975$
+    latex_macro: statRevGratSfShiftDepthPZero
+    description: Hierarchical bootstrap (sessions) p vs 0, SF preference shift with
+      running speed (gain_sf model slope, octave per octave), depth-selective neurons
+      of the SF speed curves
+  sf_shift_depth_p1:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statRevGratSfShiftDepthPOne
+    description: Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running
+      speed), SF preference shift with running speed (gain_sf model slope, octave
+      per octave), depth-selective neurons of the SF speed curves
+  sf_shift_depth_n:
+    raw: 342
+    formatted: '342'
+    latex_macro: statRevGratSfShiftDepthN
+    description: Neurons, SF preference shift with running speed (gain_sf model slope,
+      octave per octave), depth-selective neurons of the SF speed curves
+  tf_shift_other_median:
+    raw: 0.08468240946606193
+    formatted: '0.08'
+    latex_macro: statRevGratTfShiftOtherMedian
+    description: Median TF preference shift with running speed (gain_tf model slope,
+      octave per octave), other (not depth-selective) neurons of the TF speed curves
+  tf_shift_other_ci_low:
+    raw: 0.03042898484279813
+    formatted: '0.03'
+    latex_macro: statRevGratTfShiftOtherCiLow
+    description: 95% CI low, hierarchical bootstrap (sessions), TF preference shift
+      with running speed (gain_tf model slope, octave per octave), other (not depth-selective)
+      neurons of the TF speed curves
+  tf_shift_other_ci_high:
+    raw: 0.13327092809973537
+    formatted: '0.13'
+    latex_macro: statRevGratTfShiftOtherCiHigh
+    description: 95% CI high, hierarchical bootstrap (sessions), TF preference shift
+      with running speed (gain_tf model slope, octave per octave), other (not depth-selective)
+      neurons of the TF speed curves
+  tf_shift_other_p0:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statRevGratTfShiftOtherPZero
+    description: Hierarchical bootstrap (sessions) p vs 0, TF preference shift with
+      running speed (gain_tf model slope, octave per octave), other (not depth-selective)
+      neurons of the TF speed curves
+  tf_shift_other_p1:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statRevGratTfShiftOtherPOne
+    description: Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running
+      speed), TF preference shift with running speed (gain_tf model slope, octave
+      per octave), other (not depth-selective) neurons of the TF speed curves
+  tf_shift_other_n:
+    raw: 623
+    formatted: '623'
+    latex_macro: statRevGratTfShiftOtherN
+    description: Neurons, TF preference shift with running speed (gain_tf model slope,
+      octave per octave), other (not depth-selective) neurons of the TF speed curves
+  tf_shift_depth_median:
+    raw: 0.13138956350946196
+    formatted: '0.13'
+    latex_macro: statRevGratTfShiftDepthMedian
+    description: Median TF preference shift with running speed (gain_tf model slope,
+      octave per octave), depth-selective neurons of the TF speed curves
+  tf_shift_depth_ci_low:
+    raw: 0.05869926311289261
+    formatted: '0.06'
+    latex_macro: statRevGratTfShiftDepthCiLow
+    description: 95% CI low, hierarchical bootstrap (sessions), TF preference shift
+      with running speed (gain_tf model slope, octave per octave), depth-selective
+      neurons of the TF speed curves
+  tf_shift_depth_ci_high:
+    raw: 0.2036583801344248
+    formatted: '0.20'
+    latex_macro: statRevGratTfShiftDepthCiHigh
+    description: 95% CI high, hierarchical bootstrap (sessions), TF preference shift
+      with running speed (gain_tf model slope, octave per octave), depth-selective
+      neurons of the TF speed curves
+  tf_shift_depth_p0:
+    raw: 0.001
+    formatted: $p = 0.001$
+    latex_macro: statRevGratTfShiftDepthPZero
+    description: Hierarchical bootstrap (sessions) p vs 0, TF preference shift with
+      running speed (gain_tf model slope, octave per octave), depth-selective neurons
+      of the TF speed curves
+  tf_shift_depth_p1:
+    raw: 0.0
+    formatted: $p < 0.0001$
+    latex_macro: statRevGratTfShiftDepthPOne
+    description: Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running
+      speed), TF preference shift with running speed (gain_tf model slope, octave
+      per octave), depth-selective neurons of the TF speed curves
+  tf_shift_depth_n:
+    raw: 218
+    formatted: '218'
+    latex_macro: statRevGratTfShiftDepthN
+    description: Neurons, TF preference shift with running speed (gain_tf model slope,
+      octave per octave), depth-selective neurons of the TF speed curves
