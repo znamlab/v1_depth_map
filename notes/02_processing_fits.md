@@ -123,11 +123,20 @@ The onset-detection method is always explicit, except bare `_treadmill` which de
 > Enforced by [`revisions/migrate_treadmill_columns.py --check`](../v1_depth_map/revisions/migrate_treadmill_columns.py).
 > All four sessions pass this check.
 
-Depth-tuned neuron yields (`is_depth_neuron_treadmill`):
-- `PZAG16.3b_S20250401`: 185
-- `PZAG16.3c_S20250401`: 227
-- `PZAG17.3a_S20250402`: 152
-- `PZAH17.1e_S20250403`: 200
+Depth-tuned neuron yields (`is_depth_neuron_treadmill`, old seed → fixed seed; `_treadmill_model` in brackets):
+- `PZAG16.3b_S20250401`: 185 → 286 (248 → 289)
+- `PZAG16.3c_S20250401`: 227 → 335 (333 → 340)
+- `PZAG17.3a_S20250402`: 152 → 322 (288 → 330)
+- `PZAH17.1e_S20250403`: 200 → 202 (170 → 214)
+
+> [!NOTE]
+> 2026-11-14: the treadmill depth fits (`_treadmill`, `_treadmill_plateau`, `_treadmill_model`) in
+> `neurons_df.pickle` are the fixed-seed refit (cottage_analysis f6d95de: NaN-aware `best_depth`,
+> multi-start `fit_preferred_depth`; NEMO job 63283704, `analysis/treadmill_depth_refit/`), merged with
+> [merge_treadmill_depth_refit.py](../v1_depth_map/precompute_data/merge_treadmill_depth_refit.py) on
+> BlackPasspo and on NEMO. The old seed (first NaN depth) left 48–79% of plateau fits flat. Only the
+> all-trials, `_crossval` and 5-fold test columns were merged: the `_running_treadmill*` /
+> `_notrunning_treadmill*` depth columns, where present, are still old-seed fits.
 
 ### RS/OF Fit Bounds (`param_range`)
 
@@ -158,6 +167,7 @@ under `/Volumes/BlackPasspo/v1_depth_map/processed/<project>/<mouse>/<session>/`
 | Pre-plateau depth fit `neurons_df` | `neurons_df.pickle.pre_plateau_depthfit_backup` | Replaced by plateau single frames |
 | Pre-migration `neurons_df` | `neurons_df.pickle.pre_treadmill_migration_backup` | Preserved before column migration |
 | Pre-tightened bounds `neurons_df` | `neurons_df.pickle.pre_g2d_treadmill_trial_average_plateau_paramrange_refit_20260828_backup` | Preserved before tightened bounds refit |
+| Pre-seed-fix treadmill depth fits `neurons_df` (4 motor sessions, BlackPasspo and NEMO) | `neurons_df.pickle.pre_depth_seed_fix_backup` | 2026-11-14, before merging the fixed-seed treadmill depth refit (§6); merge logs `analysis/treadmill_depth_refit/merge_log_*.json` |
 | Wide-range fit pickles (4 motor sessions) | `paramrange_backup_wide_range_20260828/` | Includes `param_range_backup.json` |
 | Pre-2026-08-20 size-control outputs | `stale_pre_20260820/` | 3 hey2 sessions |
 | Pre-stationary-fix decoder results (84 hey2 sessions) | `/Volumes/BlackPasspo/v1_depth_map/processed/backups/decoder_results_pre_still_fix_20261031/<mouse>/<session>/decoder_results.pickle` (absolute) | Old "Still" bin (~7 s of smoothed samples) and zero-placeholder `y_preds_all`; replaced 2026-10-31 by the methods definition (max raw RS over preceding 1 s < 5 cm/s, `find_stationary_samples`, cottage_analysis cb5e66e) with [regenerate_production_still.py](../v1_depth_map/precompute_data/regenerate_production_still.py): no refit, predictions rebuilt from the per-fold outputs, accuracy and confusion matrices unchanged; median closed-loop stationary n 1418 -> 2531, accuracy 0.135 -> 0.151 (`still_regeneration.csv` in the backup folder) |
