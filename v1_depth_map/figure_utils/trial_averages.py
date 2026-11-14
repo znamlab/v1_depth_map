@@ -41,6 +41,7 @@ PROJECTS = ["colasa_3d-vision_revisions"]
 SESSIONS_TO_EXCLUDE = {
     "PZAG22.1b_S20260220": "1000 more frames than triggers in the treadmill recording",
     "PZAG16.3b_S20250401": "not V1",
+    "PZAG22.1b_S20260303b": "not V1",
 }
 
 # Canonical running mask, matching fit_rs_of_tuning(trial_average=True) as run by

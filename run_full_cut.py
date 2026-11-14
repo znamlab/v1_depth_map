@@ -24,7 +24,11 @@ warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 # ── Session lists ─────────────────────────────────────────────────────────────
 PROJECTS = ["colasa_3d-vision_revisions"]
-SESSIONS_TO_EXCLUDE = {"PZAG22.1b_S20260220", "PZAG16.3b_S20250401"}  # sync bug, not V1
+SESSIONS_TO_EXCLUDE = {
+    "PZAG22.1b_S20260220",
+    "PZAG16.3b_S20250401",
+    "PZAG22.1b_S20260303b",
+}  # sync bug, not V1
 
 # ── Fixed decoder parameters (match run_grid_subsets.py) ──────────────────────
 FILTER_DATASETS = {"anatomical_only": 3, "ast_neuropil": False}

@@ -44,4 +44,5 @@ sessions = {
 # but are repeated here so a stale offline database cannot let them back in.
 EXCLUDED_SESSIONS = {
     "PZAG16.3b_S20250401": "not V1",
+    "PZAG22.1b_S20260303b": "not V1",
 }
