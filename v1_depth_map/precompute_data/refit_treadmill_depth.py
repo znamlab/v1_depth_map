@@ -60,14 +60,16 @@ def code_version(module):
         return "unknown"
 
 
-def main(session, variant_name, out_dir):
+def main(session, variant_name, out_dir, overwrite=False):
     var = {v["name"]: v for v in VARIANTS}[variant_name]
     suffix, mirror = var["suffix"], var.get("mirror_suffix")
     out_dir = Path(out_dir) / session
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / f"treadmill_depth_fit{suffix}.pickle"
-    if out.exists():
-        raise FileExistsError(f"{out} exists: not overwriting")
+    if out.exists() and not overwrite:
+        raise FileExistsError(
+            f"{out} exists: not overwriting (pass --overwrite to replace)"
+        )
 
     flm = flz.get_flexilims_session(project_id=PROJECT)
     neurons_ds = flz.get_datasets(
@@ -169,5 +171,8 @@ if __name__ == "__main__":
     parser.add_argument("session")
     parser.add_argument("variant", choices=[v["name"] for v in VARIANTS])
     parser.add_argument("--out-dir", required=True)
+    parser.add_argument(
+        "--overwrite", action="store_true", help="Overwrite existing output files"
+    )
     args = parser.parse_args()
-    main(args.session, args.variant, args.out_dir)
+    main(args.session, args.variant, args.out_dir, overwrite=args.overwrite)
