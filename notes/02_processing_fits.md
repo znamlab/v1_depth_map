@@ -42,6 +42,10 @@ flowchart TD
   production, 1/461 ROIs differs, poor fit), results in
   `analysis/treadmill_halves/results/`. `fig_reviewer_treadmill_halves.ipynb` rerun: 109 cells
   kept in both halves, median axial |Δθ| 6.1° (84% within 22.5°; shuffled 31.3°).
+- **Open (FrameIndex refit, §6):** adding `PZAG22.1a_S20260128` to Fig 3 raises the pooled
+  empirical-null threshold of the trial-average g2d fit (its k5 test R² has a wide negative tail),
+  so the 3 other sessions lose cells and the von Mises mixture of Fig 3M changes. Decide pooled vs
+  per-session threshold.
 
 ---
 
@@ -175,6 +179,42 @@ pickle is saved, mapping every pickle to the bounds of the run that wrote it. Th
 (`--use-slurm`) still writes no record. Before overwriting SMB copies, compare checksums: fit
 pickles on SMB and BlackPasspo were not always identical.
 
+**2026-11-15 FrameIndex refit of the PZAG22 sessions.** Until 2026-11-15, cottage_analysis
+`reviews` lacked the FrameIndex fix of `synchronisation.generate_vs_df` (`9f422c3`,
+cherry-picked as `9083052`): `find_monitor_frames` returns row indices of the frame log, which
+were merged onto `FrameIndex`. When `FrameIndex` does not start at 0, the frame-log signals
+(RS, motor speed, OF, depth) were attached early. Every PZAG22 recording starts 240–400
+monitor frames in (1.7–2.8 s); every other `colasa` and `hey2` recording with a `FrameIndex`
+column, including all paper RF sessions, is at 0 or 1 frame (7 ms, negligible). All sync-dependent fits of the 8
+PZAG22 sessions (`PZAG22.1a_S20260128` and the 7 `MOTOR_ONLY_V1_SESSIONS`;
+`PZAG22.1b_S20260303b` excluded) were redone on NEMO in the run directory
+`/nemo/lab/znamenskiyp/home/users/blota/frameindex_refit/` (`src/` snapshot, `JOBS.txt`, per-session
+`results/`):
+- RS/OF (`sphere`, `treadmill_frames`, trial-average `treadmill`, plateau, dF/F, 11 configurations):
+  [refit_rsof_batched.py](../v1_depth_map/precompute_data/refit_rsof_batched.py);
+  closed-loop depth (S20260128):
+  [refit_closedloop_depth.py](../v1_depth_map/precompute_data/refit_closedloop_depth.py);
+  treadmill depth: [refit_treadmill_depth.py](../v1_depth_map/precompute_data/refit_treadmill_depth.py)
+  (all trials, odd trials, 5-fold; `_running` / `_notrunning` not refit, keep old values).
+- Merged into `neurons_df.pickle` on NEMO with
+  [merge_frameindex_refit.py](../v1_depth_map/precompute_data/merge_frameindex_refit.py) (job
+  `64061038`, log `merge_log_cn082.json`), then copied to BlackPasspo. The
+  `_treadmill_trial_average_plateau` and `_treadmill_model` depth columns were **added**: they had
+  never been merged into these `neurons_df` before.
+- RFs refit with the fixed sync: closed loop of S20260128 (array `64061039`), spikes in
+  `neurons_df_spks.pickle`, dF/F in `neurons_df_dffs.pickle`; treadmill RFs with
+  [rf_fit_treadmill.py](../v1_depth_map/precompute_data/rf_fit_treadmill.py) in
+  `neurons_df_rf_only_treadmill{,_spks}.pickle` (previous files backed up in all 8 sessions, §7).
+  As of 2026-11-15, the `rf_*` columns inside S20260128 `neurons_df.pickle` were still the buggy
+  dF/F fit.
+- Effect: trial-average treadmill preferred RS/OF old vs new Spearman 0.5–0.7 over all ROIs; well-fit
+  cells' ellipse angle moves 1–5°. The 15° nasal RF shift reported for S20260128 was this bug: the fixed
+  closed-loop dF/F fit has median azimuth 67.5° (old `ccyp_l5_3d_vision` extraction 72.5°, buggy
+  27.5°), consistent with the intrinsic map; spike and dF/F centres agree.
+- Investigation notes (steps, run log, comparison tables, provenance CSV, one-off scripts):
+  `rf_center_check/` in the run directory; comparison tables also in
+  `/Volumes/BlackPasspo/agent_cache/rf_center_check/`.
+
 ---
 
 ## 7. Backups & Superseded Data
@@ -190,6 +230,8 @@ under `/Volumes/BlackPasspo/v1_depth_map/processed/<project>/<mouse>/<session>/`
 | Pre-migration `neurons_df` | `neurons_df.pickle.pre_treadmill_migration_backup` | Preserved before column migration |
 | Pre-tightened bounds `neurons_df` | `neurons_df.pickle.pre_g2d_treadmill_trial_average_plateau_paramrange_refit_20260828_backup` | Preserved before tightened bounds refit |
 | Pre-seed-fix treadmill depth fits `neurons_df` (4 motor sessions, BlackPasspo and NEMO) | `neurons_df.pickle.pre_depth_seed_fix_backup` | 2026-11-14, before merging the fixed-seed treadmill depth refit (§6); merge logs `analysis/treadmill_depth_refit/merge_log_*.json` |
+| Pre-FrameIndex-fix `neurons_df` (8 PZAG22 sessions) | `neurons_df.pickle.pre_frameindex_fix_backup` | 2026-11-15, before merging the FrameIndex refit (§6). On NEMO for all 8 sessions (merge log `frameindex_refit/merge_log_cn082.json`); on BlackPasspo only `PZAG22.1a_S20260317`, backed up before the merged NEMO files were copied over |
+| Pre-FrameIndex-fix treadmill RF fits (8 PZAG22 sessions) | `neurons_df_rf_only_treadmill.pickle.pre_frameindex_fix_backup` | 2026-11-15, before the treadmill RF refit with the fixed sync (§6); on BlackPasspo for all 8 sessions |
 | Wide-range fit pickles (4 motor sessions) | `paramrange_backup_wide_range_20260828/` | Includes `param_range_backup.json` |
 | Wide-range trial-average plateau pickles, 3 sessions from 2025 | `paramrange_refit_backup_20261116/` | 2026-11-16, before the `TREADMILL_PARAM_RANGE` refit (§6); `neurons_df.pickle.pre_paramrange_refit` inside; `PZAG16.3c` Aug 22 pickles recovered from SMB in `from_smb_pre_refit/` |
 | Pre-2026-08-20 size-control outputs | `stale_pre_20260820/` | 3 hey2 sessions |
