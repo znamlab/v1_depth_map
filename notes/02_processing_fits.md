@@ -103,8 +103,9 @@ The four **motor** sessions (`PZAG16.3b_S20250401`, `PZAG16.3c_S20250401`, `PZAG
 > `PZAG16.3b_S20250401` was **not in V1** (found 2026-11-14). It is flagged on flexilims
 > (`exclude_reason = "not V1"`) and listed in `revisions/revision_sessions.EXCLUDED_SESSIONS`;
 > `load_treadmill_population_neurons_df`, the trial-average/decoder session lists and the methods
-> dataset table skip it. Its fits stay on disk but no treadmill analysis may use it: the treadmill
-> population is 3 sessions, 3 mice.
+> dataset table skip it. Its fits stay on disk but no treadmill analysis may use it. With
+> `PZAG22.1a_S20260128` added as a `motor` session (2026-11-15, after the FrameIndex refit, §6),
+> the treadmill population of Fig 3 is 4 sessions, 4 mice.
 
 ### Project: `hey2_3d-vision_foodres_20220101` (size control)
 

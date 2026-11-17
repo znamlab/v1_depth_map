@@ -424,6 +424,8 @@ def load_treadmill_population_neurons_df(
     percentile=95,
     load_simulated=False,
     load_simulated_trial_average=False,
+    include_treadmill_only=False,
+    include_motor_only=None,
 ):
     """Load and filter the population `neurons_df` for treadmill-protocol sessions.
 
@@ -462,12 +464,18 @@ def load_treadmill_population_neurons_df(
             `simul_df_treadmill` with the `TA_SIM_SUFFIX` suffix, alongside derived
             ellipse geometry, so the two fit families sit side by side on the same row.
             Requires `load_simulated`. Defaults to False.
+        include_treadmill_only (bool, optional): Whether to also load the motor-only/
+            treadmill-only sessions (which lack closed-loop depth recordings).
+            Defaults to False.
+        include_motor_only (bool, optional): Alias for `include_treadmill_only`.
 
     Returns:
         tuple: (neurons_df, simul_df_treadmill, simul_df_spheres, valid_sessions,
             treadmill_sessions). `simul_df_treadmill`/`simul_df_spheres` are None if
             `load_simulated` is False.
     """
+    if include_motor_only is not None:
+        include_treadmill_only = include_motor_only
     from cottage_analysis.io_module import suite2p as s2p_io
     from cottage_analysis.analysis import fit_gaussian_blob as fit_gb
 
@@ -537,6 +545,7 @@ def load_treadmill_population_neurons_df(
         valid_sessions.append(session_name)
         neurons_df["session"] = session_name
         neurons_df["roi_uid"] = session_name + "_" + neurons_df.roi.astype(str)
+        neurons_df["has_closed_loop"] = True
         all_dfs.append(neurons_df)
         if load_simulated:
             for which in ["treadmill", "spheres"]:
@@ -569,6 +578,41 @@ def load_treadmill_population_neurons_df(
                     "Trial-average simulated fits not found for session "
                     f"{session_name}: run precompute_data/fit_revision_simulation.py"
                 )
+
+    if include_treadmill_only:
+        from v1_depth_map.revisions.revision_sessions import MOTOR_ONLY_V1_SESSIONS
+
+        processed_root = Path(
+            flz.get_data_root("processed", flexilims_session=flm_sess_rev)
+        )
+        project_name = getattr(flm_sess_rev, "project", "colasa_3d-vision_revisions")
+        for session_name in MOTOR_ONLY_V1_SESSIONS:
+            if session_name in EXCLUDED_SESSIONS:
+                continue
+            mouse, sess = session_name.split("_")
+            sdir = processed_root / project_name / mouse / sess
+            ndf_path = sdir / "neurons_df.pickle"
+            s2p_path = sdir / "suite2p_rois_annotated_0"
+            if not ndf_path.exists() or not s2p_path.exists():
+                print(f"Missing data for motor-only session {session_name}")
+                continue
+            df = pd.read_pickle(ndf_path)
+            df["is_cell"] = s2p_io.load_is_cell(s2p_path)
+            df["session"] = session_name
+            df["roi_uid"] = session_name + "_" + df.roi.astype(str)
+            df["has_closed_loop"] = False
+            df["is_depth_neuron"] = False
+            df["preferred_depth_closedloop"] = np.nan
+            df["preferred_depth_closedloop_crossval"] = np.nan
+            common_utils.add_one_sided_spearman_significance(
+                df,
+                rval_col="depth_tuning_test_spearmanr_rval_closedloop_treadmill",
+                pval_col="depth_tuning_test_spearmanr_pval_closedloop_treadmill",
+                out_col="is_depth_neuron_treadmill",
+            )
+            valid_sessions.append(session_name)
+            treadmill_sessions[session_name] = None
+            all_dfs.append(df)
     print(
         f"{len(valid_sessions)}/{len(treadmill_sessions)} valid sessions with treadmill depth data"
     )

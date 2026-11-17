@@ -141,6 +141,10 @@ def _stubs(name):
             n_mice=4,
             k_vm=3,
             components=r"$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)",
+            rs_range_gi={"below": 38, "within": 210, "above": 37},
+            ori_counts={"0": 67, "45": 103, "90": 39, "-45": 5},
+            ELONGATION_CUTOFF=1.4,
+            include_treadmill_only=False,
         )
     if name == "figsupp9_v1_depth_map":
         from scipy.stats import spearmanr

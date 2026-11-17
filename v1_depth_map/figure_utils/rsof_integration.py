@@ -1010,14 +1010,16 @@ def plot_g2d_fit_schematic(
             "theta_deg" (major axis, in [0, 180)) and "k_iso" (the Mahalanobis radius the
             ellipse is drawn at).
     """
-    fit_kwargs = dict(
-        model_label="Gaussian fit",
-        label_r2=False,
-        cbar_width=None,
-        xlabel="Running speed",
-        ylabel="Optic flow",
+    fit_kwargs = {
+        **dict(
+            model_label="Gaussian fit",
+            label_r2=False,
+            cbar_width=None,
+            xlabel="Running speed",
+            ylabel="Optic flow",
+        ),
         **fit_kwargs,
-    )
+    }
     rsof_plots.plot_RS_OF_fit(
         neurons_df=neurons_df,
         roi=roi,

@@ -37,6 +37,7 @@ sessions = {
     "PZAH17.1e_S20250306": "spheretube_3",
     "PZAH17.1e_S20250305": "spheretube_2",
     "PZAH17.1e_S20250304": "spheretube_1",
+    "PZAG22.1a_S20260128": "motor",
 }
 
 # Sessions that must not enter any V1 analysis, with the reason. They are also flagged on
@@ -46,3 +47,14 @@ EXCLUDED_SESSIONS = {
     "PZAG16.3b_S20250401": "not V1",
     "PZAG22.1b_S20260303b": "not V1",
 }
+
+# Treadmill-only (motor-only) V1 sessions from revision experiments without closed-loop depth
+MOTOR_ONLY_V1_SESSIONS = [
+    "PZAG22.1a_S20260317",
+    "PZAG22.1b_S20260303",
+    "PZAG22.1b_S20260306b",
+    "PZAG22.1b_S20260319",
+    "PZAG22.1d_S20260312",
+    "PZAG22.1f_S20260326",
+    "PZAG22.1f_S20260331",
+]

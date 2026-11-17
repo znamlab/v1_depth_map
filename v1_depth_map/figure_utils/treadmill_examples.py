@@ -259,9 +259,9 @@ def break_axis_at_range(ax, spine, levels, values, bounds):
 
 def bound_tick_labels(levels, bounds, fmt):
     """Tick labels [lower bound, levels..., upper bound] for the scatter axes: the fit
-    bound ticks end the below / above range bins, labelled "<" and ">" without a value
-    (the bins hold everything beyond the tested range, not just the bound)."""
-    return ["<"] + [fmt(v) for v in levels] + [">"]
+    bound ticks end the below / above range bins, labelled "<" / ">" the lowest / highest
+    tested level (the bins hold everything beyond the tested range, not just the bound)."""
+    return [f"<{fmt(levels[0])}"] + [fmt(v) for v in levels] + [f">{fmt(levels[-1])}"]
 
 
 def plot_marginal(
@@ -561,7 +561,9 @@ def plot_of_by_rs(add_axes_cm, x, y, w, h, ex, color="k", fontsize_dict=FONTSIZE
         )
         a.minorticks_off()
     axes[n_bins // 2].set_ylabel("ΔF/F", fontsize=fontsize_dict["label"], labelpad=1)
-    axes[-1].set_xlabel("Optic flow (°/s)", fontsize=fontsize_dict["label"], labelpad=1)
+    axes[-1].set_xlabel(
+        "Optic flow speed (°/s)", fontsize=fontsize_dict["label"], labelpad=1
+    )
     return axes
 
 
@@ -653,7 +655,7 @@ def plot_treadmill_examples_block(
         return fig.text((x0 + x) / fig_w, 1 - (y0 + y) / fig_h, s, **kw)
 
     cmap = plt.get_cmap(CMAP)
-    depth_cl = scatter_df["pref_depth_cl"]
+    depth_cl = scatter_df["pref_depth_cl"].dropna()
     norm = LogNorm(depth_cl.min(), depth_cl.max())
     y_top = L["top"]  # top of the axes
     scat_y = y_top + g["marg_h"]
@@ -661,15 +663,30 @@ def plot_treadmill_examples_block(
     # --- G: scatter, equal length per log unit on both axes
     ax = add_axes_cm(L["left"], scat_y, g["sc_w"], g["scat_h"])
     d = scatter_df.iloc[np.random.default_rng(0).permutation(len(scatter_df))]
+    d_na = d[d["pref_depth_cl"].isna()]
+    d_cl = d[d["pref_depth_cl"].notna()]
+    if len(d_na) > 0:
+        ax.scatter(
+            d_na["pref_rs"],
+            d_na["pref_of"],
+            color="0.6",
+            s=8,
+            alpha=0.6,
+            linewidths=0,
+            zorder=1,
+            rasterized=True,
+            gid=SCATTER_GID,
+        )
     sc = ax.scatter(
-        d["pref_rs"],
-        d["pref_of"],
-        c=d["pref_depth_cl"],
+        d_cl["pref_rs"],
+        d_cl["pref_of"],
+        c=d_cl["pref_depth_cl"],
         cmap=cmap,
         norm=norm,
         s=8,
         alpha=0.6,
         linewidths=0,
+        zorder=3,
         rasterized=True,
         gid=SCATTER_GID,  # lets the notebook find it to save a vector version
     )
