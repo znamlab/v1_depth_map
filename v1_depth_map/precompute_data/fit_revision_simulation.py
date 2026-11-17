@@ -183,9 +183,10 @@ def seed_popt_list(neurons_df):
 def write_provenance(session_dir, cfg, n_seed, n_rois):
     """Record what produced the parquet - the fit records only `min_sigma`.
 
-    Deliberately NOT `param_range_current.json`: that filename belongs to
-    `fit_revision_treadmill.py`'s real fits and is rewritten per run, so sharing it would
-    destroy the real fits' provenance.
+    Deliberately NOT a `param_range_*.json`: those filenames belong to
+    `fit_revision_treadmill.py`'s real fits (`param_range_<target>_<method>_<use_col>.json`,
+    formerly `param_range_current.json`), so sharing one would destroy the real fits'
+    provenance.
     """
     record = {
         "script": Path(__file__).name,

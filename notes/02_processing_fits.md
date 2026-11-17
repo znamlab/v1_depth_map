@@ -37,6 +37,12 @@ flowchart TD
   - [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb): ✅ Re-executed with `_treadmill_trial_average_plateau` fits (`fig2.svg` and `fig2.pdf` generated).
   - [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb): ✅ Updated to use plateau simulation data (`fig_supp_simulation_control.svg` generated).
 - `presentations/` notebooks remain frozen reference artifacts reading historical column suffixes.
+- **Open after the 2026-11-16 param_range refit (§6):**
+  - `fit_treadmill_halves` for `PZAG22.1a_S20260128` needs NEMO (`R154043_SpheresTubeMotor`
+    recordings live under `ccyp_l5_3d_vision`); until then
+    `treadmill_controls/fig_reviewer_treadmill_halves.ipynb` fails with `KeyError: 'half1'`.
+  - Not re-run on the new fits: `revisions/running_tuning/plot_running_tuning.py` and
+    `revisions/treadmill.ipynb`.
 
 ---
 
@@ -153,6 +159,23 @@ are enforced for the trial-average `treadmill` target:
 
 The free-running sphere protocol and per-frame treadmill fits retain the standard wide bounds.
 
+**2026-11-16 refit of the three 2025 sessions.** `PZAG16.3c_S20250401`, `PZAG17.3a_S20250402` and
+`PZAH17.1e_S20250403` still had `_treadmill_trial_average_plateau` fits on the wide default bounds
+(RS 0.5-500 cm/s, OF 0.03-3000 deg/s; e.g. `PZAG17.3a` ROI 249 pinned at 3000 deg/s), because the
+Aug 28 refit predated `TREADMILL_PARAM_RANGE` (`ffaa88f`). All 11 configs were refit with
+`fit_revision_treadmill.py --only treadmill --method plateau --use-col dffs --redo` and merged
+with `--conflicts overwrite`; non-target columns untouched, median g2d `test_rsq` unchanged
+(within 0.001), ROIs pinned on a bound now 45-60% (as in `PZAG22.1*`). Fig 3, Fig S7 and the
+simulations were rerun on the new fits. The figure looked fine before only because
+`treadmill_examples.py` clips scatter points to the axis limits.
+
+**Provenance files.** Each run now writes `param_range_<target>_<method>_<use_col>.json` after a
+pickle is saved, mapping every pickle to the bounds of the run that wrote it. The older
+`param_range_current.json` was overwritten by every run whatever the family (in `PZAG17.3a` /
+`PZAH17.1e` it described the `_spks` pickles), so ignore any copy still on disk. The slurm path
+(`--use-slurm`) still writes no record. Before overwriting SMB copies, compare checksums: fit
+pickles on SMB and BlackPasspo were not always identical.
+
 ---
 
 ## 7. Backups & Superseded Data
@@ -169,6 +192,7 @@ under `/Volumes/BlackPasspo/v1_depth_map/processed/<project>/<mouse>/<session>/`
 | Pre-tightened bounds `neurons_df` | `neurons_df.pickle.pre_g2d_treadmill_trial_average_plateau_paramrange_refit_20260828_backup` | Preserved before tightened bounds refit |
 | Pre-seed-fix treadmill depth fits `neurons_df` (4 motor sessions, BlackPasspo and NEMO) | `neurons_df.pickle.pre_depth_seed_fix_backup` | 2026-11-14, before merging the fixed-seed treadmill depth refit (§6); merge logs `analysis/treadmill_depth_refit/merge_log_*.json` |
 | Wide-range fit pickles (4 motor sessions) | `paramrange_backup_wide_range_20260828/` | Includes `param_range_backup.json` |
+| Wide-range trial-average plateau pickles, 3 sessions from 2025 | `paramrange_refit_backup_20261116/` | 2026-11-16, before the `TREADMILL_PARAM_RANGE` refit (§6); `neurons_df.pickle.pre_paramrange_refit` inside; `PZAG16.3c` Aug 22 pickles recovered from SMB in `from_smb_pre_refit/` |
 | Pre-2026-08-20 size-control outputs | `stale_pre_20260820/` | 3 hey2 sessions |
 | Pre-stationary-fix decoder results (84 hey2 sessions) | `/Volumes/BlackPasspo/v1_depth_map/processed/backups/decoder_results_pre_still_fix_20261031/<mouse>/<session>/decoder_results.pickle` (absolute) | Old "Still" bin (~7 s of smoothed samples) and zero-placeholder `y_preds_all`; replaced 2026-10-31 by the methods definition (max raw RS over preceding 1 s < 5 cm/s, `find_stationary_samples`, cottage_analysis cb5e66e) with [regenerate_production_still.py](../v1_depth_map/precompute_data/regenerate_production_still.py): no refit, predictions rebuilt from the per-fold outputs, accuracy and confusion matrices unchanged; median closed-loop stationary n 1418 -> 2531, accuracy 0.135 -> 0.151 (`still_regeneration.csv` in the backup folder) |
 | Pre-stationary-fix decoder results on NEMO (same 84 sessions) | `decoder_results.pickle.pre_still_fix_20261031_backup` | Regenerated on NEMO with `regenerate_production_still.sbatch` (run dir `ver_rev1/still_regen/`); identical stationary bins to the local run |

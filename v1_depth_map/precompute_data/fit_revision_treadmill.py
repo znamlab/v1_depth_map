@@ -113,11 +113,13 @@ what confirms the protocol-grid constants against the real data::
     python fit_revision_treadmill.py --only treadmill --method plateau --check-range
 
 Because `fit_rs_of_tuning` records `min_sigma` in its output but NOT `param_range`, and
-because the g2d refit overwrites `_treadmill_trial_average_plateau` in place, every real run
-also writes `param_range_current.json` into the session folder (invisible to
-`merge_fit_dataframes`' `*.pickle` glob). Without it there is no way to tell after the fact
-which bounds produced a given pickle, so back up the previous pickles alongside their own
-record before re-fitting.
+because the g2d refit overwrites `_treadmill_trial_average_plateau` in place, every pickle a
+run actually writes is recorded in `param_range_<target>_<method>_<use_col>.json` in the
+session folder (invisible to `merge_fit_dataframes`' `*.pickle` glob), keyed by filename.
+Without it there is no way to tell after the fact which bounds produced a given pickle, so
+back up the previous pickles alongside their own record before re-fitting. (The older
+single `param_range_current.json` was overwritten by every run regardless of family, so it
+is unreliable - see notes/02_processing_fits.md, section 6.)
 """
 
 import argparse
@@ -372,18 +374,50 @@ def param_range_record(target, method, cfg, use_col="dffs"):
     }
 
 
-def write_param_range_record(session_dir, target, method, cfg, use_col="dffs"):
-    """Write `param_range_current.json` next to the pickles this run produced.
+def param_range_record_path(session_dir, target, method, use_col="dffs"):
+    """Per-family provenance file: `param_range_<target>_<method>_<use_col>.json`.
+
+    One file per (target, method, use_col) family. The previous single
+    `param_range_current.json` was rewritten by *every* run, so e.g. a `--use-col spks`
+    run left a record describing the spike pickles beside dF/F pickles fit with other
+    bounds (found 2026-11-16, see notes/02_processing_fits.md, section 6). Legacy
+    `param_range_current.json` files are left in place but no longer written.
+    """
+    return Path(session_dir) / f"param_range_{target}_{method}_{use_col}.json"
+
+
+def write_param_range_record(
+    session_dir, target, method, cfg, fitted_files, use_col="dffs"
+):
+    """Record the bounds that produced `fitted_files`, merged into the family's record.
+
+    Called only AFTER pickles were actually written, and lists them, so a run whose
+    configs were all skipped (no `--redo`) can no longer claim bounds it never applied.
+    `files` accumulates across runs: each entry maps a pickle name to the record of the
+    run that last wrote it.
 
     `.json` is invisible to `merge_fit_dataframes`' `fit_rs_of_tuning_*.pickle` glob, so
     this cannot be mistaken for a fit result to merge.
     """
     import json
+    from datetime import datetime
 
-    path = Path(session_dir) / "param_range_current.json"
-    record = param_range_record(target, method, cfg, use_col)
-    path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
-    print(f"### wrote provenance record: {path}")
+    path = param_range_record_path(session_dir, target, method, use_col)
+    run = param_range_record(target, method, cfg, use_col)
+    run["written_at"] = datetime.now().isoformat(timespec="seconds")
+    files = {}
+    if path.exists():
+        try:
+            files = json.loads(path.read_text()).get("files", {})
+        except (ValueError, AttributeError):
+            files = {}
+    for fname in fitted_files:
+        files[fname] = run
+    record = dict(run, files=files)  # top level = most recent run
+    tmp = path.with_suffix(".json.partial")
+    tmp.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
+    tmp.replace(path)
+    print(f"### wrote provenance record ({len(fitted_files)} files): {path}")
     return path
 
 
@@ -563,9 +597,8 @@ def fit_session_target(
     if check_range_only:
         return []
 
-    write_param_range_record(neurons_ds.path_full.parent, target, method, cfg, use_col)
-
     durations = []
+    fitted_files = []
     for model, choose_trials, k_folds in configs:
         fname = fit_filename(target, method, model, choose_trials, k_folds, use_col)
         out_path = neurons_ds.path_full.with_name(fname)
@@ -597,6 +630,11 @@ def fit_session_target(
         tmp.replace(out_path)
         dt = time.time() - t0
         durations.append(dt)
+        fitted_files.append(fname)
+        # Update after every pickle so an interrupted run still records what it wrote.
+        write_param_range_record(
+            neurons_ds.path_full.parent, target, method, cfg, [fname], use_col
+        )
         print(f"=== done in {dt / 60:.1f} min -> {fname}")
     return durations
 
