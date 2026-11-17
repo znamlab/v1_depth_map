@@ -37,12 +37,11 @@ flowchart TD
   - [`figure_rsof_integration.ipynb`](../v1_depth_map/figures/figure_rsof_integration.ipynb): ✅ Re-executed with `_treadmill_trial_average_plateau` fits (`fig2.svg` and `fig2.pdf` generated).
   - [`figsupp_simulation_control.ipynb`](../v1_depth_map/figures/figsupp_simulation_control.ipynb): ✅ Updated to use plateau simulation data (`fig_supp_simulation_control.svg` generated).
 - `presentations/` notebooks remain frozen reference artifacts reading historical column suffixes.
-- **Open after the 2026-11-16 param_range refit (§6):**
-  - `fit_treadmill_halves` for `PZAG22.1a_S20260128` needs NEMO (`R154043_SpheresTubeMotor`
-    recordings live under `ccyp_l5_3d_vision`); until then
-    `treadmill_controls/fig_reviewer_treadmill_halves.ipynb` fails with `KeyError: 'half1'`.
-  - Not re-run on the new fits: `revisions/running_tuning/plot_running_tuning.py` and
-    `revisions/treadmill.ipynb`.
+- Treadmill halves control (Fig 3 K-M) now covers the 4 current sessions: `PZAG22.1a_S20260128`
+  fit on NEMO 2026-11-17 (array 64157708, cottage_analysis `23ef2ff`; `full` reproduces
+  production, 1/461 ROIs differs, poor fit), results in
+  `analysis/treadmill_halves/results/`. `fig_reviewer_treadmill_halves.ipynb` rerun: 109 cells
+  kept in both halves, median axial |Δθ| 6.1° (84% within 22.5°; shuffled 31.3°).
 
 ---
 

@@ -757,7 +757,7 @@ def generate_depth_pref_summary_figure(
       - Right (cols 2-3): 2 Closed-loop example cells (ROIs 644 and 518) with 1D RS tuning curves
         and RS/OF matrices.
     Bottom row (cols 0-3):
-      - 4 Treadmill depth-tuned example cells (ROIs 49, 249, 41, 361) with 1D RS tuning curves
+      - 4 Treadmill depth-tuned example cells (ROIs 49, 249, 41, 556) with 1D RS tuning curves
         and RS/OF matrices.
     """
     fig_width = 18.5 * CM
@@ -1069,7 +1069,7 @@ def generate_depth_pref_summary_figure(
         )
 
     # -------------------------------------------------------------------------
-    # Panel C: 4 Motorized Treadmill Examples (ROIs 49, 249, 41, 361)
+    # Panel C: 4 Motorized Treadmill Examples (ROIs 49, 249, 41, 556)
     # -------------------------------------------------------------------------
     _panel_header(
         fig,
@@ -1107,7 +1107,11 @@ def generate_depth_pref_summary_figure(
         ("PZAG17.3a_S20250402", 49, "PZAG17.3a"),
         ("PZAG17.3a_S20250402", 249, "PZAG17.3a"),
         ("PZAG16.3c_S20250401", 41, "PZAG16.3c"),
-        ("PZAG16.3b_S20250401", 361, "PZAG16.3b"),
+        (
+            "PZAG17.3a_S20250402",
+            556,
+            "PZAG17.3a",
+        ),  # replaced 16.3b ROI 361 (session excluded, not V1)
     ]
 
     speed_bins_tm = np.array([0, 5, 11, 22, 45, 90])
