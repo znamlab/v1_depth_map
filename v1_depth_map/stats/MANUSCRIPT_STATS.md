@@ -1,18 +1,18 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-11-12 12:48:54.*
+*Compiled from figure notebook outputs at 2026-11-18 13:50:40.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 213 values were written by a notebook run.
+> ✅ All 253 values were written by a notebook run.
 
 ---
 
 ## Figure 1: Virtual Depth Selectivity & Experience Independence
 
-Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-11-02T11:51:36)
+Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-11-18T13:22:47)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -34,7 +34,7 @@ Source notebook: `figure1_depth_selectivity.ipynb` (notebook, generated 2026-11-
 
 ## Figure 2: Visuomotor Integration Models & Open-Loop Replay
 
-Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-11-04T18:06:36)
+Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-11-18T13:39:41)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -54,18 +54,19 @@ Source notebook: `figure2_openloop.ipynb` (notebook, generated 2026-11-04T18:06:
 | `\statFigTwoDecoderFiveDepthSessions` | `7` | 7 | notebook | Sessions with 5 depths in the decoder comparison (Fig 2K) |
 | `\statFigTwoDecoderEightDepthSessions` | `27` | 27 | notebook | Sessions with 8 depths for confusion matrices (Fig 2L) |
 | `\statFigTwoDecoderMice` | `7` | 7 | notebook | Mice contributing to the closed vs open loop decoder comparison (Fig 2K) |
-| `\statFigTwoDecoderErrDiffMedian` | `0.35` | 0.3495463830189586 | notebook | Median across sessions of open minus closed loop decoding error, octaves (Fig 2K) |
-| `\statFigTwoDecoderErrDiffCI` | `0.14--0.50` | [0.1366436414438883, 0.4963389375001652] | notebook | Hierarchical bootstrap 95% CI of the median open minus closed loop decoding error, octaves |
-| `\statFigTwoDecoderErrDiffPval` | `$p = 0.0004$` | 0.0004 | notebook | Hierarchical bootstrap p-value (mice, sessions) of open minus closed loop decoding error |
-| `\statFigTwoDecoderErrClosedLowerN` | `30` | 30 | notebook | Sessions with lower decoding error in closed than open loop (Fig 2K) |
+| `\statFigTwoDecoderErrDiffMedian` | `0.31` | 0.31001527684661623 | notebook | Median across sessions of open minus closed loop decoding error, octaves (Fig 2K) |
+| `\statFigTwoDecoderErrDiffCI` | `0.13--0.47` | [0.13206657689961876, 0.46684498148041254] | notebook | Hierarchical bootstrap 95% CI of the median open minus closed loop decoding error, octaves |
+| `\statFigTwoDecoderErrDiffPval` | `$p = 0.0021$` | 0.0021 | notebook | Hierarchical bootstrap p-value (mice, sessions) of open minus closed loop decoding error |
+| `\statFigTwoDecoderErrClosedLowerN` | `29` | 29 | notebook | Sessions with lower decoding error in closed than open loop (Fig 2K) |
 
-Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-10-29T10:46:05)
+Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-11-18T13:42:35)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
 | `\statFigTwoModelSessions` | `84` | 84 | notebook | Sessions included in model comparison analysis (Fig 2E) |
 | `\statFigTwoModelNeurons` | `21,457` | 21457 | notebook | Depth-tuned neurons with at least one significant RS/OF model fit (Fig 2E) |
 | `\statFigTwoClosedLoopConjunctiveNeurons` | `18,049` | 18049 | notebook | Depth-tuned neurons with significant conjunctive model fit in closed loop (Methods L621) |
+| `\statFigTwoConjunctiveThreshold` | `0.0015` | 0.0015457551494470478 | notebook | Empirical null R² threshold for the 2D conjunctive model (Methods L638) |
 | `\statFigTwoPvalRunningSpeedVsOpticFlow` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Running speed vs Optic flow: median difference -0.058, 95% CI [-0.095, -0.028], 20,000 resamples (Fig 2E) |
 | `\statFigTwoPvalRunningSpeedVsRsOfRatio` | `$p = 0.0001$` | 0.0001 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Running speed vs RS/OF: median difference -0.071, 95% CI [-0.122, -0.039], 20,000 resamples (Fig 2E) |
 | `\statFigTwoPvalRunningSpeedVsAdditive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Running speed vs Additive: median difference -0.318, 95% CI [-0.368, -0.284], 20,000 resamples (Fig 2E) |
@@ -77,35 +78,42 @@ Source notebook: `figure2_rsof_integration.ipynb` (notebook, generated 2026-10-2
 | `\statFigTwoPvalRsOfRatioVsConjunctive` | `$p < 0.0001$` | 5e-05 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by RS/OF vs Conjunctive: median difference -0.292, 95% CI [-0.363, -0.239], 20,000 resamples (Fig 2E) |
 | `\statFigTwoPvalAdditiveVsConjunctive` | `$p = 0.206$` | 0.2057 | notebook | Hierarchical bootstrap on the proportion of neurons best fit by Additive vs Conjunctive: median difference -0.046, 95% CI [-0.120, 0.027], 20,000 resamples (Fig 2E) |
 | `\statFigTwoModelComparisonPval` | `$p < 0.0001$` | 5e-05 | notebook | Additive and Conjunctive models outperforming isolated speed and ratio models (Fig 2E): the largest of the 6 hierarchical-bootstrap p-values that claim rests on, floored at the 1/20,000 resolution limit |
-| `\statFigTwoConjunctiveThreshold` | `0.0016` | 0.001582344287087 | notebook | Empirical null R² threshold for the 2D conjunctive model (Methods L638) |
 
 ## Figure 3: Motorized Wheel & Visuomotor Gain Modulation
 
-Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-11T14:56:39)
+Source notebook: `figure3_depth_cells.ipynb` (notebook, generated 2026-11-18T10:50:38)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
-| `\statFigThreeMotorizedDepthNeurons` | `285` | 285 | notebook | Depth-tuned neurons compared between free locomotion and motorized wheel (Fig 3F) |
-| `\statFigThreeMotorizedDepthR` | `$r = 0.772$` | 0.7717072962114766 | notebook | Spearman correlation of preferred depth (free locomotion) vs RS/OF ratio (motorized wheel) (Fig 3F) |
+| `\statFigThreeMotorizedDepthNeurons` | `227` | 227 | notebook | Depth-tuned neurons compared between free locomotion and motorized wheel (Fig 3F) |
+| `\statFigThreeMotorizedDepthR` | `$r = 0.778$` | 0.7783244206774644 | notebook | Spearman correlation of preferred depth (free locomotion) vs RS/OF ratio (motorized wheel) (Fig 3F) |
 | `\statFigThreeMotorizedDepthPval` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap p-value over mice and sessions of the Fig 3F correlation |
-| `\statFigThreePolarNeurons` | `285` | 285 | notebook | Neurons with significant 2D-Gaussian fit on motorized wheel (Fig 3K) |
+| `\statFigThreePolarNeurons` | `227` | 227 | notebook | Neurons with significant 2D-Gaussian fit on motorized wheel (Fig 3K) |
 | `\statFigThreePolarSessions` | `4` | 4 | notebook | Sessions in motorized wheel elongation analysis (Fig 3K) |
 | `\statFigThreePolarMice` | `4` | 4 | notebook | Mice in motorized wheel elongation analysis (Fig 3K) |
-| `\statFigThreeElongationCutoffRatio` | `266/285` | 266/285 | notebook | Fraction of neurons with elongation ratio > 1.4 (Fig 3K) |
-| `\statFigThreeElongationCutoffPct` | `93\%` | 93.33333333333333 | notebook | Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig 3K) |
-| `\statFigThreeElongatedNeurons` | `266` | 266 | notebook | Neurons with elongated ellipses for orientation distribution (Fig 3M) |
+| `\statFigThreeElongationCutoffRatio` | `214/227` | 214/227 | notebook | Fraction of neurons with elongation ratio > 1.4 (Fig 3K) |
+| `\statFigThreeElongationCutoffPct` | `94\%` | 94.27312775330397 | notebook | Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig 3K) |
+| `\statFigThreeElongatedNeurons` | `214` | 214 | notebook | Neurons with elongated ellipses for orientation distribution (Fig 3M) |
 | `\statFigThreeVonMisesK` | `3` | 3 | notebook | Best axial von Mises mixture number of components (Fig 3M) |
-| `\statFigThreeVonMisesComponents` | `$3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%)` | $3^\circ$ (14\%), $43^\circ$ (76\%), $90^\circ$ (11\%) | notebook | Component centers and mixture weights for orientation distribution (Fig 3M) |
-| `\statFigThreePrefRSBelowRangeN` | `40/285` | 40 | notebook | Neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G) |
-| `\statFigThreePrefRSBelowRangePct` | `14\%` | 14.035087719298245 | notebook | Percentage of neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G) |
-| `\statFigThreePrefRSWithinRangeN` | `111/285` | 111 | notebook | Neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s), i.e. non-monotonic in running speed (Fig 3G) |
-| `\statFigThreePrefRSWithinRangePct` | `39\%` | 38.94736842105263 | notebook | Percentage of neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s), i.e. non-monotonic in running speed (Fig 3G) |
-| `\statFigThreePrefRSAboveRangeN` | `134/285` | 134 | notebook | Neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G) |
-| `\statFigThreePrefRSAboveRangePct` | `47\%` | 47.01754385964912 | notebook | Percentage of neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G) |
+| `\statFigThreeVonMisesComponents` | `$4^\circ$ (18\%), $43^\circ$ (70\%), $90^\circ$ (12\%)` | $4^\circ$ (18\%), $43^\circ$ (70\%), $90^\circ$ (12\%) | notebook | Component centers and mixture weights for orientation distribution (Fig 3M) |
+| `\statFigThreePrefRSBelowRangeN` | `39/227` | 39 | notebook | Neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSBelowRangePct` | `17\%` | 17.180616740088105 | notebook | Percentage of neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSWithinRangeN` | `88/227` | 88 | notebook | Neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s), i.e. non-monotonic in running speed (Fig 3G) |
+| `\statFigThreePrefRSWithinRangePct` | `39\%` | 38.76651982378855 | notebook | Percentage of neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s), i.e. non-monotonic in running speed (Fig 3G) |
+| `\statFigThreePrefRSAboveRangeN` | `100/227` | 100 | notebook | Neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G) |
+| `\statFigThreePrefRSAboveRangePct` | `44\%` | 44.052863436123346 | notebook | Percentage of neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G) |
+| `\statFigThreeOrientationZeroN` | `67/214` | 67 | notebook | Elongated neurons (elongation > 1.4) oriented around 0 deg ([-22.5, 22.5) deg) (Fig 3M) |
+| `\statFigThreeOrientationZeroPct` | `31\%` | 31.308411214953267 | notebook | Percentage of elongated neurons oriented around 0 deg ([-22.5, 22.5) deg) (Fig 3M) |
+| `\statFigThreeOrientationFortyFiveN` | `103/214` | 103 | notebook | Elongated neurons (elongation > 1.4) oriented around 45 deg ([22.5, 67.5) deg) (Fig 3M) |
+| `\statFigThreeOrientationFortyFivePct` | `48\%` | 48.13084112149533 | notebook | Percentage of elongated neurons oriented around 45 deg ([22.5, 67.5) deg) (Fig 3M) |
+| `\statFigThreeOrientationNinetyN` | `39/214` | 39 | notebook | Elongated neurons (elongation > 1.4) oriented around 90 deg ([67.5, 112.5) deg) (Fig 3M) |
+| `\statFigThreeOrientationNinetyPct` | `18\%` | 18.22429906542056 | notebook | Percentage of elongated neurons oriented around 90 deg ([67.5, 112.5) deg) (Fig 3M) |
+| `\statFigThreeOrientationMinusFortyFiveN` | `5/214` | 5 | notebook | Elongated neurons (elongation > 1.4) oriented around -45/135 deg ([112.5, 135) or [-45, -22.5) deg) (Fig 3M) |
+| `\statFigThreeOrientationMinusFortyFivePct` | `2\%` | 2.336448598130841 | notebook | Percentage of elongated neurons oriented around -45/135 deg ([112.5, 135) or [-45, -22.5) deg) (Fig 3M) |
 
 ## Figure 4: Three-Dimensional Receptive Fields
 
-Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-11-11T21:16:24)
+Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-11-18T13:50:17)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -121,7 +129,7 @@ Source notebook: `figure4_receptive_fields.ipynb` (notebook, generated 2026-11-1
 
 ## Supplementary Figures & Methods: Controls & Experimental Specs
 
-Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:33:25)
+Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-11-18T13:17:31)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -129,11 +137,12 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:3
 | `\statRevGratSessions` | `6` | 6 | notebook | Sessions with drifting gratings |
 | `\statRevGratMice` | `2` | 2 | notebook | Mice with drifting gratings |
 | `\statRevGratDepthNeurons` | `693` | 693 | notebook | Depth-selective neurons |
-| `\statRevGratRsofThreshold` | `0.0016` | 0.001582344287087 | notebook | RS/OF held-out R² threshold of figure 2 (95th percentile of the empirical null, iscell ROIs of all sessions) |
-| `\statRevGratRsofNeurons` | `495` | 495 | notebook | RS/OF-tuned neurons (figure 2 threshold) in the grating sessions |
+| `\statRevGratRsofThreshold` | `0.0015` | 0.0015457551494470478 | notebook | RS/OF held-out R² threshold of figure 2 (95th percentile of the empirical null, iscell ROIs of all sessions) |
+| `\statRevGratRsofNeurons` | `501` | 501 | notebook | RS/OF-tuned neurons (figure 2 threshold) in the grating sessions |
 | `\statRevGratPctDepth` | `23\%` | 23.007968127490038 | notebook | Percentage depth selective |
 | `\statRevGratSftfNeurons` | `1,442` | 1442 | notebook | SF/TF-tuned neurons, cross-validated |
 | `\statRevGratPctSftf` | `48\%` | 47.875166002656044 | notebook | Percentage SF/TF tuned |
+| `\statRevGratOtherSftfNeurons` | `1,052` | 1052 | notebook | SF/TF-tuned neurons that are not depth selective (Fig S10E) |
 | `\statRevGratBothN` | `390` | 390 | notebook | Depth-selective and SF/TF-tuned neurons |
 | `\statRevGratPctBoth` | `13\%` | 12.94820717131474 | notebook | Percentage depth selective and SF/TF tuned |
 | `\statRevGratBothExpectedN` | `345` | 345.1645308608199 | notebook | Depth selective and SF/TF tuned expected if independent, computed per session and summed |
@@ -152,13 +161,13 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:3
 | `\statRevGratSfDepthRho` | `0.36` | 0.35759638119038867 | notebook | Spearman rho, preferred SF vs preferred depth (I) |
 | `\statRevGratSfDepthP` | `$p = 0.0097$` | 0.0097 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred depth (I) |
 | `\statRevGratSfDepthPHolm` | `$p = 0.0291$` | 0.0291 | notebook | Holm-corrected p over the 5 pairs, preferred SF vs preferred depth (I) |
-| `\statRevGratSfOfN` | `330` | 330 | notebook | Neurons, preferred SF vs preferred optic flow (J) |
-| `\statRevGratSfOfRho` | `-0.41` | -0.41277760035347594 | notebook | Spearman rho, preferred SF vs preferred optic flow (J) |
-| `\statRevGratSfOfP` | `$p = 0.0005$` | 0.0005 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred optic flow (J) |
-| `\statRevGratSfOfPHolm` | `$p = 0.0025$` | 0.0025 | notebook | Holm-corrected p over the 5 pairs, preferred SF vs preferred optic flow (J) |
-| `\statRevGratSfRsN` | `330` | 330 | notebook | Neurons, preferred SF vs preferred running speed (not shown) |
-| `\statRevGratSfRsRho` | `-0.14` | -0.14444308662301544 | notebook | Spearman rho, preferred SF vs preferred running speed (not shown) |
-| `\statRevGratSfRsP` | `$p = 0.535$` | 0.5347 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred running speed (not shown) |
+| `\statRevGratSfOfN` | `333` | 333 | notebook | Neurons, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfOfRho` | `-0.41` | -0.4066807464295328 | notebook | Spearman rho, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfOfP` | `$p = 0.0012$` | 0.0012 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfOfPHolm` | `$p = 0.006$` | 0.005999999999999999 | notebook | Holm-corrected p over the 5 pairs, preferred SF vs preferred optic flow (J) |
+| `\statRevGratSfRsN` | `333` | 333 | notebook | Neurons, preferred SF vs preferred running speed (not shown) |
+| `\statRevGratSfRsRho` | `-0.13` | -0.1328735113133372 | notebook | Spearman rho, preferred SF vs preferred running speed (not shown) |
+| `\statRevGratSfRsP` | `$p = 0.581$` | 0.5807 | notebook | Hierarchical bootstrap (sessions) p, preferred SF vs preferred running speed (not shown) |
 | `\statRevGratSfRsPHolm` | `$p = 1$` | 1.0 | notebook | Holm-corrected p over the 5 pairs, preferred SF vs preferred running speed (not shown) |
 | `\statRevGratDsiMedianDepth` | `0.14` | 0.14493252901840448 | notebook | Median implied DSI, SF/TF-tuned depth-selective neurons (E) |
 | `\statRevGratDsiMedianOther` | `0.19` | 0.18526940986028534 | notebook | Median implied DSI, SF/TF-tuned other neurons (E) |
@@ -173,9 +182,32 @@ Source notebook: `figsupp10_gratings.ipynb` (notebook, generated 2026-10-29T10:3
 | `\statRevGratSpeedCurvesSfN` | `342` | 342 | notebook | Depth-selective neurons, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfSessions` | `6` | 6 | notebook | Sessions, population SF curves per running-speed bin (N, P) |
 | `\statRevGratSpeedCurvesSfMice` | `2` | 2 | notebook | Mice, population SF curves per running-speed bin (N, P) |
-| `\statRevGratOtherSftfNeurons` | `1,052` | 1052 | notebook | SF/TF-tuned neurons that are not depth selective (Fig S10E) |
+| `\statRevGratSfShiftOtherMedian` | `-0.02` | -0.016338236190125206 | notebook | Median SF preference shift with running speed (gain_sf model slope, octave per octave), other (not depth-selective) neurons of the SF speed curves |
+| `\statRevGratSfShiftOtherCiLow` | `-0.04` | -0.03535350168148298 | notebook | 95% CI low, hierarchical bootstrap (sessions), SF preference shift with running speed (gain_sf model slope, octave per octave), other (not depth-selective) neurons of the SF speed curves |
+| `\statRevGratSfShiftOtherCiHigh` | `0.00` | 0.0038495423725570664 | notebook | 95% CI high, hierarchical bootstrap (sessions), SF preference shift with running speed (gain_sf model slope, octave per octave), other (not depth-selective) neurons of the SF speed curves |
+| `\statRevGratSfShiftOtherPZero` | `$p = 0.124$` | 0.1244 | notebook | Hierarchical bootstrap (sessions) p vs 0, SF preference shift with running speed (gain_sf model slope, octave per octave), other (not depth-selective) neurons of the SF speed curves |
+| `\statRevGratSfShiftOtherPOne` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running speed), SF preference shift with running speed (gain_sf model slope, octave per octave), other (not depth-selective) neurons of the SF speed curves |
+| `\statRevGratSfShiftOtherN` | `918` | 918 | notebook | Neurons, SF preference shift with running speed (gain_sf model slope, octave per octave), other (not depth-selective) neurons of the SF speed curves |
+| `\statRevGratSfShiftDepthMedian` | `0.00` | 0.0004167616647319094 | notebook | Median SF preference shift with running speed (gain_sf model slope, octave per octave), depth-selective neurons of the SF speed curves |
+| `\statRevGratSfShiftDepthCiLow` | `-0.03` | -0.025369193804987273 | notebook | 95% CI low, hierarchical bootstrap (sessions), SF preference shift with running speed (gain_sf model slope, octave per octave), depth-selective neurons of the SF speed curves |
+| `\statRevGratSfShiftDepthCiHigh` | `0.04` | 0.041613010167198386 | notebook | 95% CI high, hierarchical bootstrap (sessions), SF preference shift with running speed (gain_sf model slope, octave per octave), depth-selective neurons of the SF speed curves |
+| `\statRevGratSfShiftDepthPZero` | `$p = 0.975$` | 0.9753 | notebook | Hierarchical bootstrap (sessions) p vs 0, SF preference shift with running speed (gain_sf model slope, octave per octave), depth-selective neurons of the SF speed curves |
+| `\statRevGratSfShiftDepthPOne` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running speed), SF preference shift with running speed (gain_sf model slope, octave per octave), depth-selective neurons of the SF speed curves |
+| `\statRevGratSfShiftDepthN` | `342` | 342 | notebook | Neurons, SF preference shift with running speed (gain_sf model slope, octave per octave), depth-selective neurons of the SF speed curves |
+| `\statRevGratTfShiftOtherMedian` | `0.08` | 0.08468240946606193 | notebook | Median TF preference shift with running speed (gain_tf model slope, octave per octave), other (not depth-selective) neurons of the TF speed curves |
+| `\statRevGratTfShiftOtherCiLow` | `0.03` | 0.03042898484279813 | notebook | 95% CI low, hierarchical bootstrap (sessions), TF preference shift with running speed (gain_tf model slope, octave per octave), other (not depth-selective) neurons of the TF speed curves |
+| `\statRevGratTfShiftOtherCiHigh` | `0.13` | 0.13327092809973537 | notebook | 95% CI high, hierarchical bootstrap (sessions), TF preference shift with running speed (gain_tf model slope, octave per octave), other (not depth-selective) neurons of the TF speed curves |
+| `\statRevGratTfShiftOtherPZero` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap (sessions) p vs 0, TF preference shift with running speed (gain_tf model slope, octave per octave), other (not depth-selective) neurons of the TF speed curves |
+| `\statRevGratTfShiftOtherPOne` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running speed), TF preference shift with running speed (gain_tf model slope, octave per octave), other (not depth-selective) neurons of the TF speed curves |
+| `\statRevGratTfShiftOtherN` | `623` | 623 | notebook | Neurons, TF preference shift with running speed (gain_tf model slope, octave per octave), other (not depth-selective) neurons of the TF speed curves |
+| `\statRevGratTfShiftDepthMedian` | `0.13` | 0.13138956350946196 | notebook | Median TF preference shift with running speed (gain_tf model slope, octave per octave), depth-selective neurons of the TF speed curves |
+| `\statRevGratTfShiftDepthCiLow` | `0.06` | 0.05869926311289261 | notebook | 95% CI low, hierarchical bootstrap (sessions), TF preference shift with running speed (gain_tf model slope, octave per octave), depth-selective neurons of the TF speed curves |
+| `\statRevGratTfShiftDepthCiHigh` | `0.20` | 0.2036583801344248 | notebook | 95% CI high, hierarchical bootstrap (sessions), TF preference shift with running speed (gain_tf model slope, octave per octave), depth-selective neurons of the TF speed curves |
+| `\statRevGratTfShiftDepthPZero` | `$p = 0.001$` | 0.001 | notebook | Hierarchical bootstrap (sessions) p vs 0, TF preference shift with running speed (gain_tf model slope, octave per octave), depth-selective neurons of the TF speed curves |
+| `\statRevGratTfShiftDepthPOne` | `$p < 0.0001$` | 0.0 | notebook | Hierarchical bootstrap (sessions) p vs 1 (shift proportional to running speed), TF preference shift with running speed (gain_tf model slope, octave per octave), depth-selective neurons of the TF speed curves |
+| `\statRevGratTfShiftDepthN` | `218` | 218 | notebook | Neurons, TF preference shift with running speed (gain_tf model slope, octave per octave), depth-selective neurons of the TF speed curves |
 
-Source notebook: `figsupp1_vis_stim_sync.ipynb` (notebook, generated 2026-10-29T10:38:22)
+Source notebook: `figsupp1_vis_stim_sync.ipynb` (notebook, generated 2026-11-18T10:06:56)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -183,14 +215,14 @@ Source notebook: `figsupp1_vis_stim_sync.ipynb` (notebook, generated 2026-10-29T
 | `\statSuppFrameRate` | `$127 \pm 2~\mathrm{Hz}$` | 127.03871492644178 | notebook | Average effective display refresh rate across sessions (2-colour photodiode cohort) |
 | `\statSuppFrameTargetPct` | `$91.5 \pm 0.9\%$` | 91.46000966969683 | notebook | Percentage of frames displayed at full nominal 144 Hz rate (2-colour photodiode cohort) |
 
-Source notebook: `figsupp2_speed.ipynb` (notebook, generated 2026-10-29T10:30:36)
+Source notebook: `figsupp2_speed.ipynb` (notebook, generated 2026-11-18T10:07:27)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
 | `\statSuppEyeSessions` | `16` | 16 | notebook | Sessions with pupil/gaze tracking in Fig S2 |
 | `\statSuppEyeMice` | `2` | 2 | notebook | Mice with pupil/gaze tracking in Fig S2 |
 
-Source notebook: `figsupp3_depth_pop.ipynb` (notebook, generated 2026-10-29T10:30:18)
+Source notebook: `figsupp3_depth_pop.ipynb` (notebook, generated 2026-11-18T10:09:30)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -213,7 +245,7 @@ Source notebook: `figsupp3_depth_pop.ipynb` (notebook, generated 2026-10-29T10:3
 | `\statSuppDepthPopKsStat` | `$D = 0.160$` | 0.15981412343891632 | notebook | KS statistic, log preferred depth of 5- vs 8-depth sessions (Fig S3K-L) |
 | `\statSuppDepthPopKsPval` | `$p < 0.0001$` | 3.59785207596945e-120 | notebook | KS test p-value, log preferred depth of 5- vs 8-depth sessions (Fig S3K-L) |
 
-Source notebook: `figsupp4_size_control.ipynb` (notebook, generated 2026-10-29T11:11:36)
+Source notebook: `figsupp4_size_control.ipynb` (notebook, generated 2026-11-18T10:10:31)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -233,7 +265,7 @@ Source notebook: `figsupp4_size_control.ipynb` (notebook, generated 2026-10-29T1
 | `\statSuppSizeControlCorrRTenTwenty` | `$r = 0.766$` | 0.7659021899666625 | notebook | Spearman correlation r: 10 vs 20 deg spheres |
 | `\statSuppSizeControlCorrPvalTenTwenty` | `$p_{correlation} < 0.0001$` | 8.359022898284035e-62 | notebook | Spearman correlation p-value: 10 vs 20 deg spheres |
 
-Source notebook: `figsupp5_rsof.ipynb` (notebook, generated 2026-10-29T10:27:26)
+Source notebook: `figsupp5_rsof.ipynb` (notebook, generated 2026-11-18T13:18:24)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -248,20 +280,20 @@ Source notebook: `figsupp5_rsof.ipynb` (notebook, generated 2026-10-29T10:27:26)
 | `\statSuppRSOFCorrRSDepthBinThreeR` | `$r = 0.361$` | 0.3606019098035661 | notebook | Correlation between preferred depth and running speed (OF 100-1000 deg/s) |
 | `\statSuppRSOFCorrRSDepthBinThreePval` | `$p < 0.0001$` | 0.0 | notebook | P-value of correlation (OF 100-1000 deg/s) |
 
-Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-11-12T12:48:49)
+Source notebook: `figsupp7_simulation_control.ipynb` (notebook, generated 2026-11-18T13:19:27)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
-| `\statSuppSimulFreeNeurons` | `316` | 316 | notebook | Free locomotion simulated neurons (Fig S7C) |
-| `\statSuppSimulFreeElongatedRatio` | `297/316` | 297/316 | notebook | Free locomotion simulated neurons with elongation > 1.4 ratio |
-| `\statSuppSimulFreeElongatedPct` | `94\%` | 93.9873417721519 | notebook | Free locomotion simulated neurons with elongation > 1.4 percentage |
-| `\statSuppSimulMotorNeurons` | `285` | 285 | notebook | Motorized wheel simulated neurons (Fig S7D) |
-| `\statSuppSimulMotorElongatedRatio` | `25/285` | 25/285 | notebook | Motorized wheel simulated neurons with elongation > 1.4 ratio |
-| `\statSuppSimulMotorElongatedPct` | `9\%` | 8.771929824561402 | notebook | Motorized wheel simulated neurons with elongation > 1.4 percentage |
+| `\statSuppSimulFreeNeurons` | `326` | 326 | notebook | Free locomotion simulated neurons (Fig S7C) |
+| `\statSuppSimulFreeElongatedRatio` | `306/326` | 306/326 | notebook | Free locomotion simulated neurons with elongation > 1.4 ratio |
+| `\statSuppSimulFreeElongatedPct` | `94\%` | 93.86503067484662 | notebook | Free locomotion simulated neurons with elongation > 1.4 percentage |
+| `\statSuppSimulMotorNeurons` | `227` | 227 | notebook | Motorized wheel simulated neurons (Fig S7D) |
+| `\statSuppSimulMotorElongatedRatio` | `22/227` | 22/227 | notebook | Motorized wheel simulated neurons with elongation > 1.4 ratio |
+| `\statSuppSimulMotorElongatedPct` | `10\%` | 9.691629955947137 | notebook | Motorized wheel simulated neurons with elongation > 1.4 percentage |
 | `\statSuppSimulSessions` | `4` | 4 | notebook | Sessions included in simulation control (Fig S7) |
 | `\statSuppSimulMice` | `4` | 4 | notebook | Mice included in simulation control (Fig S7) |
 
-Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generated 2026-10-29T10:42:27)
+Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generated 2026-11-18T10:17:25)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -286,7 +318,7 @@ Source notebook: `figsupp8_multidepth_receptive_fields.ipynb` (notebook, generat
 | `\statSuppEightPeakDepthMedianRatio` | `0.939` | 0.9392100406025342 | notebook | Median ratio of multi- to single-depth RF peak depth (Fig S8F) |
 | `\statSuppEightPeakDepthRatioIQR` | `0.669--1.506` | [0.6687090402716057, 1.5061576016632765] | notebook | Interquartile range of the multi- to single-depth RF peak depth ratio (Fig S8F) |
 
-Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-10-29T10:26:36)
+Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-11-18T13:19:39)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
@@ -301,7 +333,20 @@ Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-10-29T1
 | `\statSuppNineGradientPvalCorrected` | `$p = 4.90e-09$` | 4.9001111528122825e-09 | notebook | Significance of 3D RF depth gradient across visual space (corrected) |
 | `\statSuppNineGradientPvalUncorrected` | `$p = 0.0406$` | 0.040557886156214376 | notebook | Significance of depth gradient across visual space (uncorrected) |
 | `\statSuppNineAPCorrR` | `$r = -0.140$` | -0.13975497571941636 | notebook | Correlation between preferred depth and anterior-posterior location in V1 |
-| `\statSuppNineAPCorrPval` | `$p < 0.0001$` | 1e-74 | notebook | p-value of correlation between preferred depth and anterior-posterior location in V1 |
+| `\statSuppNineAPCorrCI` | `$[-0.227, -0.073]$` | [-0.22747305716101646, -0.0732883049497649] | notebook | 95% CI of the AP correlation, hierarchical bootstrap (mice, sessions, neurons) |
+| `\statSuppNineAPCorrPval` | `$p = 0.0003$` | 0.0003 | notebook | p-value of correlation between preferred depth and anterior-posterior location in V1, two-sided hierarchical bootstrap (mice, sessions, neurons) |
+
+Source notebook: `methods_dataset_tables.ipynb` (notebook, generated 2026-11-18T13:50:39)
+
+| Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
+| :--- | :---: | :---: | :---: | :--- |
+| `\statTableSOneClosedLoopNeurons` | `59,937` | 59937 | notebook | Total recorded neurons in closed loop experiments (Table S1) |
+| `\statTableSOneMotorizedNeurons` | `2,573` | 2573 | notebook | Total recorded neurons in motorized wheel experiments (Table S1) |
+| `\statTableSOneOpenLoopNeurons` | `22,851` | 22851 | notebook | Total recorded neurons in open loop experiments (Table S1) |
+| `\statTableSOneGratingsNeurons` | `3,012` | 3012 | notebook | Total recorded neurons in drifting gratings experiments (Table S1) |
+| `\statTableSOneMultidayNeurons` | `11,518` | 11518 | notebook | Total recorded neurons in multi-day tracking experiments (Table S1) |
+| `\statTableSOneMultidepthNeurons` | `3,799` | 3799 | notebook | Total recorded neurons in multi-depth RF experiments (Table S1) |
+| `\statTableSOneTotalRecordedNeurons` | `77,827` | 77827 | notebook | Total unique recorded neurons across all experiments (Table S1) |
 
 ---
 

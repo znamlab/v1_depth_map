@@ -1,18 +1,18 @@
 _meta:
   notebook: figure3_depth_cells
   figure: fig3
-  generated_at: '2026-11-14T09:32:50'
+  generated_at: '2026-11-18T10:50:38'
   source: notebook
 metrics:
   motorized_depth_tuned_neurons:
-    raw: 248
-    formatted: '248'
+    raw: 227
+    formatted: '227'
     latex_macro: statFigThreeMotorizedDepthNeurons
     description: Depth-tuned neurons compared between free locomotion and motorized
       wheel (Fig 3F)
   motorized_depth_r:
-    raw: 0.7515473317927669
-    formatted: $r = 0.752$
+    raw: 0.7783244206774644
+    formatted: $r = 0.778$
     latex_macro: statFigThreeMotorizedDepthR
     description: Spearman correlation of preferred depth (free locomotion) vs RS/OF
       ratio (motorized wheel) (Fig 3F)
@@ -23,35 +23,35 @@ metrics:
     description: Hierarchical bootstrap p-value over mice and sessions of the Fig
       3F correlation
   polar_n_neurons:
-    raw: 248
-    formatted: '248'
+    raw: 227
+    formatted: '227'
     latex_macro: statFigThreePolarNeurons
     description: Neurons with significant 2D-Gaussian fit on motorized wheel (Fig
       3K)
   polar_n_sessions:
-    raw: 3
-    formatted: '3'
+    raw: 4
+    formatted: '4'
     latex_macro: statFigThreePolarSessions
     description: Sessions in motorized wheel elongation analysis (Fig 3K)
   polar_n_mice:
-    raw: 3
-    formatted: '3'
+    raw: 4
+    formatted: '4'
     latex_macro: statFigThreePolarMice
     description: Mice in motorized wheel elongation analysis (Fig 3K)
   elongation_cutoff_ratio:
-    raw: 230/248
-    formatted: 230/248
+    raw: 214/227
+    formatted: 214/227
     latex_macro: statFigThreeElongationCutoffRatio
     description: Fraction of neurons with elongation ratio > 1.4 (Fig 3K)
   elongation_cutoff_pct:
-    raw: 92.74193548387096
-    formatted: 93\%
+    raw: 94.27312775330397
+    formatted: 94\%
     latex_macro: statFigThreeElongationCutoffPct
     description: Motorized wheel neurons with elongation ratio > 1.4 percentage (Fig
       3K)
   elongation_n_neurons:
-    raw: 230
-    formatted: '230'
+    raw: 214
+    formatted: '214'
     latex_macro: statFigThreeElongatedNeurons
     description: Neurons with elongated ellipses for orientation distribution (Fig
       3M)
@@ -61,44 +61,92 @@ metrics:
     latex_macro: statFigThreeVonMisesK
     description: Best axial von Mises mixture number of components (Fig 3M)
   von_mises_components:
-    raw: $19^\circ$ (59\%), $52^\circ$ (24\%), $90^\circ$ (17\%)
-    formatted: $19^\circ$ (59\%), $52^\circ$ (24\%), $90^\circ$ (17\%)
+    raw: $4^\circ$ (18\%), $43^\circ$ (70\%), $90^\circ$ (12\%)
+    formatted: $4^\circ$ (18\%), $43^\circ$ (70\%), $90^\circ$ (12\%)
     latex_macro: statFigThreeVonMisesComponents
     description: Component centers and mixture weights for orientation distribution
       (Fig 3M)
   pref_rs_below_range_n:
-    raw: 41
-    formatted: 41/248
+    raw: 39
+    formatted: 39/227
     latex_macro: statFigThreePrefRSBelowRangeN
     description: 'Neurons with preferred RS in the lowest bins (<5.39 cm/s: 3.81 cm/s
       bin or below 3.81 cm/s) (Fig 3G)'
   pref_rs_below_range_pct:
-    raw: 16.532258064516128
+    raw: 17.180616740088105
     formatted: 17\%
     latex_macro: statFigThreePrefRSBelowRangePct
     description: 'Percentage of neurons with preferred RS in the lowest bins (<5.39
       cm/s: 3.81 cm/s bin or below 3.81 cm/s) (Fig 3G)'
   pref_rs_within_range_n:
-    raw: 103
-    formatted: 103/248
+    raw: 88
+    formatted: 88/227
     latex_macro: statFigThreePrefRSWithinRangeN
     description: Neurons with preferred RS in the 3 middle bins (5.39-43.13 cm/s),
       i.e. non-monotonic in running speed (Fig 3G)
   pref_rs_within_range_pct:
-    raw: 41.53225806451613
-    formatted: 42\%
+    raw: 38.76651982378855
+    formatted: 39\%
     latex_macro: statFigThreePrefRSWithinRangePct
     description: Percentage of neurons with preferred RS in the 3 middle bins (5.39-43.13
       cm/s), i.e. non-monotonic in running speed (Fig 3G)
   pref_rs_above_range_n:
-    raw: 104
-    formatted: 104/248
+    raw: 100
+    formatted: 100/227
     latex_macro: statFigThreePrefRSAboveRangeN
     description: 'Neurons with preferred RS in the highest bins (>43.13 cm/s: 61 cm/s
       bin or above 61 cm/s) (Fig 3G)'
   pref_rs_above_range_pct:
-    raw: 41.935483870967744
-    formatted: 42\%
+    raw: 44.052863436123346
+    formatted: 44\%
     latex_macro: statFigThreePrefRSAboveRangePct
     description: 'Percentage of neurons with preferred RS in the highest bins (>43.13
       cm/s: 61 cm/s bin or above 61 cm/s) (Fig 3G)'
+  orientation_0_n:
+    raw: 67
+    formatted: 67/214
+    latex_macro: statFigThreeOrientationZeroN
+    description: Elongated neurons (elongation > 1.4) oriented around 0 deg ([-22.5,
+      22.5) deg) (Fig 3M)
+  orientation_0_pct:
+    raw: 31.308411214953267
+    formatted: 31\%
+    latex_macro: statFigThreeOrientationZeroPct
+    description: Percentage of elongated neurons oriented around 0 deg ([-22.5, 22.5)
+      deg) (Fig 3M)
+  orientation_45_n:
+    raw: 103
+    formatted: 103/214
+    latex_macro: statFigThreeOrientationFortyFiveN
+    description: Elongated neurons (elongation > 1.4) oriented around 45 deg ([22.5,
+      67.5) deg) (Fig 3M)
+  orientation_45_pct:
+    raw: 48.13084112149533
+    formatted: 48\%
+    latex_macro: statFigThreeOrientationFortyFivePct
+    description: Percentage of elongated neurons oriented around 45 deg ([22.5, 67.5)
+      deg) (Fig 3M)
+  orientation_90_n:
+    raw: 39
+    formatted: 39/214
+    latex_macro: statFigThreeOrientationNinetyN
+    description: Elongated neurons (elongation > 1.4) oriented around 90 deg ([67.5,
+      112.5) deg) (Fig 3M)
+  orientation_90_pct:
+    raw: 18.22429906542056
+    formatted: 18\%
+    latex_macro: statFigThreeOrientationNinetyPct
+    description: Percentage of elongated neurons oriented around 90 deg ([67.5, 112.5)
+      deg) (Fig 3M)
+  orientation_minus45_n:
+    raw: 5
+    formatted: 5/214
+    latex_macro: statFigThreeOrientationMinusFortyFiveN
+    description: Elongated neurons (elongation > 1.4) oriented around -45/135 deg
+      ([112.5, 135) or [-45, -22.5) deg) (Fig 3M)
+  orientation_minus45_pct:
+    raw: 2.336448598130841
+    formatted: 2\%
+    latex_macro: statFigThreeOrientationMinusFortyFivePct
+    description: Percentage of elongated neurons oriented around -45/135 deg ([112.5,
+      135) or [-45, -22.5) deg) (Fig 3M)

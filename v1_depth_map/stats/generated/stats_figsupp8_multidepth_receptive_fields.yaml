@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp8_multidepth_receptive_fields
   figure: supp
-  generated_at: '2026-10-29T10:42:27'
+  generated_at: '2026-11-18T10:17:25'
   source: notebook
 metrics:
   rf_corr_n_neurons:

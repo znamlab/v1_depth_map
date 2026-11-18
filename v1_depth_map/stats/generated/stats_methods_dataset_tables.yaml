@@ -1,7 +1,7 @@
 _meta:
   notebook: methods_dataset_tables
   figure: supp
-  generated_at: '2026-11-14T09:28:26'
+  generated_at: '2026-11-18T13:50:39'
   source: notebook
 metrics:
   closed_loop_neurons:
@@ -10,8 +10,8 @@ metrics:
     latex_macro: statTableSOneClosedLoopNeurons
     description: Total recorded neurons in closed loop experiments (Table S1)
   motorized_wheel_neurons:
-    raw: 2137
-    formatted: 2,137
+    raw: 2573
+    formatted: 2,573
     latex_macro: statTableSOneMotorizedNeurons
     description: Total recorded neurons in motorized wheel experiments (Table S1)
   open_loop_neurons:
@@ -25,8 +25,8 @@ metrics:
     latex_macro: statTableSOneGratingsNeurons
     description: Total recorded neurons in drifting gratings experiments (Table S1)
   multiday_neurons:
-    raw: 11535
-    formatted: 11,535
+    raw: 11518
+    formatted: 11,518
     latex_macro: statTableSOneMultidayNeurons
     description: Total recorded neurons in multi-day tracking experiments (Table S1)
   multidepth_rf_neurons:
@@ -35,7 +35,7 @@ metrics:
     latex_macro: statTableSOneMultidepthNeurons
     description: Total recorded neurons in multi-depth RF experiments (Table S1)
   total_recorded_neurons:
-    raw: 77408
-    formatted: 77,408
+    raw: 77827
+    formatted: 77,827
     latex_macro: statTableSOneTotalRecordedNeurons
     description: Total unique recorded neurons across all experiments (Table S1)

@@ -1,7 +1,7 @@
 _meta:
   notebook: figure2_rsof_integration
   figure: fig2
-  generated_at: '2026-10-29T10:46:05'
+  generated_at: '2026-11-18T13:42:35'
   source: notebook
 metrics:
   model_comparison_n_sessions:
@@ -21,6 +21,12 @@ metrics:
     latex_macro: statFigTwoClosedLoopConjunctiveNeurons
     description: Depth-tuned neurons with significant conjunctive model fit in closed
       loop (Methods L621)
+  conjunctive_rsq_threshold:
+    raw: 0.0015457551494470478
+    formatted: '0.0015'
+    latex_macro: statFigTwoConjunctiveThreshold
+    description: Empirical null R² threshold for the 2D conjunctive model (Methods
+      L638)
   model_comparison_pval_grs_vs_gof:
     raw: 5.0e-05
     formatted: $p < 0.0001$
@@ -98,9 +104,3 @@ metrics:
     description: 'Additive and Conjunctive models outperforming isolated speed and
       ratio models (Fig 2E): the largest of the 6 hierarchical-bootstrap p-values
       that claim rests on, floored at the 1/20,000 resolution limit'
-  conjunctive_rsq_threshold:
-    raw: 0.001582344287087
-    formatted: '0.0016'
-    latex_macro: statFigTwoConjunctiveThreshold
-    description: "Empirical null R\xB2 threshold for the 2D conjunctive model (Methods\
-      \ L638)"

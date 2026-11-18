@@ -1,7 +1,7 @@
 _meta:
   notebook: figsupp9_v1_depth_map
   figure: supp
-  generated_at: '2026-10-29T10:26:36'
+  generated_at: '2026-11-18T13:19:39'
   source: notebook
 metrics:
   rf_n_neurons_total:
@@ -61,9 +61,17 @@ metrics:
     latex_macro: statSuppNineAPCorrR
     description: Correlation between preferred depth and anterior-posterior location
       in V1
+  ap_correlation_ci:
+    raw:
+    - -0.22747305716101646
+    - -0.0732883049497649
+    formatted: $[-0.227, -0.073]$
+    latex_macro: statSuppNineAPCorrCI
+    description: 95% CI of the AP correlation, hierarchical bootstrap (mice, sessions,
+      neurons)
   ap_correlation_pval:
-    raw: 1.0e-74
-    formatted: $p < 0.0001$
+    raw: 0.0003
+    formatted: $p = 0.0003$
     latex_macro: statSuppNineAPCorrPval
     description: p-value of correlation between preferred depth and anterior-posterior
-      location in V1
+      location in V1, two-sided hierarchical bootstrap (mice, sessions, neurons)
