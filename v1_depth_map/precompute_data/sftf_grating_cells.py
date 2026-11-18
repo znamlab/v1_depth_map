@@ -38,6 +38,7 @@ from cottage_analysis.analysis import common_utils
 from cottage_analysis.pipelines import pipeline_utils
 from cottage_analysis.preprocessing import synchronisation
 from v1_depth_map.figure_utils.rf_distance import load_session_neurons
+from v1_depth_map.figure_utils.rsof_threshold import figure2_rsof_threshold
 from v1_depth_map.paths import get_figures_roots
 
 PROJECT = "hey2_3d-vision_foodres_20220101"
@@ -57,10 +58,6 @@ MIN_VOLUMES = 10  # drop trials shorter than this (truncated at the end of a rec
 P_RESPONSIVE = 0.01  # ANOVA across conditions
 P_SELECTIVE = 0.05  # gOSI / gDSI shuffle
 N_SHUFFLES = 1000
-RSOF_SIG_PERCENTILE = (
-    95  # empirical-null threshold of the RS/OF held-out R², as figure 2
-)
-FIG2_RSOF_TABLE = "fig2/results_all_rsof_closedloop.parquet"  # under the read root
 NEURONS_COLUMNS = [
     "roi",
     "iscell",
@@ -211,21 +208,6 @@ def load_sftf_fit(flm, session):
     return fit.drop(columns=["sftf_test_popts"])
 
 
-def figure2_rsof_threshold(flm):
-    """Empirical-null threshold of the RS/OF held-out R² of figure 2 (iscell ROIs of all its sessions)."""
-    read_root, _ = get_figures_roots(flm)
-    rsq = pd.read_parquet(
-        read_root / FIG2_RSOF_TABLE, columns=["iscell", "rsof_test_rsq_closedloop_g2d"]
-    )
-    rsq = rsq[rsq.iscell].copy()  # as figure2_rsof_integration
-    return common_utils.add_rsq_significance(
-        rsq,
-        {"g2d": "rsof_test_rsq_closedloop_g2d"},
-        percentile=RSOF_SIG_PERCENTILE,
-        verbose=False,
-    )["g2d"]
-
-
 def main(rebuild=False):
     flm = flz.get_flexilims_session(PROJECT)
     _, save_root = get_figures_roots(flm, fig_subdir="cache_gratings")
@@ -281,7 +263,9 @@ def main(rebuild=False):
         pval_col="fit_sftf_test_spearmanr_pval",
         out_col="sftf_tuned",
     )
-    rsof_threshold = figure2_rsof_threshold(flm)
+    # Fig S10 recomputes both columns at run time with the same function; they are kept
+    # here for the other readers of the CSV (revisions/sftf)
+    rsof_threshold = figure2_rsof_threshold(get_figures_roots(flm)[0])
     cells["rsof_threshold"] = rsof_threshold
     cells["rsof_tuned"] = cells.rsof_test_rsq > rsof_threshold
     cells.to_csv(save_root / "grating_tuning_cells.csv", index=False)
