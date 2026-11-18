@@ -12,6 +12,8 @@ Welcome to the analysis tracking hub for the `v1_depth_map` project. These docum
 | **04** | [**04_manuscript_figures.md**](./04_manuscript_figures.md) | Final figure assembly status (Main Figures 1–5, Supplementary Figures S1–S8), SVGs/PDFs, vector layout |
 | **05** | [**05_manuscript_statistics.md**](./05_manuscript_statistics.md) | Manuscript numbers & statistics pipeline: notebook emission, YAML manifests, LaTeX macros |
 | **06** | [**06_manuscript_numbers_tracking.md**](./06_manuscript_numbers_tracking.md) | Audit & tracking manifest of all numbers cited in the manuscript vs compiled stats |
+| **07** | [**07_decoder_rerun_2026-11-16.md**](./07_decoder_rerun_2026-11-16.md) | Depth decoder rerun (Nov 2026): no rolling average, `LinearSVC`, bugs fixed, checks, data locations, open items |
+| **08** | [**08_decoder_fitting_speed_2026-11-17.md**](./08_decoder_fitting_speed_2026-11-17.md) | Why the decoder moved from libsvm `SVC` to `LinearSVC`: fitting time, C grid, alternative classifiers |
 
 ---
 
