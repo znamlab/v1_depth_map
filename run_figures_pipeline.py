@@ -105,9 +105,12 @@ DEEP_FLAGS = {
 }
 MIN_FREE_RAM_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB
 POLL_INTERVAL = 0.2  # Interval in seconds to poll memory/process status
-TIMEOUT_SECONDS = (
-    900  # Timeout for each notebook execution (15 minutes), overridable via --timeout
-)
+# Per-notebook execution timeout in seconds, overridable via --timeout. The default
+# depends on the mode: reading the caches, rebuilding them (--reload), or also recomputing
+# the per-session PSTHs and running-speed statistics (--recompute-deep).
+TIMEOUT_SECONDS = 900
+TIMEOUT_SECONDS_RELOAD = 3600
+TIMEOUT_SECONDS_DEEP = 4 * 3600
 
 
 def order_notebooks(notebooks):
@@ -478,11 +481,18 @@ async def main():
     parser.add_argument(
         "--timeout",
         type=float,
-        default=TIMEOUT_SECONDS,
-        help="Per-notebook execution timeout in seconds.",
+        default=None,
+        help="Per-notebook execution timeout in seconds. Default: "
+        f"{TIMEOUT_SECONDS}, {TIMEOUT_SECONDS_RELOAD} with --reload, "
+        f"{TIMEOUT_SECONDS_DEEP} with --recompute-deep.",
     )
     args = parser.parse_args()
-    TIMEOUT_SECONDS = args.timeout
+    if args.timeout is not None:
+        TIMEOUT_SECONDS = args.timeout
+    elif args.recompute_deep:
+        TIMEOUT_SECONDS = TIMEOUT_SECONDS_DEEP
+    elif args.reload:
+        TIMEOUT_SECONDS = TIMEOUT_SECONDS_RELOAD
 
     if not NOTEBOOKS_DIR.exists():
         print(f"Error: notebooks directory {NOTEBOOKS_DIR} does not exist.")
@@ -524,6 +534,7 @@ async def main():
             for _, old, new in changes:
                 print(f"    {old.strip()}  ->  {new.strip()}")
     if args.dry_run:
+        print(f"Timeout per notebook: {TIMEOUT_SECONDS:g} s")
         print(f"Dry run: {len(notebooks)} notebooks, nothing executed")
         return
 

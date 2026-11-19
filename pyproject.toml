@@ -13,7 +13,7 @@ authors = [
     { name = "Petr Znamenskiy" },
 ]
 urls = { Homepage = "https://github.com/znamlab/v1_depth_map" }
-requires-python = ">=3.10"
+requires-python = ">=3.12"
 dependencies = [
     "numpy",
     "pandas<3",
@@ -28,10 +28,12 @@ dependencies = [
     "roifile",
     "pyarrow",
     "fastparquet",
-    "wayla @ git+ssh://git@github.com/znamlab/wayla.git",
-    "flexiznam @ git+ssh://git@github.com/znamlab/flexiznam.git",
-    "znamutils @ git+ssh://git@github.com/znamlab/znamutils.git",
-    "cottage_analysis",
+    "opencv-python",
+    "wayla @ git+https://github.com/znamlab/wayla.git@3673a8c5017362e2efd386a228c0b63a82fce7b9",
+    "flexiznam @ git+https://github.com/znamlab/flexiznam.git@8f89b6b2bc241d1eb887c5d3f4b86e7d5ffad209",
+    "znamutils @ git+https://github.com/znamlab/znamutils.git@3a205a96f936636fc252226610c2f5c75644bd7f",
+    # cottage_analysis tag v1_depth_map_resubmission
+    "cottage_analysis @ git+https://github.com/znamlab/cottage_analysis.git@c5785063191e1cdab33d2b3293046a464bb4c398",
     "pyparsing<3.0.0",
     "cmcrameri>=1.10",
     "pypdf>=6.21.2",
@@ -58,8 +60,16 @@ version_file = "v1_depth_map/_version.py"
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
 
-[tool.uv.sources]
-cottage_analysis = { path = "../cottage_analysis", editable = true }
+[tool.uv]
+# The lab packages list each other by SSH URL; these pins make every one of them install over
+# https, at the commit used for the paper.
+override-dependencies = [
+    "flexiznam @ git+https://github.com/znamlab/flexiznam.git@8f89b6b2bc241d1eb887c5d3f4b86e7d5ffad209",
+    "flexilims @ git+https://github.com/znamlab/flexilims.git@ca19bb7794468c0cf1341402cd3648fe535f1807",
+    "znamutils @ git+https://github.com/znamlab/znamutils.git@3a205a96f936636fc252226610c2f5c75644bd7f",
+    "image-tools @ git+https://github.com/znamlab/image-tools.git@711b4ec8df5ba08ff0d71d526de32b7daf344943",
+    "pymcms @ git+https://github.com/znamlab/pymcms.git@b835fa603d2cba105add49d2a6f0d3441857bb0c",
+]
 
 [dependency-groups]
 dev = [

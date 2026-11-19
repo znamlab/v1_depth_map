@@ -9,19 +9,12 @@ pkgs/
 build
 *code-workspace
 logs
-depth_analysis_2p/
-v1_depth_map/sfn/
-v1_depth_map/ucl_neuro_symp_2923/
-notes.py
 v1_depth_map/_version.py
 dist/
 *.pdf
 *.svg
 *.png
-# panel A schematic of fig_reviewer_gratings (vector, and its raster preview)
-!v1_depth_map/figures/schematic_gratings.pdf
-!v1_depth_map/figures/schematic_gratings.png
+# schematic panels drawn into the figures (tracked, unlike generated figures)
+!v1_depth_map/figures/schematics/*
 *.pickle
 .venv/
-antigravity_output/
-v1_depth_map/revisions/rf_multidepth/
