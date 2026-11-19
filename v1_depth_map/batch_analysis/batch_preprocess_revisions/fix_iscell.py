@@ -4,7 +4,7 @@
 The curated masks contain only validated cells, so every ROI with a non-NaN trace should
 be marked as a cell.
 
-Backs each file up to ~/offset_check_work/backups/ before writing. Report-only unless
+Backs each file up to --backup-dir before writing. Report-only unless
 --apply is passed.
 """
 
@@ -14,7 +14,7 @@ from pathlib import Path
 import flexiznam as flz
 import numpy as np
 
-BACKUP_DIR = Path.home() / "offset_check_work" / "backups"
+DEFAULT_BACKUP_DIR = Path.home() / "offset_check_work" / "backups"
 
 
 def main():
@@ -23,6 +23,12 @@ def main():
     parser.add_argument("--sessions", nargs="+", required=True)
     parser.add_argument(
         "--apply", action="store_true", help="actually write iscell.npy"
+    )
+    parser.add_argument(
+        "--backup-dir",
+        type=Path,
+        default=DEFAULT_BACKUP_DIR,
+        help="folder for the original iscell.npy files",
     )
     args = parser.parse_args()
 
@@ -61,9 +67,9 @@ def main():
             )
             if not args.apply:
                 continue
-            BACKUP_DIR.mkdir(parents=True, exist_ok=True)
+            args.backup_dir.mkdir(parents=True, exist_ok=True)
             tag = "_".join(iscellfile.parts[-4:]).replace("/", "_")
-            backup = BACKUP_DIR / f"{sess}_{tag}"
+            backup = args.backup_dir / f"{sess}_{tag}"
             if not backup.exists():
                 np.save(backup, iscell)
                 print(f"      backed up original to {backup}")
