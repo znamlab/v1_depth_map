@@ -64,6 +64,15 @@ EXPERIMENT_LABELS = {
     "multidepth": "Multi-depth RF",
 }
 
+# Spelled-out counts for numbers that start a sentence
+_NUMBER_WORDS = {
+    n + 1: w
+    for n, w in enumerate(
+        "One Two Three Four Five Six Seven Eight Nine Ten Eleven Twelve Thirteen "
+        "Fourteen Fifteen Sixteen Seventeen Eighteen Nineteen Twenty".split()
+    )
+}
+
 # Day 1 of PZAH17.1e crashed and sync between vis stim and recording is broken
 # (also dropped from the multi-day panels of Fig 1)
 # PZAG16.3b_S20250401 (treadmill) was not in V1 (`revision_sessions.EXCLUDED_SESSIONS`)
@@ -241,7 +250,13 @@ def build_anonymous_compact_table(df: pd.DataFrame) -> pd.DataFrame:
         if len(sub) == 0:
             continue
         mice_group = sub[["mouse", "sex", "indicator"]].drop_duplicates()
-        ind_counts = mice_group["indicator"].value_counts().to_dict()
+        # Most mice first, by name on ties, so the exported text is stable
+        ind_counts = dict(
+            sorted(
+                mice_group["indicator"].value_counts().items(),
+                key=lambda kv: (-kv[1], kv[0]),
+            )
+        )
         rows.append(
             {
                 "Experiment": exp_name,
@@ -440,8 +455,48 @@ def export_dataset_table_stats(
             "latex_macro": f"statTableSOne{macro_stem}Neurons",
             "description": f"Total recorded neurons in {desc_label}",
         }
+        # Other cells of the row, exported as printed in the table
+        for col, suffix, kind in [
+            ("Mice", "Mice", "Mice"),
+            ("Sessions", "Sessions", "Imaging sessions"),
+            ("Sex", "Sex", "Sex of the mice"),
+            ("Indicators (mice)", "Indicators", "Calcium indicators (number of mice)"),
+        ]:
+            value = row[col]
+            if col in ("Mice", "Sessions"):
+                value = int(value)
+            stats_data[f"{key_prefix}_{suffix.lower()}"] = {
+                "raw": value,
+                "formatted": str(value),
+                "latex_macro": f"statTableSOne{macro_stem}{suffix}",
+                "description": f"{kind} in {desc_label}",
+            }
 
     if df_sessions is not None:
+        # Animals sentence of the Methods: all mice across experiments, by transgenic line
+        mice = mouse_table(df_sessions)
+        n_mice = len(mice)
+        stats_data["total_mice"] = {
+            "raw": n_mice,
+            "formatted": str(n_mice),
+            "latex_macro": "statTableSOneTotalMice",
+            "description": "Total mice across all experiments (Methods, Animals)",
+        }
+        stats_data["total_mice_word"] = {
+            "raw": n_mice,
+            "formatted": _NUMBER_WORDS.get(n_mice, str(n_mice)),
+            "latex_macro": "statTableSOneTotalMiceWord",
+            "description": "Total mice, spelled out to start the Animals sentence",
+        }
+        for indicator, stem in [("GCaMP6f", "Emx"), ("GCaMP6s", "Gsixs")]:
+            n = int((mice["indicator"] == indicator).sum())
+            stats_data[f"{stem.lower()}_mice"] = {
+                "raw": n,
+                "formatted": str(n),
+                "latex_macro": f"statTableSOne{stem}Mice",
+                "description": f"Mice of the {LINES['PZAH' if indicator == 'GCaMP6f' else 'PZAG']['genotype_plain']} line ({indicator}), all experiments",
+            }
+
         total_unique = int(_unique_session_neurons(df_sessions).sum())
         stats_data["total_recorded_neurons"] = {
             "raw": total_unique,

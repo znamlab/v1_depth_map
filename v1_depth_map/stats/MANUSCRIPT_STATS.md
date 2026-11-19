@@ -1,12 +1,12 @@
 # Manuscript Statistics Manifest (Audit Dashboard)
 
-*Compiled from figure notebook outputs at 2026-11-18 13:50:40.*
+*Compiled from figure notebook outputs at 2026-11-19 10:05:58.*
 
 This document is compiled directly from statistics generated inside the figure notebooks.
 Because each number is written by the exact code cell that generates the corresponding figure panel,
 these values cannot drift out of sync with the figures.
 
-> ✅ All 253 values were written by a notebook run.
+> ✅ All 281 values were written by a notebook run.
 
 ---
 
@@ -336,16 +336,44 @@ Source notebook: `figsupp9_v1_depth_map.ipynb` (notebook, generated 2026-11-18T1
 | `\statSuppNineAPCorrCI` | `$[-0.227, -0.073]$` | [-0.22747305716101646, -0.0732883049497649] | notebook | 95% CI of the AP correlation, hierarchical bootstrap (mice, sessions, neurons) |
 | `\statSuppNineAPCorrPval` | `$p = 0.0003$` | 0.0003 | notebook | p-value of correlation between preferred depth and anterior-posterior location in V1, two-sided hierarchical bootstrap (mice, sessions, neurons) |
 
-Source notebook: `methods_dataset_tables.ipynb` (notebook, generated 2026-11-18T13:50:39)
+Source notebook: `methods_dataset_tables.ipynb` (notebook, generated 2026-11-19T10:05:57)
 
 | Macro Name | Formatted Value | Raw Value | Source | Description / Manuscript Context |
 | :--- | :---: | :---: | :---: | :--- |
 | `\statTableSOneClosedLoopNeurons` | `59,937` | 59937 | notebook | Total recorded neurons in closed loop experiments (Table S1) |
+| `\statTableSOneClosedLoopMice` | `7` | 7 | notebook | Mice in closed loop experiments (Table S1) |
+| `\statTableSOneClosedLoopSessions` | `84` | 84 | notebook | Imaging sessions in closed loop experiments (Table S1) |
+| `\statTableSOneClosedLoopSex` | `1M, 6F` | 1M, 6F | notebook | Sex of the mice in closed loop experiments (Table S1) |
+| `\statTableSOneClosedLoopIndicators` | `GCaMP6f (6), GCaMP6s (1)` | GCaMP6f (6), GCaMP6s (1) | notebook | Calcium indicators (number of mice) in closed loop experiments (Table S1) |
 | `\statTableSOneMotorizedNeurons` | `2,573` | 2573 | notebook | Total recorded neurons in motorized wheel experiments (Table S1) |
+| `\statTableSOneMotorizedMice` | `4` | 4 | notebook | Mice in motorized wheel experiments (Table S1) |
+| `\statTableSOneMotorizedSessions` | `4` | 4 | notebook | Imaging sessions in motorized wheel experiments (Table S1) |
+| `\statTableSOneMotorizedSex` | `3M, 1F` | 3M, 1F | notebook | Sex of the mice in motorized wheel experiments (Table S1) |
+| `\statTableSOneMotorizedIndicators` | `GCaMP6s (3), GCaMP6f (1)` | GCaMP6s (3), GCaMP6f (1) | notebook | Calcium indicators (number of mice) in motorized wheel experiments (Table S1) |
 | `\statTableSOneOpenLoopNeurons` | `22,851` | 22851 | notebook | Total recorded neurons in open loop experiments (Table S1) |
+| `\statTableSOneOpenLoopMice` | `7` | 7 | notebook | Mice in open loop experiments (Table S1) |
+| `\statTableSOneOpenLoopSessions` | `34` | 34 | notebook | Imaging sessions in open loop experiments (Table S1) |
+| `\statTableSOneOpenLoopSex` | `1M, 6F` | 1M, 6F | notebook | Sex of the mice in open loop experiments (Table S1) |
+| `\statTableSOneOpenLoopIndicators` | `GCaMP6f (6), GCaMP6s (1)` | GCaMP6f (6), GCaMP6s (1) | notebook | Calcium indicators (number of mice) in open loop experiments (Table S1) |
 | `\statTableSOneGratingsNeurons` | `3,012` | 3012 | notebook | Total recorded neurons in drifting gratings experiments (Table S1) |
+| `\statTableSOneGratingsMice` | `2` | 2 | notebook | Mice in drifting gratings experiments (Table S1) |
+| `\statTableSOneGratingsSessions` | `6` | 6 | notebook | Imaging sessions in drifting gratings experiments (Table S1) |
+| `\statTableSOneGratingsSex` | `2F` | 2F | notebook | Sex of the mice in drifting gratings experiments (Table S1) |
+| `\statTableSOneGratingsIndicators` | `GCaMP6f (2)` | GCaMP6f (2) | notebook | Calcium indicators (number of mice) in drifting gratings experiments (Table S1) |
 | `\statTableSOneMultidayNeurons` | `11,518` | 11518 | notebook | Total recorded neurons in multi-day tracking experiments (Table S1) |
+| `\statTableSOneMultidayMice` | `4` | 4 | notebook | Mice in multi-day tracking experiments (Table S1) |
+| `\statTableSOneMultidaySessions` | `19` | 19 | notebook | Imaging sessions in multi-day tracking experiments (Table S1) |
+| `\statTableSOneMultidaySex` | `3M, 1F` | 3M, 1F | notebook | Sex of the mice in multi-day tracking experiments (Table S1) |
+| `\statTableSOneMultidayIndicators` | `GCaMP6s (3), GCaMP6f (1)` | GCaMP6s (3), GCaMP6f (1) | notebook | Calcium indicators (number of mice) in multi-day tracking experiments (Table S1) |
 | `\statTableSOneMultidepthNeurons` | `3,799` | 3799 | notebook | Total recorded neurons in multi-depth RF experiments (Table S1) |
+| `\statTableSOneMultidepthMice` | `4` | 4 | notebook | Mice in multi-depth RF experiments (Table S1) |
+| `\statTableSOneMultidepthSessions` | `5` | 5 | notebook | Imaging sessions in multi-depth RF experiments (Table S1) |
+| `\statTableSOneMultidepthSex` | `3M, 1F` | 3M, 1F | notebook | Sex of the mice in multi-depth RF experiments (Table S1) |
+| `\statTableSOneMultidepthIndicators` | `GCaMP6s (3), GCaMP6f (1)` | GCaMP6s (3), GCaMP6f (1) | notebook | Calcium indicators (number of mice) in multi-depth RF experiments (Table S1) |
+| `\statTableSOneTotalMice` | `12` | 12 | notebook | Total mice across all experiments (Methods, Animals) |
+| `\statTableSOneTotalMiceWord` | `Twelve` | 12 | notebook | Total mice, spelled out to start the Animals sentence |
+| `\statTableSOneEmxMice` | `7` | 7 | notebook | Mice of the Emx1-Cre x Ai95D line (GCaMP6f), all experiments |
+| `\statTableSOneGsixsMice` | `5` | 5 | notebook | Mice of the CamKII-tTA x TRE-GCaMP6s (G6s2) line (GCaMP6s), all experiments |
 | `\statTableSOneTotalRecordedNeurons` | `77,827` | 77827 | notebook | Total unique recorded neurons across all experiments (Table S1) |
 
 ---
