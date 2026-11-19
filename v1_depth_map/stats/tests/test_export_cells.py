@@ -7,7 +7,6 @@ a broken export before a multi-hour notebook run does - in particular
 TypeError and leaves the previous (possibly hand-entered) YAML silently in place.
 """
 
-import ast
 import itertools
 import json
 import re
@@ -147,22 +146,23 @@ def _stubs(name):
             include_treadmill_only=False,
         )
     if name == "figsupp9_v1_depth_map":
-        from scipy.stats import spearmanr
-
         df = _neurons(
             15697,
             extra={
                 "preferred_depth_closedloop": lambda n: rng.uniform(0.02, 6, n),
                 "preferred_depth_corrected": lambda n: rng.uniform(0.02, 6, n),
-                "overview_y_aligned": lambda n: rng.normal(size=n),
-                "log_preferred_depth_corrected": lambda n: rng.normal(size=n),
             },
         )
         return dict(
             neurons_df_sig=df,
-            spearmanr=spearmanr,
             p_val_corrected=7.4e-09,
             p_val_uncorrected=0.0175,
+            # AP correlation: Spearman r, hierarchical bootstrap CI and p (floored at
+            # 1 / n_boot), computed by the stats lines above the export marker
+            r_ap_val=np.float64(-0.140),
+            ap_ci=np.array([-0.227, -0.073]),
+            p_ap_val=3e-4,
+            p_ap_floor=1 / 20000,
             OUT_SFX="_spks",
         )
     if name == "figure4_receptive_fields":
@@ -191,6 +191,10 @@ def _stubs(name):
             rf_distance=rf_distance,
             pairwise_df=pairwise_df,
             rf_dist_counts=dict(n_sessions=3, n_mice=3, n_pairs=1080),
+            # panel E: population correlation and its hierarchical bootstrap p-value
+            r_pop_val=np.float64(0.518),
+            p_pop=np.float64(0.0),
+            p_pop_fmt="$p < 0.0001$",
             OUT_SFX="_spks",
         )
     if name == "figsupp8_multidepth_receptive_fields":
@@ -352,8 +356,8 @@ def _export_cell_source(name):
     return source[source.index(MARKER) :]
 
 
-@pytest.mark.parametrize("name,figure", sorted(OWNERS.items()))
-def test_export_cell_runs_and_emits_valid_macros(name, figure):
+def _run_export_cell(name):
+    """Exec a notebook's export cell on stub data; return what it hands to the hook."""
     source = _export_cell_source(name)
     # swap the real hook for a capture so the test never writes to generated/
     source = re.sub(
@@ -370,6 +374,12 @@ def test_export_cell_runs_and_emits_valid_macros(name, figure):
         ),
     )
     exec(compile(source, f"<{name} export cell>", "exec"), namespace)
+    return captured
+
+
+@pytest.mark.parametrize("name,figure", sorted(OWNERS.items()))
+def test_export_cell_runs_and_emits_valid_macros(name, figure):
+    captured = _run_export_cell(name)
 
     assert captured["name"] == name, "YAML must be keyed by the producing notebook"
     assert captured["figure"] == figure
@@ -385,22 +395,21 @@ def test_export_cell_runs_and_emits_valid_macros(name, figure):
         assert item["description"], f"{key}: empty description"
 
 
-def test_no_macro_is_defined_by_two_notebooks():
-    """Two notebooks feed Fig. 2; they must not both claim the same macro."""
+def test_no_macro_is_defined_twice():
+    """Every macro an export cell emits is unique, within and across notebooks.
+
+    The cells are run rather than parsed: some macro names are built with f-strings,
+    and their literal fragment is not a macro name. Two notebooks feed Fig. 2; they
+    must not both claim the same macro.
+    """
     owners = {}
     for name in OWNERS:
-        tree = ast.parse(_export_cell_source(name))
-        for node in ast.walk(tree):
-            if (
-                isinstance(node, ast.Constant)
-                and isinstance(node.value, str)
-                and node.value.startswith("stat")
-                and node.value[4:5].isupper()
-            ):
-                assert (
-                    node.value not in owners
-                ), f"macro {node.value} claimed by {owners[node.value]} and {name}"
-                owners[node.value] = name
+        for key, item in _run_export_cell(name)["stats"].items():
+            macro = item["latex_macro"]
+            assert (
+                macro not in owners
+            ), f"macro {macro} claimed by {owners[macro]} and {name}:{key}"
+            owners[macro] = f"{name}:{key}"
     assert len(owners) >= 40
 
 
