@@ -40,9 +40,8 @@ results_all = rs_stats.get_rs_stats_all_sessions(
     still_time=1,
     corridor_length=6,
     blank_length=3,
-    # reuse each session's rs_stats.pkl: re-syncing needs the raw stimulus logs, archived to tape on
-    # NEMO (REQ0146129) and missing on BlackPasspo for PZAH10.2f_S20230601; delete a session's
-    # rs_stats.pkl to recompute it
+    # reuse each session's rs_stats.pkl rather than re-syncing every session (slow);
+    # Delete a session's rs_stats.pkl to recompute it
     overwrite=False,
     filter_datasets=FILTER_DATASETS,
 )
