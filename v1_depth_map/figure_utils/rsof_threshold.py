@@ -6,6 +6,10 @@ ROIs of the figure 2 sessions. Figure 2 and Fig S5 compute it on the table they 
 and `precompute_data/sftf_grating_cells.py` read the same table from disk with
 `figure2_rsof_threshold`. All of them go through `add_rsof_significance`, so the value can
 only differ if the table on disk differs from the one the figures used.
+
+The table itself (`FIG2_RSOF_TABLE`) is built by `build_figure2_rsof_table` and written
+only by `figure2_rsof_integration.ipynb`; every other user reads it with
+`load_figure2_rsof_table`.
 """
 
 from pathlib import Path
@@ -18,6 +22,110 @@ RSOF_SIG_PERCENTILE = 95
 FIG2_RSOF_TABLE = (
     "fig2/results_all_rsof_closedloop.parquet"  # under the figures read root
 )
+# Mice of the closed-loop RS/OF analysis (figure 2 and Fig S5)
+FIG2_MICE = (
+    "PZAH6.4b",
+    "PZAG3.4f",
+    "PZAH8.2h",
+    "PZAH8.2i",
+    "PZAH8.2f",
+    "PZAH10.2d",
+    "PZAH10.2f",
+)
+
+
+def build_figure2_rsof_table(flexilims_session, models=RSOF_MODELS, verbose=True):
+    """Concatenate the closed-loop depth and RS/OF fits of every figure 2 session.
+
+    Sessions are the V1 sessions of `FIG2_MICE` with at least 10 trials (closed loop, with
+    or without open loop). All ROIs are kept, with their `iscell` flag. Units are
+    converted for the cross-validated preferences: RS to cm/s, depth to cm, OF to deg/s.
+
+    Args:
+        flexilims_session: flexilims session of the main project.
+        models (iterable): RS/OF models whose test R², R² and parameters are kept.
+        verbose (bool): passed to `concatenate_all_neurons_df`.
+
+    Returns:
+        pd.DataFrame: the table saved as `FIG2_RSOF_TABLE`.
+    """
+    import flexiznam as flz
+    import numpy as np
+    from cottage_analysis.summary_analysis import get_session_list, summary_utils
+
+    cols = [
+        "roi",
+        "best_depth",
+        "preferred_depth_closedloop",
+        "preferred_depth_closedloop_crossval",
+        "depth_tuning_popt_closedloop",
+        "depth_tuning_test_rsq_closedloop",
+        "depth_tuning_test_spearmanr_pval_closedloop",
+        "depth_tuning_test_spearmanr_rval_closedloop",
+        "preferred_RS_closedloop_g2d",
+        "preferred_RS_closedloop_crossval_g2d",
+        "preferred_OF_closedloop_g2d",
+        "preferred_OF_closedloop_crossval_g2d",
+    ]
+    for model in models:
+        for col in [
+            "rsof_test_rsq_closedloop_",
+            "rsof_rsq_closedloop_",
+            "rsof_popt_closedloop_",
+        ]:
+            cols.append(f"{col}{model}")
+
+    mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
+    mouse_list = mouse_list[mouse_list.name.isin(FIG2_MICE)]
+    results_all = summary_utils.concatenate_all_neurons_df(
+        flexilims_session=flexilims_session,
+        session_list=get_session_list.get_sessions(
+            flexilims_session,
+            exclude_openloop=False,
+            exclude_pure_closedloop=False,
+            v1_only=True,
+            trialnum_min=10,
+            mouse_list=mouse_list,
+        ),
+        filename="neurons_df.pickle",
+        cols=cols,
+        read_iscell=True,
+        verbose=verbose,
+    )
+    results_all["preferred_RS_closedloop_crossval_g2d"] = (
+        results_all["preferred_RS_closedloop_crossval_g2d"] * 100
+    )
+    results_all["preferred_depth_closedloop_crossval"] = (
+        results_all["preferred_depth_closedloop_crossval"] * 100
+    )
+    results_all["preferred_OF_closedloop_crossval_g2d"] = np.degrees(
+        results_all["preferred_OF_closedloop_crossval_g2d"]
+    )
+    cols_to_keep = [
+        col
+        for col in results_all.columns
+        if not any(x in col for x in ["rf_coef", "dff_stim"])
+    ]
+    return results_all[cols_to_keep].copy()
+
+
+def load_figure2_rsof_table(read_root, columns=None):
+    """Read `FIG2_RSOF_TABLE` under the figures read root.
+
+    Args:
+        read_root (Path): figures read root (`get_figures_roots(...)[0]`).
+        columns (list, optional): columns to read. Defaults to all.
+
+    Returns:
+        pd.DataFrame: all ROIs, with their `iscell` flag.
+    """
+    path = Path(read_root) / FIG2_RSOF_TABLE
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} not found: run figure2_rsof_integration.ipynb first, it builds "
+            "this table"
+        )
+    return pd.read_parquet(path, columns=columns)
 
 
 def rsof_rsq_col(model):
@@ -56,8 +164,6 @@ def figure2_rsof_threshold(read_root, model="g2d"):
     Returns:
         float: threshold, identical to the one figure 2 uses.
     """
-    table = pd.read_parquet(
-        Path(read_root) / FIG2_RSOF_TABLE, columns=["iscell", rsof_rsq_col(model)]
-    )
+    table = load_figure2_rsof_table(read_root, columns=["iscell", rsof_rsq_col(model)])
     table = table[table["iscell"].astype(bool)].copy()
     return float(add_rsof_significance(table, [model], verbose=False)[model])

@@ -14,7 +14,7 @@ Provides dedicated tables for:
 Every number is reloaded from data:
   - closed loop / open loop / SF/TF: the cached population files of Fig 1, Fig 2 and
     Fig S10 under the figures READ_ROOT (iscell only);
-  - treadmill / multi-day / multi-depth: sessions from `revisions.revision_sessions`,
+  - treadmill / multi-day / multi-depth: sessions from `v1_depth_map.revision_sessions`,
     neurons counted as curated cells (`iscell` of the annotated suite2p ROIs);
   - sex: flexilims mouse entities. Indicator and genotype follow the colony prefix.
 
@@ -31,8 +31,8 @@ import pandas as pd
 
 import flexiznam as flz
 from cottage_analysis.io_module import suite2p as s2p_io
-from v1_depth_map.revisions.revision_sessions import sessions as REVISION_SESSIONS
-from v1_depth_map.revisions.revision_sessions import (
+from v1_depth_map.revision_sessions import sessions as REVISION_SESSIONS
+from v1_depth_map.revision_sessions import (
     EXCLUDED_SESSIONS as NOT_V1_SESSIONS,
 )
 
