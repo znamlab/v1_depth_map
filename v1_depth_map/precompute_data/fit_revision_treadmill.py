@@ -150,16 +150,18 @@ import flexiznam as flz
 
 from cottage_analysis.analysis import fit_gaussian_blob, treadmill
 from cottage_analysis.pipelines import pipeline_utils
+from v1_depth_map.revision_sessions import EXCLUDED_SESSIONS
+from v1_depth_map.revision_sessions import sessions as REVISION_SESSIONS
 
 PROJECT = "colasa_3d-vision_revisions"
 
-# The four sessions with a SpheresTubeMotor recording.
-SESSIONS = [
-    "PZAG16.3b_S20250401",
-    "PZAG16.3c_S20250401",
-    "PZAG17.3a_S20250402",
-    "PZAH17.1e_S20250403",
-]
+# The treadmill sessions of the paper: tagged "motor" in `revision_sessions`, minus the
+# excluded ones.
+SESSIONS = sorted(
+    name
+    for name, protocol in REVISION_SESSIONS.items()
+    if protocol == "motor" and name not in EXCLUDED_SESSIONS
+)
 
 # Kept in sync with cottage_analysis.pipelines.analysis_pipeline (the `to_do` list of the
 # run_rsof_fit block). (model, choose_trials, k_folds).

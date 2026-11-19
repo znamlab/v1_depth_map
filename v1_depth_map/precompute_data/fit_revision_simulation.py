@@ -55,7 +55,7 @@ Typical use::
 
     python fit_revision_simulation.py --dry-run
     python fit_revision_simulation.py --sessions PZAG17.3a_S20250402   # time one first
-    python fit_revision_simulation.py                                   # all four
+    python fit_revision_simulation.py                                   # all treadmill sessions
     python fit_revision_simulation.py --traces --no-fits                # traces only
 
 Cost, measured on PZAG17.3a_S20250402 (784 ROIs, 225 trials, local drive): load and
