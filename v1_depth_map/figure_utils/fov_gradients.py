@@ -15,7 +15,11 @@ import pandas as pd
 import seaborn as sns
 
 from cottage_analysis.analysis import roi_location
-from v1_depth_map.figure_utils.rf_distance import PIXEL_SIZE, load_session_neurons
+from v1_depth_map.figure_utils.rf_distance import (
+    PIXEL_SIZE,
+    check_pixel_size,
+    load_session_neurons,
+)
 
 # column, transform, label
 MAPS = [
@@ -65,7 +69,10 @@ def load_fov_gradients(
     """
     cache_path = Path(cache_path)
     if not recompute:
-        return pd.read_pickle(cache_path)
+        gradients_df = pd.read_pickle(cache_path)
+        # magnitudes are per 100 um through PIXEL_SIZE: every session must match it
+        check_pixel_size(flexilims_session, gradients_df["session"].unique())
+        return gradients_df
     from cottage_analysis.summary_analysis import get_session_list
 
     session_list = get_session_list.get_sessions(
@@ -74,6 +81,7 @@ def load_fov_gradients(
         exclude_pure_closedloop=False,
         v1_only=True,
     )
+    check_pixel_size(flexilims_session, session_list)
     gradients_df = pd.concat(
         [
             fov_gradients_per_session(
