@@ -19,6 +19,11 @@ from cottage_analysis.analysis.spheres import rf_analysis, rf_fitting
 from cottage_analysis.pipelines import pipeline_utils
 
 PIXEL_SIZE = 661 / 1024  # 2p FOV 661 um, 1024 pixels
+# Acquisition settings PIXEL_SIZE is valid for: the 2p FOV is 661 um at ScanImage zoom
+# 1.3 (860 um at zoom 1). `check_pixel_size` raises for any session imaged differently.
+SCAN_ZOOM = 1.3
+FOV_PIXELS = 1024
+TRACES_FILTER = {"anatomical_only": 3, "ast_neuropil": False}
 CI_COLS = ["rf_azi", "rf_ele", "preferred_depth_closedloop"]
 BINS = np.linspace(10, 860, 30)
 YLABELS = [
@@ -26,6 +31,55 @@ YLABELS = [
     r"Mean |$\Delta$(RF elevation)| (degrees)",
     r"Mean |$\Delta\log_2$(preferred virtual depth)|",
 ]
+
+
+def session_scan_settings(flexilims_session, session_name):
+    """ScanImage zoom factor and frame size (pixels per line, lines) of a session.
+
+    Read from the metadata of its first recording, as the ROI positions are.
+    """
+    metadata = common_utils.get_si_metadata(
+        flexilims_session, session_name, TRACES_FILTER
+    )
+    # raw tif metadata nests the SI.* keys under "FrameData"; older exports are flat
+    metadata = metadata.get("FrameData", metadata)
+    keys = [
+        f"SI.hRoiManager.{k}"
+        for k in ("scanZoomFactor", "pixelsPerLine", "linesPerFrame")
+    ]
+    missing = [k for k in keys if k not in metadata]
+    if missing:
+        raise KeyError(f"{session_name}: no {missing} in the ScanImage metadata")
+    zoom, pixels_per_line, lines_per_frame = (metadata[k] for k in keys)
+    return float(zoom), int(pixels_per_line), int(lines_per_frame)
+
+
+def check_pixel_size(flexilims_session, session_names):
+    """Raise if a session was not imaged at the scale `PIXEL_SIZE` assumes.
+
+    Distances and gradients are converted from pixels to um with the single
+    constant `PIXEL_SIZE`. That is only correct for sessions acquired at zoom
+    `SCAN_ZOOM` with `FOV_PIXELS` x `FOV_PIXELS` frames; any other session would be
+    silently mis-scaled, so this stops instead.
+    """
+    expected = (SCAN_ZOOM, FOV_PIXELS, FOV_PIXELS)
+    wrong = {}
+    for session_name in sorted(set(session_names)):
+        settings = session_scan_settings(flexilims_session, session_name)
+        if not np.allclose(settings, expected):
+            wrong[session_name] = settings
+    if wrong:
+        listed = "\n".join(
+            f"  {name}: zoom {zoom:g}, {px} x {lines} pixels"
+            for name, (zoom, px, lines) in wrong.items()
+        )
+        raise ValueError(
+            f"{len(wrong)} session(s) were not imaged at the scale assumed by "
+            f"rf_distance.PIXEL_SIZE ({PIXEL_SIZE:.4f} um per pixel: zoom "
+            f"{SCAN_ZOOM:g}, {FOV_PIXELS} x {FOV_PIXELS} pixels):\n{listed}\n"
+            "Cortical distances and gradients of these sessions would be mis-scaled. "
+            "Exclude them, or use a pixel size per session."
+        )
 
 
 def load_session_neurons(flexilims_session, session_name, rf_file=None):
@@ -204,6 +258,7 @@ def load_pairwise_distances(
         session_df_all.to_pickle(cache_path)
     else:
         session_df_all = pd.read_pickle(cache_path)
+    check_pixel_size(flexilims_session, session_df_all["session"].unique())
     session_df_all["roi_distance"] = session_df_all["roi_distance"] * PIXEL_SIZE
     return session_df_all
 
