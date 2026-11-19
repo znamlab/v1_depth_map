@@ -6,7 +6,8 @@ from pathlib import Path
 
 import flexiznam as flz
 from cottage_analysis.analysis import common_utils
-from v1_depth_map.revisions.revision_sessions import EXCLUDED_SESSIONS
+from v1_depth_map.revision_sessions import EXCLUDED_SESSIONS
+from v1_depth_map.revision_sessions import sessions as REVISION_SESSIONS
 
 # Column suffix of the simulated fits run with the real trial-average plateau
 # configuration (`precompute_data/fit_revision_simulation.py`), as opposed to the per-frame
@@ -424,14 +425,12 @@ def load_treadmill_population_neurons_df(
     percentile=95,
     load_simulated=False,
     load_simulated_trial_average=False,
-    include_treadmill_only=False,
-    include_motor_only=None,
 ):
     """Load and filter the population `neurons_df` for treadmill-protocol sessions.
 
-    Finds every session in the project that ran the treadmill protocol (except those
-    in `revision_sessions.EXCLUDED_SESSIONS` or with an `exclude_reason` on flexilims,
-    e.g. "not V1"), loads and
+    Uses the sessions tagged "motor" in `revision_sessions.sessions` (except those in
+    `revision_sessions.EXCLUDED_SESSIONS` or with an `exclude_reason` on flexilims, e.g.
+    "not V1"), in date order, checks that each has a `protocol_base` recording, loads and
     concatenates their `neurons_df` (and, if `load_simulated`, the matching
     simulated-response dataframes), flags depth- and RS/OF-tuned neurons, and adds
     ellipse/Gaussian-fit-derived columns for both the closed-loop and treadmill fits.
@@ -444,8 +443,8 @@ def load_treadmill_population_neurons_df(
 
     Args:
         flm_sess_rev: Flexilims session for the project holding the treadmill data.
-        protocol_base (str, optional): Protocol name used to find treadmill sessions.
-            Defaults to "SpheresTubeMotor".
+        protocol_base (str, optional): Protocol of the treadmill recording that every
+            session must have. Defaults to "SpheresTubeMotor".
         tdecay (float, optional): Calcium decay time constant used to pick the
             simulated-response file to load. Defaults to 2.
         trise (float, optional): Calcium rise time constant used to pick the
@@ -464,45 +463,44 @@ def load_treadmill_population_neurons_df(
             `simul_df_treadmill` with the `TA_SIM_SUFFIX` suffix, alongside derived
             ellipse geometry, so the two fit families sit side by side on the same row.
             Requires `load_simulated`. Defaults to False.
-        include_treadmill_only (bool, optional): Whether to also load the motor-only/
-            treadmill-only sessions (which lack closed-loop depth recordings).
-            Defaults to False.
-        include_motor_only (bool, optional): Alias for `include_treadmill_only`.
 
     Returns:
         tuple: (neurons_df, simul_df_treadmill, simul_df_spheres, valid_sessions,
             treadmill_sessions). `simul_df_treadmill`/`simul_df_spheres` are None if
             `load_simulated` is False.
     """
-    if include_motor_only is not None:
-        include_treadmill_only = include_motor_only
     from cottage_analysis.io_module import suite2p as s2p_io
     from cottage_analysis.analysis import fit_gaussian_blob as fit_gb
 
-    mice = flz.get_entities(datatype="mouse", flexilims_session=flm_sess_rev)
-    all_sessions = flz.get_entities(datatype="session", flexilims_session=flm_sess_rev)
-
+    # The paper's treadmill sessions are the ones listed as "motor" in
+    # `revision_sessions.sessions`; date order (session name after "_S"), then name.
+    motor_sessions = sorted(
+        (name for name, protocol in REVISION_SESSIONS.items() if protocol == "motor"),
+        key=lambda name: (name.split("_S")[-1], name),
+    )
     treadmill_sessions = {}
-    for _, mouse_data in mice.iterrows():
-        sessions = all_sessions[all_sessions.origin_id == mouse_data.id]
-        for session_name, sess_data in sessions.iterrows():
-            # Sessions excluded by hand (e.g. FOV not in V1): listed in
-            # `revision_sessions.EXCLUDED_SESSIONS` and/or flagged on flexilims.
-            exclude_reason = EXCLUDED_SESSIONS.get(
-                session_name, sess_data.get("exclude_reason")
-            )
-            if isinstance(exclude_reason, str) and exclude_reason.strip():
-                print(f"Excluding session {session_name}: {exclude_reason}")
-                continue
-            recordings = flz.get_children(
-                parent_id=sess_data.id,
-                flexilims_session=flm_sess_rev,
-                children_datatype="recording",
-            )
-            if not len(recordings):
-                continue
-            if protocol_base in recordings.protocol.values:
-                treadmill_sessions[session_name] = recordings
+    for session_name in motor_sessions:
+        sess_data = flz.get_entity(
+            datatype="session", name=session_name, flexilims_session=flm_sess_rev
+        )
+        if sess_data is None:
+            raise ValueError(f"Session {session_name} not found on flexilims")
+        # Sessions excluded by hand (e.g. FOV not in V1): listed in
+        # `revision_sessions.EXCLUDED_SESSIONS` and/or flagged on flexilims.
+        exclude_reason = EXCLUDED_SESSIONS.get(
+            session_name, sess_data.get("exclude_reason")
+        )
+        if isinstance(exclude_reason, str) and exclude_reason.strip():
+            print(f"Excluding session {session_name}: {exclude_reason}")
+            continue
+        recordings = flz.get_children(
+            parent_id=sess_data.id,
+            flexilims_session=flm_sess_rev,
+            children_datatype="recording",
+        )
+        if not len(recordings) or protocol_base not in recordings.protocol.values:
+            raise ValueError(f"Session {session_name} has no {protocol_base} recording")
+        treadmill_sessions[session_name] = recordings
 
     if load_simulated_trial_average and not load_simulated:
         raise ValueError(
@@ -545,7 +543,6 @@ def load_treadmill_population_neurons_df(
         valid_sessions.append(session_name)
         neurons_df["session"] = session_name
         neurons_df["roi_uid"] = session_name + "_" + neurons_df.roi.astype(str)
-        neurons_df["has_closed_loop"] = True
         all_dfs.append(neurons_df)
         if load_simulated:
             for which in ["treadmill", "spheres"]:
@@ -579,40 +576,6 @@ def load_treadmill_population_neurons_df(
                     f"{session_name}: run precompute_data/fit_revision_simulation.py"
                 )
 
-    if include_treadmill_only:
-        from v1_depth_map.revisions.revision_sessions import MOTOR_ONLY_V1_SESSIONS
-
-        processed_root = Path(
-            flz.get_data_root("processed", flexilims_session=flm_sess_rev)
-        )
-        project_name = getattr(flm_sess_rev, "project", "colasa_3d-vision_revisions")
-        for session_name in MOTOR_ONLY_V1_SESSIONS:
-            if session_name in EXCLUDED_SESSIONS:
-                continue
-            mouse, sess = session_name.split("_")
-            sdir = processed_root / project_name / mouse / sess
-            ndf_path = sdir / "neurons_df.pickle"
-            s2p_path = sdir / "suite2p_rois_annotated_0"
-            if not ndf_path.exists() or not s2p_path.exists():
-                print(f"Missing data for motor-only session {session_name}")
-                continue
-            df = pd.read_pickle(ndf_path)
-            df["is_cell"] = s2p_io.load_is_cell(s2p_path)
-            df["session"] = session_name
-            df["roi_uid"] = session_name + "_" + df.roi.astype(str)
-            df["has_closed_loop"] = False
-            df["is_depth_neuron"] = False
-            df["preferred_depth_closedloop"] = np.nan
-            df["preferred_depth_closedloop_crossval"] = np.nan
-            common_utils.add_one_sided_spearman_significance(
-                df,
-                rval_col="depth_tuning_test_spearmanr_rval_closedloop_treadmill",
-                pval_col="depth_tuning_test_spearmanr_pval_closedloop_treadmill",
-                out_col="is_depth_neuron_treadmill",
-            )
-            valid_sessions.append(session_name)
-            treadmill_sessions[session_name] = None
-            all_dfs.append(df)
     print(
         f"{len(valid_sessions)}/{len(treadmill_sessions)} valid sessions with treadmill depth data"
     )
