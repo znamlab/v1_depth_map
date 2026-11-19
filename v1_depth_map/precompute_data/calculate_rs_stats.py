@@ -1,12 +1,12 @@
 import flexiznam as flz
 from cottage_analysis.summary_analysis import get_session_list, rs_stats
-from v1_depth_map.paths import get_figures_roots
+from v1_depth_map.paths import get_figures_roots, per_session_cache_kwargs
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 project = "hey2_3d-vision_foodres_20220101"
-# must match the filter the figure notebooks pass, see notes/01_preprocessing.md
+# must match the filter the figure notebooks pass
 FILTER_DATASETS = {"anatomical_only": 3, "ast_neuropil": False}
 flexilims_session = flz.get_flexilims_session(project)
 mouse_list = flz.get_entities("mouse", flexilims_session=flexilims_session)
@@ -40,11 +40,11 @@ results_all = rs_stats.get_rs_stats_all_sessions(
     still_time=1,
     corridor_length=6,
     blank_length=3,
-    # reuse each session's rs_stats.pkl: re-syncing needs the raw stimulus logs, archived to tape on
-    # NEMO (REQ0146129) and missing on BlackPasspo for PZAH10.2f_S20230601; delete a session's
-    # rs_stats.pkl to recompute it
+    # reuse each session's rs_stats.pkl rather than re-syncing every session (slow);
+    # Delete a session's rs_stats.pkl to recompute it
     overwrite=False,
     filter_datasets=FILTER_DATASETS,
+    **per_session_cache_kwargs(rs_stats.get_rs_stats_all_sessions, flexilims_session),
 )
 
 _, SAVE_ROOT = get_figures_roots(flexilims_session, fig_subdir="supp")

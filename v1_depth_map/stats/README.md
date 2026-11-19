@@ -4,7 +4,10 @@ This directory contains the pipeline for tracking and formatting manuscript numb
 
 
 ## Quick Reference
-- **Detailed Documentation**: See [`notes/05_manuscript_statistics.md`](../../notes/05_manuscript_statistics.md) for full architecture, design principles, and guidelines for adding new metrics.
+- **Design rules**: each number is computed in the notebook that draws the corresponding
+  panel; the export cell only reads variables that already exist (it never re-runs a test);
+  `build_manuscript_stats.py` only compiles the YAML files in `generated/` and holds no
+  analysis logic.
 - **Audit Dashboard**: [`MANUSCRIPT_STATS.md`](./MANUSCRIPT_STATS.md) contains a human-readable table of all current manuscript values and macro mappings, with a `Source` column marking any value not written by a notebook run.
 - **LaTeX Definitions**: [`manuscript_stats.tex`](./manuscript_stats.tex) contains the `\providecommand` and `\renewcommand` declarations.
 

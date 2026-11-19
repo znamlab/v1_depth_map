@@ -1,4 +1,5 @@
 #!/bin/bash
+# Lab Slurm submission wrapper (Crick NEMO cluster), kept for provenance: adapt partition, modules, environment and paths to another cluster.
 #
 #SBATCH --job-name=figure
 #SBATCH --ntasks=1
@@ -6,7 +7,7 @@
 #SBATCH --mem=16G
 #SBATCH --partition=ncpu
 #SBATCH --mail-type=END,FAIL
-#SBATCH --output="/camp/lab/znamenskiyp/home/users/hey2/codes/3d-vision-analysis-2p/v1_depth_map/precompute_data/logs/psth_%j.log"
+#SBATCH --output=logs/psth_%j.log
 
 . ~/.bash_profile
 ml purge
@@ -16,5 +17,5 @@ source activate base
 
 conda activate v1_depth_map
 
-cd "/camp/home/hey2/home/codes/3d-vision-analysis-2p/v1_depth_map/precompute_data/"
+cd "$SLURM_SUBMIT_DIR"  # submit from this folder (logs/ must exist)
 python make_depth_tuning_raster.py

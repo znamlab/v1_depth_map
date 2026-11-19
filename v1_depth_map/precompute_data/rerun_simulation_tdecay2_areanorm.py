@@ -14,7 +14,7 @@ This script regenerates the precomputed
 for the "motor" (treadmill) sessions of the colasa_3d-vision_revisions project, via
 `treadmill.simulate_and_fit_session` / `spheres.simulate_and_fit_session` (both
 submitted to slurm, matching how they were originally generated in
-`v1_depth_map/revisions/preprocess_rev_sessions.ipynb`, cells 26-27), using:
+`v1_depth_map/batch_analysis/batch_preprocess_revisions/preprocess_rev_sessions.ipynb`, cells 26-27), using:
   - the default kernel normalization ("area"), and
   - decay_tau=2 instead of the previously-used decay_tau=4.
 
@@ -35,7 +35,7 @@ import flexiznam as flz
 
 from cottage_analysis.analysis import treadmill
 from cottage_analysis.analysis.spheres import spheres
-from v1_depth_map.revisions.revision_sessions import sessions
+from v1_depth_map.revision_sessions import sessions
 
 PROJECT = "colasa_3d-vision_revisions"
 DECAY_TAU = 2  # matches figsupp7_simulation_control.ipynb's TDECAY

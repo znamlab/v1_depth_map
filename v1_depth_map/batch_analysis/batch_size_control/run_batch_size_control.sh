@@ -1,4 +1,5 @@
 #!/bin/bash
+# Lab Slurm submission wrapper (Crick NEMO cluster), kept for provenance: adapt partition, modules, environment and paths to another cluster.
 #
 #SBATCH --job-name=batch_size
 #SBATCH --ntasks=1
@@ -6,7 +7,7 @@
 #SBATCH --mem=4G
 #SBATCH --partition=ncpu
 #SBATCH --mail-type=END,FAIL
-#SBATCH --output="/camp/lab/znamenskiyp/home/users/hey2/codes/3d-vision-analysis-2p/v1_depth_map/batch_analysis/batch_size_control/logs/batch_analysis_%j.log"
+#SBATCH --output=logs/batch_analysis_%j.log
 
 . ~/.bash_profile
 ml purge
@@ -15,5 +16,5 @@ ml Anaconda3/2020.07
 source activate base
 
 conda activate v1_depth_map
-cd "/camp/lab/znamenskiyp/home/users/hey2/codes/3d-vision-analysis-2p/v1_depth_map/batch_analysis/batch_size_control/"
+cd "$SLURM_SUBMIT_DIR"  # submit from this folder (logs/ must exist)
 python size_control_all_sessions.py

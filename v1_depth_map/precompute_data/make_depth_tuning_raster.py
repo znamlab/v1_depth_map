@@ -1,7 +1,7 @@
 import flexiznam as flz
 from cottage_analysis.summary_analysis import depth_responses
 from cottage_analysis.summary_analysis import get_session_list
-from v1_depth_map.paths import get_figures_roots
+from v1_depth_map.paths import get_figures_roots, per_session_cache_kwargs
 import warnings
 
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -52,6 +52,9 @@ results_all = depth_responses.get_psth_crossval_all_sessions(
     ],
     blank_length=3,
     overwrite=True,
+    **per_session_cache_kwargs(
+        depth_responses.get_psth_crossval_all_sessions, flexilims_session
+    ),
 )
 _, SAVE_ROOT = get_figures_roots(flexilims_session, fig_subdir="fig1")
 SAVE_ROOT.mkdir(parents=True, exist_ok=True)

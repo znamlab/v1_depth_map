@@ -1,6 +1,6 @@
 import flexiznam as flz
 import wayla
-from v1_depth_map.figure_utils import get_session_list
+from cottage_analysis.summary_analysis import get_session_list
 
 PROJECT = "hey2_3d-vision_foodres_20220101"
 flexilims_session = flz.get_flexilims_session(project_id=PROJECT)

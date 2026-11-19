@@ -8,6 +8,8 @@ from tifffile import TiffFile
 import pandas as pd
 import warnings
 
+from v1_depth_map.paths import get_figures_roots
+
 warnings.filterwarnings("ignore")
 
 
@@ -105,11 +107,9 @@ def main():
     print(f"Connecting to flexilims (project: {project})...")
     flm_sess = flz.get_flexilims_session(project_id=project)
 
-    # We load all sessions in our dataset
-    processed_root = flz.get_data_root("processed", flexilims_session=flm_sess)
-    pickle_path = (
-        processed_root / "v1_manuscript_figures/ver_rev1/fig1/results_all_psth.pickle"
-    )
+    # We load all sessions in our dataset (session list from the figure 1 cache)
+    read_root, _ = get_figures_roots(flm_sess, fig_subdir="fig1")
+    pickle_path = read_root / "results_all_psth.pickle"
     df = pd.read_pickle(pickle_path)
     session_list = sorted(df["session"].unique())
     print(f"Found {len(session_list)} unique sessions in {pickle_path.name}.")

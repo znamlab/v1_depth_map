@@ -1,4 +1,5 @@
 #!/bin/bash --login
+# Lab Slurm submission wrapper (Crick NEMO cluster), kept for provenance: adapt partition, modules, environment and paths to another cluster.
 #SBATCH --job-name=deconvolve-tau
 #SBATCH --partition=ncpu
 #SBATCH --ntasks=1
