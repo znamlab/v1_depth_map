@@ -14,11 +14,6 @@ example neurons.
 Data are prepared by `prepare_example_data` (heavy: one session load per example session)
 and the block is drawn by `plot_treadmill_examples_block` in cm coordinates on an
 existing figure.
-
-The wheel depth fits come from the refit with the fixed best-depth seeding
-(`precompute_data/refit_treadmill_depth.py`, results under
-`<processed>/colasa_3d-vision_revisions/analysis/treadmill_depth_refit/results`): the
-fits stored in neurons_df were seeded at a NaN-argmax depth and many are flat.
 """
 
 import numpy as np
@@ -52,8 +47,7 @@ GRID_DEPTHS_CM = TM_MOTOR_SPEEDS[None, :] / np.radians(TM_OF_LEVELS)[:, None]
 MAX_RS2MOTOR_DIFF = 0.3  # as the depth and RS/OF fits
 DEPTH_RS_THR = 0  # fit_preferred_depth default: frames with RS > 0
 DEPTH_MIN_SIGMA = 0.5
-TM_DEPTH_SFX = "_treadmill"  # refit variant (mirrored to _treadmill_plateau)
-REFIT_SUBDIR = "analysis/treadmill_depth_refit/results"
+TM_DEPTH_SFX = "_treadmill"  # wheel depth fit columns of neurons_df
 CMAP = "cool_r"
 
 # Layout (cm). x from the block left, y from the block top.
@@ -88,16 +82,28 @@ LIM_PAD = 1.2  # axis limit beyond the most extreme value (room for a dot radius
 
 
 # ---------------------------------------------------------------------------- data
-def load_treadmill_depth_refit(processed_root, session, project):
-    """Wheel depth fit columns (refit with the fixed seed) of one session, indexed by roi."""
-    path = (
-        processed_root
-        / project
-        / REFIT_SUBDIR
-        / session
-        / f"treadmill_depth_fit{TM_DEPTH_SFX}.pickle"
+def wheel_depth_fit(neurons_df, roi_uid):
+    """Wheel depth fit of one neuron of `neurons_df`: (popt, preferred depth in cm)."""
+    row = neurons_df.set_index("roi_uid").loc[roi_uid]
+    return (
+        np.asarray(row[f"depth_tuning_popt_closedloop{TM_DEPTH_SFX}"], float),
+        float(row[f"preferred_depth_closedloop{TM_DEPTH_SFX}"] * 100),
     )
-    return pd.read_pickle(path).set_index("roi")
+
+
+def wheel_depth_fits_match(example_data, neurons_df):
+    """Whether the wheel depth fits of cached examples are those of `neurons_df` (False
+    for a cache built from other fits, e.g. before the examples read neurons_df)."""
+    if not set(ex["roi_uid"] for ex in example_data) <= set(neurons_df["roi_uid"]):
+        return False
+    for ex in example_data:
+        popt, pref = wheel_depth_fit(neurons_df, ex["roi_uid"])
+        if not (
+            np.array_equal(ex["tm_depth_popt"], popt, equal_nan=True)
+            and np.array_equal(ex["tm_pref_depth_cm"], pref, equal_nan=True)
+        ):
+            return False
+    return True
 
 
 def depth_trial_means(trials_df, closed_loop_only=True, rs_thr=None, rs2motor=True):
@@ -128,14 +134,15 @@ def _one_roi_trials(trials_df, roi):
     return t
 
 
-def prepare_example_data(examples, trials_by_session, refits):
+def prepare_example_data(examples, trials_by_session, neurons_df):
     """Small per-example data for the H/I panels (cache it: it needs the full sessions).
 
     Args:
         examples: list of roi_uid strings ("MOUSE_SESSION_ROI").
         trials_by_session: {session: (trials_df_treadmill, trials_df_sphere)}, wheel
             trials loaded with `tread_kwargs=dict(method="plateau")`.
-        refits: {session: refit dataframe} from `load_treadmill_depth_refit`.
+        neurons_df: population neurons_df with a `roi_uid` column, holding the wheel
+            depth fits of the examples.
 
     Returns:
         list of dicts, one per example, in order.
@@ -153,7 +160,7 @@ def prepare_example_data(examples, trials_by_session, refits):
                 depth_trial_means(sphere, rs2motor=False),
             )
         (tm_depth, tm_dff), (cl_depth, cl_dff) = means[session]
-        refit = refits[session].loc[roi]
+        tm_depth_popt, tm_pref_depth_cm = wheel_depth_fit(neurons_df, uid)
         out.append(
             dict(
                 roi_uid=uid,
@@ -163,12 +170,8 @@ def prepare_example_data(examples, trials_by_session, refits):
                 tm_dff=tm_dff[:, roi],
                 cl_depth_cm=cl_depth,
                 cl_dff=cl_dff[:, roi],
-                tm_depth_popt=np.asarray(
-                    refit[f"depth_tuning_popt_closedloop{TM_DEPTH_SFX}"], float
-                ),
-                tm_pref_depth_cm=float(
-                    refit[f"preferred_depth_closedloop{TM_DEPTH_SFX}"] * 100
-                ),
+                tm_depth_popt=tm_depth_popt,
+                tm_pref_depth_cm=tm_pref_depth_cm,
                 trials=_one_roi_trials(trials_by_session[session][0], roi),
             )
         )
