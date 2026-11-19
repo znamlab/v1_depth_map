@@ -1,5 +1,7 @@
 """Drifting-grating (SF/TF) helpers for Figure S10 (`figures/figsupp10_gratings.ipynb`).
 
+- rebuilding the `cache_gratings` folder from the per-session data (`rebuild_gratings_cache`, the notebook's
+  `RELOAD`);
 - depth-protocol trials and the panel B example (`load_depth_trials`, `load_depth_example`);
 - frame-level SF / TF tuning per running-speed bin (`speed_binned_responses`, `tf_curves_by_speed`,
   `population_tf_curves`, `sftf_model_kept_pairs`);
@@ -8,9 +10,6 @@
 - plotting (`plot_sftf_3x3_grid`, `plot_overlap_matrix`, `plot_polar_direction_hist`,
   `plot_heldout_speed_curves_panel`);
 - `bootstrap_spearman`: hierarchical bootstrap of Spearman correlations over sessions.
-
-Exploratory plots (example neurons, population SF/TF maps by preferred depth) are in
-`revisions/sftf/sftf_plots.py`.
 """
 
 import matplotlib.pyplot as plt
@@ -57,7 +56,7 @@ def speed_binned_responses(
 
     Args:
         X (4, n_frames): log SF, log TF, direction (rad), log RS - `log_rs_median`, as returned
-            by `precompute_data.sftf_running_models.session_frames` (running frames only).
+            by `precompute_data.sftf_frames.session_frames` (running frames only).
         response (n_frames,): dF/F of the ROI on the same frames.
         log_rs_median (float): median log RS (m/s) subtracted from X[3].
         n_bins (int): number of speed bins (quantiles of log RS), if `edges_cm_s` is None.
@@ -124,7 +123,7 @@ def drift_direction(angle_deg):
     """Drift direction (deg) of a grating of `Angle` `angle_deg`.
 
     `Angle` is the grating's wave vector and the bars drift towards `Angle` + 180° (stimulus workflow
-    `vis-stim-2d/run_SFTF.bonsai` and BonVision, see `revisions/sftf/README.md`). Drift direction in the
+    `vis-stim-2d/run_SFTF.bonsai` and BonVision). Drift direction in the
     RF-map frame: 0° towards higher azimuth (front to back, the optic flow of forward running), 90° up.
     """
     return (np.asarray(angle_deg) + 180) % 360
@@ -156,7 +155,7 @@ def _fit_tuning_above_offset(cell_fits, sf_values, tf_values, angle_values):
 
     Args:
         cell_fits: list/array of 10 parameters, Series, or DataFrame containing GratingParams fields
-            (prefixed `fit_` or `base_`, or not).
+            (prefixed `fit_` or not).
         sf_values: tested spatial frequencies in cpd.
         tf_values: tested temporal frequencies in Hz.
         angle_values: tested drift directions in degrees or radians.
@@ -173,18 +172,10 @@ def _fit_tuning_above_offset(cell_fits, sf_values, tf_values, angle_values):
     if isinstance(cell_fits, (list, tuple, np.ndarray)):
         popt_mat = np.atleast_2d(cell_fits)
     elif isinstance(cell_fits, pd.Series):
-        prefix = (
-            "fit_"
-            if f"fit_{param_names[0]}" in cell_fits
-            else ("base_" if f"base_{param_names[0]}" in cell_fits else "")
-        )
+        prefix = "fit_" if f"fit_{param_names[0]}" in cell_fits else ""
         popt_mat = np.array([[cell_fits[f"{prefix}{p}"] for p in param_names]])
     elif isinstance(cell_fits, pd.DataFrame):
-        prefix = (
-            "fit_"
-            if f"fit_{param_names[0]}" in cell_fits.columns
-            else ("base_" if f"base_{param_names[0]}" in cell_fits.columns else "")
-        )
+        prefix = "fit_" if f"fit_{param_names[0]}" in cell_fits.columns else ""
         popt_mat = cell_fits[[f"{prefix}{p}" for p in param_names]].to_numpy()
     else:
         raise ValueError("Unsupported cell_fits type")
@@ -426,7 +417,7 @@ def population_tf_curves(
 
 # running-speed bins (cm/s): the treadmill bins of figure 3 (`treadmill.compute_treadmill_rsof_bins`, motor speeds
 # 4-61 cm/s one octave apart, edges 2.83, 5.66, ... cm/s), the last with no upper limit. The frames below the first
-# edge are the slow frames (`sftf_running_models.py prepare --slow`, SLOW_THR), plotted as one more curve.
+# edge are the slow frames (`sftf_frames.py --slow`, SLOW_THR), plotted as one more curve.
 SPEED_EDGES_CM_S = [*2.0 ** np.arange(1.5, 6), np.inf]
 SLOW_LABEL = f"< {SPEED_EDGES_CM_S[0]:.1f} cm/s"
 TF_SELECT_THRESHOLD = 0.5
@@ -439,7 +430,7 @@ MIN_CELLS_PER_POINT = 10
 # 6 = last speed bin open-ended (> 45.25 cm/s, no longer capped at 90.51); 7 = treadmill bins from 2.83 cm/s and
 # the frames below 2.83 cm/s (any duration) instead of the still frames (< 5 cm/s for 1 s); 8 = dF/F divided by
 # the maximum of the fitted tuning over the tested stimuli (offset + peak), the offset no longer subtracted;
-# 9 = cells selected by `sftf_tuned` instead of frame-level `base_test_rsq_sig`
+# 9 = cells selected by `sftf_tuned` (trial-level SF/TF fit)
 SPEED_CURVES_VERSION = 9
 
 
@@ -562,74 +553,28 @@ def bootstrap_spearman(x, y, sessions, n_boots=20000, seed=0):
     )
 
 
-def bootstrap_median(values, sessions, n_boots=20000, seed=0, null_values=(0,)):
-    """Median of `values`, 95% CI and p-values from a hierarchical bootstrap over sessions.
+def rebuild_gratings_cache(cache_root, figures_root):
+    """Rebuild the `cache_gratings` inputs from the per-session data (the notebook's `RELOAD`).
 
-    As `bootstrap_spearman`, mice are not resampled. `null_values`: values the median is tested
-    against (two-sided bootstrap p, `calculate_pval_from_bootstrap`).
+    Trial tables, neurons_slim and `grating_tuning_cells.csv` (`sftf_grating_cells.build_grating_cells`),
+    then the running and slow frames of every session (`sftf_frames.prepare` with
+    `FIGURE_FRAMES`). The depth example and the speed curves are rebuilt by their own loaders.
 
-    Returns:
-        dict: `n`, `n_sessions`, `n_mice`, `median`, `ci` (2.5 and 97.5 percentiles of the bootstrap
-            medians) and `p` ({null value: p}).
+    Args:
+        cache_root (Path): `cache_gratings` folder, written to.
+        figures_root (Path): figures read root with the figure 2 table (RS/OF threshold), only read.
     """
-    import contextlib
-    import io
-    from cottage_analysis.analysis import common_utils
+    from v1_depth_map.precompute_data import sftf_grating_cells, sftf_frames
 
-    df_boot = pd.DataFrame(
-        dict(x=np.asarray(values, float), session=np.asarray(sessions))
-    )
-    df_boot = df_boot[np.isfinite(df_boot.x)].reset_index(drop=True)
-    np.random.seed(seed)
-    with contextlib.redirect_stderr(io.StringIO()):
-        _, dist = common_utils.hierarchical_bootstrap_stats(
-            df_boot, n_boots, ["x"], ["session"], plot=False
-        )
-    return dict(
-        n=len(df_boot),
-        n_sessions=df_boot.session.nunique(),
-        n_mice=df_boot.session.str.split("_").str[0].nunique(),
-        median=float(np.median(df_boot.x)),
-        ci=np.percentile(dist[:, 0], [2.5, 97.5]),
-        p={
-            v: float(common_utils.calculate_pval_from_bootstrap(dist[:, 0], value=v))
-            for v in null_values
-        },
-    )
-
-
-def speed_curve_cells(sftf_root):
-    """Cells of the population speed curves (panels M-P), per variable.
-
-    Same selection as `build_speed_curves`: SF/TF-tuned cells (`sftf_tuned`) with a significant effect of
-    TF (SF) at the kept SF (TF) / direction pairs (`_freq_modulation_p` on the trial responses,
-    p < `P_FREQ_TUNED`). Depth-selective cells are the ones plotted.
-
-    Returns:
-        pd.DataFrame: `variable` ("tf" or "sf"), `session`, `roi`, `depth_tuned` and `p` (frequency
-            modulation p-value), one row per selected cell and variable.
-    """
-    cells = pd.read_csv(sftf_root / "grating_tuning_cells.csv")
-    pop_cells = cells[cells.sftf_tuned]
-    rows = []
-    for session, sc in pop_cells.groupby("session"):
-        t_sess = pd.read_pickle(sftf_root / "cache" / f"{session}_sftf_trials.pickle")
-        for var in ("tf", "sf"):
-            rows.append(
-                pd.DataFrame(
-                    dict(
-                        variable=var,
-                        session=session,
-                        roi=sc.roi.to_numpy(),
-                        depth_tuned=sc.depth_tuned.to_numpy(),
-                        p=_freq_modulation_p(
-                            t_sess["trials"], t_sess["dff"][:, sc.roi.to_numpy()], var
-                        ),
-                    )
-                )
+    sftf_grating_cells.build_grating_cells(cache_root, figures_root, rebuild=True)
+    for session in sftf_grating_cells.SESSIONS:
+        for slow in (False, True):
+            sftf_frames.prepare(
+                session,
+                cache_root,
+                slow=slow,
+                **sftf_frames.FIGURE_FRAMES,
             )
-    out = pd.concat(rows, ignore_index=True)
-    return out[out.p < P_FREQ_TUNED].reset_index(drop=True)
 
 
 def load_depth_example(cache_dir, session, roi, rebuild=False):
@@ -682,7 +627,7 @@ def build_speed_curves(sftf_root, rebuild=False):
 
     Args:
         sftf_root (Path): `cache_gratings` folder (`grating_tuning_cells.csv`, `cache/`,
-            `running_models/` with `frames/`, `frames_slow/` and the merged fits).
+            `frames/`, `frames_slow/`).
         rebuild (bool): recompute instead of reading the cache.
 
     Returns:
@@ -694,8 +639,8 @@ def build_speed_curves(sftf_root, rebuild=False):
     from cottage_analysis.analysis import common_utils
 
     cache_dir = sftf_root / "cache"
-    frames_dir = sftf_root / "running_models" / "frames"
-    slow_dir = sftf_root / "running_models" / "frames_slow"
+    frames_dir = sftf_root / "frames"
+    slow_dir = sftf_root / "frames_slow"
     cache = cache_dir / f"speed_curves_v{SPEED_CURVES_VERSION}.pickle"
     if cache.exists() and not rebuild:
         return pd.read_pickle(cache)

@@ -1,7 +1,7 @@
 """One row per `iscell` ROI of the six drifting-grating sessions: grating tuning, depth and RS/OF tuning.
 
-Input of `figures/figsupp10_gratings.ipynb` (and of `revisions/sftf/`). Writes, under the cache folder
-`<processed>/v1_manuscript_figures/ver_rev1/cache_gratings/`:
+Input of `figures/figsupp10_gratings.ipynb`. Writes, under the cache folder
+`<analysis root>/cache_gratings/` (see `v1_depth_map.paths`):
 
 - `cache/<session>_sftf_trials.pickle`: trial table of the SFTF recordings and the (n_trials, n_rois) mean
   dF/F of each trial over `[onset + SKIP, next_onset)` volumes. Trials are split where the parameter-log time
@@ -21,13 +21,15 @@ Input of `figures/figsupp10_gratings.ipynb` (and of `revisions/sftf/`). Writes, 
 The RS/OF threshold is read from the figure 2 table `fig2/results_all_rsof_closedloop.parquet` (written by
 `figures/figure2_rsof_integration.ipynb`), so figure 2 must have been run first.
 
-Moved from the analysis cells of `revisions/sftf/sftf_exploratory_analysis.ipynb`; same output.
+The notebook rebuilds them with `RELOAD = True` (`figure_utils.sftf.rebuild_gratings_cache`, which calls
+`build_grating_cells`).
 
 Usage:
     python sftf_grating_cells.py [--rebuild]
 """
 
 import argparse
+from pathlib import Path
 
 import flexiznam as flz
 import numpy as np
@@ -208,10 +210,20 @@ def load_sftf_fit(flm, session):
     return fit.drop(columns=["sftf_test_popts"])
 
 
-def main(rebuild=False):
+def build_grating_cells(cache_root, figures_root, rebuild=False):
+    """Write the trial and neurons caches and `grating_tuning_cells.csv` under `cache_root`.
+
+    Args:
+        cache_root (Path): `cache_gratings` folder, written to.
+        figures_root (Path): figures read root holding the figure 2 table of the RS/OF threshold
+            (`get_figures_roots(...)[0]`), only read.
+        rebuild (bool): re-sync the recordings and reload neurons_df instead of reading the caches.
+
+    Returns:
+        pd.DataFrame: the table written to `grating_tuning_cells.csv`.
+    """
     flm = flz.get_flexilims_session(PROJECT)
-    _, save_root = get_figures_roots(flm, fig_subdir="cache_gratings")
-    cache = save_root / "cache"
+    cache = Path(cache_root) / "cache"
     cache.mkdir(parents=True, exist_ok=True)
 
     rng = np.random.default_rng(0)
@@ -264,13 +276,14 @@ def main(rebuild=False):
         out_col="sftf_tuned",
     )
     # Fig S10 recomputes both columns at run time with the same function; they are kept
-    # here for the other readers of the CSV (revisions/sftf)
-    rsof_threshold = figure2_rsof_threshold(get_figures_roots(flm)[0])
+    # in the CSV so that it is self-contained
+    rsof_threshold = figure2_rsof_threshold(figures_root)
     cells["rsof_threshold"] = rsof_threshold
     cells["rsof_tuned"] = cells.rsof_test_rsq > rsof_threshold
-    cells.to_csv(save_root / "grating_tuning_cells.csv", index=False)
+    out = Path(cache_root) / "grating_tuning_cells.csv"
+    cells.to_csv(out, index=False)
 
-    print(f"{len(cells)} iscell ROIs -> {save_root / 'grating_tuning_cells.csv'}")
+    print(f"{len(cells)} iscell ROIs -> {out}")
     print(f"depth selective: {cells.depth_tuned.sum()}")
     print(f"SF/TF tuned (cross-validated): {cells.sftf_tuned.sum()}")
     print(
@@ -281,6 +294,14 @@ def main(rebuild=False):
         f"SF/TF tuned and depth selective: {(cells.sftf_tuned & cells.depth_tuned).sum()}"
     )
     print(f"SF/TF tuned and RS/OF tuned: {(cells.sftf_tuned & cells.rsof_tuned).sum()}")
+    return cells
+
+
+def main(rebuild=False):
+    flm = flz.get_flexilims_session(PROJECT)
+    figures_root, _ = get_figures_roots(flm)
+    _, cache_root = get_figures_roots(flm, fig_subdir="cache_gratings")
+    build_grating_cells(cache_root, figures_root, rebuild=rebuild)
 
 
 if __name__ == "__main__":
