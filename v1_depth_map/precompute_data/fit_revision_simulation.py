@@ -427,7 +427,7 @@ def main():
     parser.add_argument(
         "--no-fits", action="store_true", help="skip the fits (use with --traces)"
     )
-    parser.add_argument("--site", choices=sorted(("local", "nemo")), default="local")
+    parser.add_argument("--site", choices=("local", "nemo", "other"), default="local")
     args = parser.parse_args()
 
     assert_site_root(args.site)

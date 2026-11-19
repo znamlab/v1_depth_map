@@ -1,14 +1,21 @@
-"""Refit the closed-loop 1D depth tuning of one revision session into a run directory.
+"""Refit the closed-loop 1D depth tuning of one revision session, then merge it.
 
-Same fits as the depth block of `analysis_pipeline.main` for `SpheresPermTubeReward`
-(find_depth_neurons, then fit_preferred_depth on all trials, on odd trials and with 5-fold
-cross-validation, for all frames, running frames and stationary frames), but the
-production `neurons_df.pickle` is only read (for ROI alignment), never written. The
+Fit step: same fits as the depth block of `analysis_pipeline.main` for
+`SpheresPermTubeReward` (find_depth_neurons, then fit_preferred_depth on all trials, on
+odd trials and with 5-fold cross-validation, for all frames, running frames and stationary
+frames). The session's `neurons_df.pickle` is only read (for ROI alignment); the
 closed-loop depth columns are saved, with `roi`, to
 OUT_DIR/SESSION/closedloop_depth_fit.pickle, with provenance in a .json.
 
+Merge step (`--merge`): copies every column of that result (including the `_running` /
+`_notrunning` fits, which this refit redoes) into the session's `neurons_df.pickle`
+(located through flexiznam, as in the fit step), with the backup, atomic write and
+verification of `refit_treadmill_depth.merge_into_neurons_df`.
+
 Usage:
     python refit_closedloop_depth.py SESSION --out-dir DIR [--overwrite]
+    python refit_closedloop_depth.py SESSION --out-dir DIR --merge [--dry-run]
+        [--backup-suffix SUFFIX] [--overwrite-backup]
 """
 
 import argparse
@@ -22,11 +29,14 @@ import flexiznam as flz
 import cottage_analysis
 from cottage_analysis.analysis import common_utils, find_depth_neurons
 from cottage_analysis.pipelines import pipeline_utils
-from v1_depth_map.precompute_data.refit_treadmill_depth import code_version
-from v1_depth_map.precompute_data.rerun_depth_fit import (
+from v1_depth_map.precompute_data.refit_treadmill_depth import (
     DEPTH_COLUMN_KEYS,
     PHOTODIODE_PROTOCOL,
     PROJECT,
+    add_merge_arguments,
+    code_version,
+    get_neurons_ds,
+    merge_into_neurons_df,
 )
 
 FILTER_ROIS = {"anatomical_only": 3, "annotated": True}
@@ -39,20 +49,18 @@ CONDITIONS = [
 ]
 
 
+def result_path(out_dir, session):
+    return Path(out_dir) / session / "closedloop_depth_fit.pickle"
+
+
 def main(session, out_dir, overwrite=False):
-    out_dir = Path(out_dir) / session
-    out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / "closedloop_depth_fit.pickle"
+    out = result_path(out_dir, session)
+    out.parent.mkdir(parents=True, exist_ok=True)
     if out.exists() and not overwrite:
         raise FileExistsError(f"{out} exists: not overwriting (pass --overwrite)")
 
     flm = flz.get_flexilims_session(project_id=PROJECT)
-    neurons_ds = flz.get_datasets(
-        origin_name=session,
-        dataset_type="neurons_df",
-        flexilims_session=flm,
-        allow_multiple=False,
-    )
+    neurons_ds = get_neurons_ds(session, flm)
     neurons_df = pd.read_pickle(neurons_ds.path_full)  # read only
     suite2p_ds = flz.get_datasets(
         origin_name=session,
@@ -147,10 +155,29 @@ def main(session, out_dir, overwrite=False):
     print(json.dumps(provenance, indent=2))
 
 
+def merge(session, out_dir, **kwargs):
+    """Merge every column of OUT_DIR/SESSION/closedloop_depth_fit.pickle into neurons_df."""
+    return merge_into_neurons_df(
+        get_neurons_ds(session).path_full, result_path(out_dir, session), **kwargs
+    )
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("session")
     parser.add_argument("--out-dir", required=True)
     parser.add_argument("--overwrite", action="store_true")
+    add_merge_arguments(parser)
     args = parser.parse_args()
-    main(args.session, args.out_dir, overwrite=args.overwrite)
+    if not args.merge and (args.dry_run or args.backup_suffix or args.overwrite_backup):
+        parser.error("--dry-run, --backup-suffix and --overwrite-backup need --merge")
+    if args.merge:
+        merge(
+            args.session,
+            args.out_dir,
+            backup_suffix=args.backup_suffix,
+            dry_run=args.dry_run,
+            overwrite_backup=args.overwrite_backup,
+        )
+    else:
+        main(args.session, args.out_dir, overwrite=args.overwrite)

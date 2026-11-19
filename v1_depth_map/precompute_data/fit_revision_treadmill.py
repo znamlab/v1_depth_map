@@ -18,8 +18,7 @@ are fit up to three ways:
 Column naming
 -------------
 Onset-detection method is ALWAYS explicit in the merged column names. `_treadmill` means
-plateau everywhere (see `revisions/migrate_treadmill_columns.py`, which settled that
-convention across all four sessions), so a `model` fit must never merge into it:
+plateau in every session, so a `model` fit must never merge into it:
 
     target            method     merges into
     treadmill         plateau    _treadmill_trial_average_plateau   <- figure default
@@ -32,27 +31,46 @@ at ~240 hardcoded sites and keeps its name), while the trial-average family tags
 methods. The mapping is spelled out in `FIT_TARGETS[...]["column_suffix"]` rather than
 derived by appending `_{method}`, so this cannot drift.
 
+The full suffix convention of the treadmill columns in `neurons_df.pickle`, for the depth
+fits (`refit_treadmill_depth.py`) and the RS/OF fits (this script). Depth tuning always
+reduces each trial to its trial-mean dF/F, so it has no per-frame / trial-average axis:
+only the onset method distinguishes depth fits. RS/OF has both axes.
+
+    suffix                              depth            RS/OF
+    _treadmill                          plateau          per-frame,     plateau
+    _treadmill_plateau                  plateau (twin)   --
+    _treadmill_model                    model            per-frame,     model
+    _treadmill_trial_average_plateau    --               trial-average, plateau  <- figure default
+    _treadmill_trial_average_model      --               trial-average, model
+
+Invariant: no treadmill family may mix onset methods, and a suffix means the same thing in
+every session.
+
 All three use the *legacy* ``(log_sigma_x2, log_sigma_y2, theta)`` 2D-Gaussian
 parameterisation of the `reviews` branch of cottage_analysis. That is the point of the
 `_legacy` filename tag: nemo carries identically-named `..._treadmill_trial_average.pickle`
 files whose popts are in the newer Cholesky parameterisation, and the two are NOT
 interchangeable. The tag makes them impossible to confuse if anything is ever synced
 between the two locations. (The real per-frame `*_treadmill.pickle` family happens to
-already be legacy-parameterised for this project - see `treadmill.ipynb` cell 23 - so
+already be legacy-parameterised for this project, so
 `treadmill_frames`'s `_legacy` tag is for naming consistency rather than a parameterisation
 guard, but it also keeps the filename from colliding with that real, untagged family.)
 
-**Which storage this writes to is controlled by `--site {local,nemo}`.** With `--site local`
+**Which storage this writes to is controlled by `--site {local,nemo,other}`.** With `--site local`
 (the default), `~/.flexiznam/config.yml` has an explicit `project_paths` entry mapping
-`colasa_3d-vision_revisions` to `/Volumes/BlackPasspo/v1_depth_map/{processed,raw}`, and
-`neurons_ds.path_full` resolves through `flz.get_data_root` to that personal copy.
+`colasa_3d-vision_revisions` to a personal copy of the data (`SITE_ROOTS["local"]`), and
+`neurons_ds.path_full` resolves through `flz.get_data_root` to that copy.
 `--site nemo` instead expects (and `assert_site_root` checks) that the same call resolves to
-the real shared `/nemo/lab/znamenskiyp/home/shared/projects` tree -- i.e. it is meant to be run
+the shared production tree on the cluster (`SITE_ROOTS["nemo"]`) -- i.e. it is meant to be run
 directly on the cluster (where `--use-slurm` needs `sbatch` on `PATH` anyway), writing into the
 production session folders. The `_legacy`/`_plateau`-style filename and `column_suffix` tags
 are what keep that run from colliding with what is already there, most notably the real,
 differently-parameterised `..._treadmill_trial_average.pickle` files nemo already carries (see
 the `_legacy` tag note above) -- not a promise that this script never touches nemo.
+`--site other` is for any other copy of the data, e.g. the published data package: the data
+root is whatever `project_paths` in the flexiznam config says, with no prefix check (it must
+still exist, and is printed before anything runs). The fits are written into that copy's
+session folders.
 
 Typical use::
 
@@ -119,7 +137,7 @@ session folder (invisible to `merge_fit_dataframes`' `*.pickle` glob), keyed by 
 Without it there is no way to tell after the fact which bounds produced a given pickle, so
 back up the previous pickles alongside their own record before re-fitting. (The older
 single `param_range_current.json` was overwritten by every run regardless of family, so it
-is unreliable - see notes/02_processing_fits.md, section 6.)
+is unreliable.)
 """
 
 import argparse
@@ -221,7 +239,7 @@ PHOTODIODE_PROTOCOL = 5
 # is the *per-frame plateau* family (it is read at ~240 hardcoded sites, so it keeps its
 # name), while the trial-average family tags both methods explicitly. Spelling each target
 # out here is what keeps a model merge from silently landing on plateau columns. See
-# `revisions/migrate_treadmill_columns.py` for the full convention.
+# "Column naming" in the module docstring for the full convention.
 #
 # `param_range` is per target rather than shared in COMMON_PARAMS: only the trial-average
 # `treadmill` target is narrowed to the protocol grid. `sphere` samples running speed
@@ -272,17 +290,22 @@ FIT_TARGETS = {
 # tree" into a property rather than a hope: on nemo the outputs land in the real session
 # folders, and only the filename tags in FIT_TARGETS keep them from colliding with what is
 # already there.
+# "other" has no expected prefix: any data root is accepted (it must still exist).
 SITE_ROOTS = {
     "local": "/Volumes/BlackPasspo",
     "nemo": "/nemo/lab/znamenskiyp/home/shared/projects",
+    "other": None,
 }
 
 
 def assert_site_root(site):
-    """Refuse to run unless this project's data root matches the declared site."""
+    """Refuse to run unless this project's data root matches the declared site.
+
+    `site="other"` accepts any existing data root.
+    """
     expected = SITE_ROOTS[site]
     root = Path(flz.get_data_root("processed", project=PROJECT))
-    if not str(root).startswith(expected):
+    if expected is not None and not str(root).startswith(expected):
         raise RuntimeError(
             f"processed root for {PROJECT} is {root}, but --site {site} expects it to "
             f"start with {expected}. Refusing to run. Check the `project_paths` entry in "
@@ -380,7 +403,7 @@ def param_range_record_path(session_dir, target, method, use_col="dffs"):
     One file per (target, method, use_col) family. The previous single
     `param_range_current.json` was rewritten by *every* run, so e.g. a `--use-col spks`
     run left a record describing the spike pickles beside dF/F pickles fit with other
-    bounds (found 2026-11-16, see notes/02_processing_fits.md, section 6). Legacy
+    bounds. Legacy
     `param_range_current.json` files are left in place but no longer written.
     """
     return Path(session_dir) / f"param_range_{target}_{method}_{use_col}.json"
@@ -430,8 +453,7 @@ def report_rsof_range(trials_df, cfg, label=""):
 
     Reuses `figure_utils.trial_averages.reduce_trials_to_average`, which already
     replicates `fit_rs_of_tuning(trial_average=True)`'s running mask, rather than
-    duplicating that mask here. Imported locally because `figure_utils` pulls in
-    matplotlib, which this script otherwise does not need.
+    duplicating that mask here. Imported locally because only `--check-range` needs it.
 
     Returns:
         dict or None: `n`, `rs_min`/`rs_max` (m/s), `of_min`/`of_max` (deg/s) and
@@ -873,7 +895,8 @@ def main():
         "--site",
         choices=sorted(SITE_ROOTS),
         default="local",
-        help="Which data root to expect; refuses to run if it does not match.",
+        help="Which data root to expect; refuses to run if it does not match. "
+        "'other' accepts any data root (e.g. the published data package).",
     )
     parser.add_argument(
         "--use-slurm",
