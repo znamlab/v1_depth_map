@@ -18,37 +18,9 @@ stop at whichever level you need.
 
 | Level | What it does | Reads | Writes | Cost |
 |---|---|---|---|---|
-| 1. Draw the figures | Runs the figure notebooks on the shipped caches | `analysis/` | figures in `analysis/`, statistics in this repository | About 1 hour for all figures on a laptop, up to 20 GB of RAM |
+| 1. Draw the figures | Runs the figure notebooks on the shipped caches | `analysis/` (and a few example sessions in `raw/`, `processed/`) | figures in `analysis/`, statistics in this repository | 1 to 2 hours for all figures on a laptop, up to 20 GB of RAM |
 | 2. Regenerate the caches | Rebuilds the notebook caches from the per-session data | `processed/`, `raw/` | `analysis/` | Laptop; several hours, more with the deep option (see below) |
 | 3. Re-analyse | Reruns preprocessing and the model fits | `raw/`, `processed/` | `processed/` | Slow; written for a Slurm cluster |
-
-**Level 1, drawing the figures.** Each notebook in `v1_depth_map/figures/` draws one
-manuscript figure. With the default flags a notebook only reads its cache from `analysis/`,
-so this level needs no fitting and no per-session data. The data package ships `analysis/`
-already filled, so this works straight after download.
-
-**Level 2, regenerating the caches.** The caches in `analysis/` are tables that the
-notebooks assemble from the per-session results in `processed/` (and, for the example
-panels, from the stimulus logs in `raw/`). Every notebook has a reload flag that rebuilds
-its cache; `analysis/` is entirely disposable: delete it, run level 2, and it comes back.
-Nothing at this level writes to `raw/` or `processed/`. It runs on a laptop but can be
-slow, and has two depths:
-
-- `--reload`: concatenates the per-session results into the cached tables and reruns the
-  bootstraps. This is the normal way to regenerate `analysis/`.
-- `--recompute-deep`: also recomputes the per-session PSTHs and running-speed statistics
-  (`psth_crossval.pkl`, `rs_stats.pkl`) from the raw stimulus logs and dF/F traces of all
-  84 sessions, instead of reading the copies shipped in `processed/`. The recomputed files
-  go to `analysis/per_session/`. About 3.5 hours on a laptop (2.2 h for the PSTHs, 1.1 h
-  for the running-speed statistics), with a peak of about 6 GB of memory.
-
-**Level 3, re-analysing.** The per-session files in `processed/` (suite2p traces,
-`neurons_df*.pickle` with the depth, running speed / optic flow and receptive field fits,
-decoder results, simulations) were produced by the scripts in
-`v1_depth_map/batch_analysis/` and `v1_depth_map/precompute_data/`. They are slow model
-fits, were run as Slurm jobs, and write their results into `processed/`. They are provided
-to document exactly how the processed data was made; see
-[Re-analysis](#level-3-re-analysis) before running them.
 
 ## Installation
 
@@ -69,7 +41,7 @@ copy, set `COTTAGE_FONT_DIR` to a folder containing the Arial `.ttf` files.
 
 ## Data package
 
-Download and unpack the data package. Its layout is:
+The data package has the following layout:
 
 ```
 v1_depth_map_data/
@@ -93,27 +65,8 @@ Data is looked up through [flexiznam](https://github.com/znamlab/flexiznam), the
 database package, used here in offline mode: it reads `offline_database.json` and needs no
 account or network access.
 
-Copy `config_template.yml` from the package to `~/.flexiznam/config.yml` and replace
-`/path/to/v1_depth_map_data` with the location of the package:
-
-```yaml
-offline_mode: true
-offline_yaml: /path/to/v1_depth_map_data/offline_database.json
-project_ids:
-  hey2_3d-vision_foodres_20220101: 624ae21a73245b6d9992a1f5
-  colasa_3d-vision_revisions: 67ae2a36b99b5006b4e2a8dd
-project_paths:
-  hey2_3d-vision_foodres_20220101:
-    raw: /path/to/v1_depth_map_data/raw
-    processed: /path/to/v1_depth_map_data/processed
-  colasa_3d-vision_revisions:
-    raw: /path/to/v1_depth_map_data/raw
-    processed: /path/to/v1_depth_map_data/processed
-enforce_dataset_types: false
-conda_envs:
-  dlc: dlc
-  cottage_analysis: cottage_analysis
-```
+Copy `config_template.yml` from the package to `~/.flexiznam/config.yml` and replace every
+`/path/to/v1_depth_map_data` in it with the location of the package.
 
 Both projects must point to the same `raw` and `processed` folders. The notebooks read and
 write their caches in the `analysis/` folder next to `processed/`; to use another location,
@@ -137,6 +90,8 @@ uv run python run_figures_pipeline.py --notebooks figure1_depth_selectivity.ipyn
 as SVG and PDF, and a status table with the run time and peak memory of each notebook is
 written to `analysis/FIGURES_README.md`. You can also open a notebook in Jupyter and run it
 by hand (`uv run jupyter lab`).
+
+All notebooks are in `v1_depth_map/figures/` unless noted:
 
 | Figure | Notebook |
 |---|---|
@@ -173,10 +128,22 @@ uv run python -m v1_depth_map.stats.build_manuscript_stats [--check]
 
 ## Level 2: regenerating the caches
 
+The caches in `analysis/` are tables that the notebooks assemble from the per-session
+results in `processed/` (and, for the example panels, from the stimulus logs in `raw/`).
+`analysis/` is entirely disposable: delete it, run level 2, and it comes back. Nothing at
+this level writes to `raw/` or `processed/`.
+
 ```bash
 uv run python run_figures_pipeline.py --reload                    # rebuild analysis/
 uv run python run_figures_pipeline.py --reload --recompute-deep   # also per-session PSTHs and running-speed stats
 ```
+
+- `--reload` concatenates the per-session results into the cached tables and reruns the
+  bootstraps. This is the normal way to regenerate `analysis/`.
+- `--recompute-deep` also recomputes the per-session PSTHs and running-speed statistics
+  (`psth_crossval.pkl`, `rs_stats.pkl`) of all 84 sessions from the stimulus logs and dF/F
+  traces, instead of reading the copies shipped in `processed/`. The recomputed files go to
+  `analysis/per_session/`. About 3.5 hours on a laptop, with a peak of about 6 GB of memory.
 
 The flags are set in a temporary copy of each notebook; the notebooks on disk are not
 modified. To rebuild one cache by hand, set the flag at the top of the notebook
@@ -185,7 +152,11 @@ modified. To rebuild one cache by hand, set the flag at the top of the notebook
 2 hours by default, 4 hours with `--reload` and 6 hours with `--recompute-deep`; change it
 with `--timeout SECONDS`.
 
-Some caches are shared, which is why the pipeline runs the notebooks in a fixed order:
+Some caches are shared between notebooks, so the pipeline runs them in a fixed order
+(`--dry-run` prints it).
+
+<details>
+<summary>Shared caches</summary>
 
 | Cache in `analysis/` | Written by | Also read by |
 |---|---|---|
@@ -196,96 +167,60 @@ Some caches are shared, which is why the pipeline runs the notebooks in a fixed 
 | `rf_neurons_df_slim_spks.pkl`, `rf_all_sig*_spks.pkl`, `rf_gradient_bootstraps_spks.pkl` | `figsupp9_v1_depth_map` | `figsupp8_multidepth_receptive_fields`, `figsupp9_rf_distance` |
 | `cache_gratings/` | `figsupp10_gratings` | Table S1 |
 
-Expected cost on a laptop (Apple M1 Pro, data on an external hard drive):
+</details>
 
-| Step | Time | Peak RAM |
-|---|---|---|
-| Fig. 2 closed-loop table | about 5 min | 1.4 GB |
-| Fig. S2 eye-tracking cache | about 11 min | 4.6 GB |
-| Fig. S10 gratings tables (`RELOAD`) | 25 to 30 min | under 3 GB |
+### Time and memory
 
-Two notebooks take much longer under `--reload`. On a Linux cluster node, with the data
-on a network file system, `figsupp9_v1_depth_map` took about 65 minutes (20 GB peak RAM)
-and `figsupp5_rsof`, which recomputes five hierarchical bootstraps of 20,000 resamples,
-about 2.5 hours (2 GB). The pipeline runs `figsupp5_rsof` last.
+Most notebooks finish in a few minutes and need less than 10 GB of RAM. The exceptions:
 
-Peak memory of each notebook (GB), measured by the pipeline on a Linux cluster node:
+- `figsupp1_vis_stim_sync` and `figure4_receptive_fields` load whole sessions on every
+  run, so they need about 20 GB even on the shipped caches.
+- `figure2_openloop` takes about 35 minutes at both levels, because it recomputes four
+  hierarchical bootstraps of 20,000 resamples on every run.
+- Under `--reload`, `figsupp5_rsof` takes about 2.5 hours because it recomputes five
+  hierarchical bootstraps of 20,000 resamples (the pipeline runs it last), and
+  `figsupp9_v1_depth_map` takes about 1 hour and 20 GB.
+
+A full `--reload` run took about 5.5 hours.
+
+<details>
+<summary>Run time and peak memory of each notebook</summary>
+
+Measured by the pipeline on a Linux cluster node with the data on a network file system.
+Level 1 times given as "under 15 min" are upper bounds, because they depend mostly on how
+fast the files can be read; the other times are as measured.
 
 | Notebook | Level 1 | Level 2 (`--reload`) |
 |---|---|---|
-| `figure1_depth_selectivity` | 9.6 | 9.6 |
-| `figure2_openloop` | 9.0 | 8.7 |
-| `figure2_rsof_integration` | 2.0 | 2.6 |
-| `figure3_depth_cells` | 4.0 | 5.0 |
-| `figure4_receptive_fields` | 18.0 | 19.0 |
-| `figsupp1_vis_stim_sync` | 20.2 | 20.5 |
-| `figsupp2_speed` | 4.9 | 5.4 |
-| `figsupp3_depth_pop` | 1.9 | 1.7 |
-| `figsupp4_size_control` | 1.4 | 1.4 |
-| `figsupp5_rsof` | 1.9 | 1.9 |
-| `figsupp6_openloop` | 3.8 | 3.3 |
-| `figsupp7_simulation_control` | 5.0 | 5.1 |
-| `figsupp8_multidepth_receptive_fields` | 7.2 | 8.8 |
-| `figsupp9_rf_distance` | 0.8 | 0.8 |
-| `figsupp9_v1_depth_map` | 1.4 | 20.2 |
-| `figsupp10_gratings` | 0.6 | 2.2 |
-| `methods_dataset_tables` | 0.6 | 0.6 |
+| `figure1_depth_selectivity` | under 15 min, 9.6 GB | 6 min, 9.6 GB |
+| `figure2_openloop` | 35 min, 9.0 GB | 35 min, 8.7 GB |
+| `figure2_rsof_integration` | under 15 min, 2.0 GB | 3 min, 2.6 GB |
+| `figure3_depth_cells` | under 15 min, 4.0 GB | 11 min, 5.0 GB |
+| `figure4_receptive_fields` | under 15 min, 18.0 GB | 35 min, 19.0 GB |
+| `figsupp1_vis_stim_sync` | under 15 min, 20.2 GB | 3 min, 20.5 GB |
+| `figsupp2_speed` | under 15 min, 4.9 GB | 8 min, 5.4 GB |
+| `figsupp3_depth_pop` | under 15 min, 1.9 GB | 3 min, 1.7 GB |
+| `figsupp4_size_control` | under 15 min, 1.4 GB | 3 min, 1.4 GB |
+| `figsupp5_rsof` | under 15 min, 1.9 GB | 145 min, 1.9 GB |
+| `figsupp6_openloop` | under 15 min, 3.8 GB | 2 min, 3.3 GB |
+| `figsupp7_simulation_control` | under 15 min, 5.0 GB | 2 min, 5.1 GB |
+| `figsupp8_multidepth_receptive_fields` | under 15 min, 7.2 GB | 9 min, 8.8 GB |
+| `figsupp9_rf_distance` | under 15 min, 0.8 GB | 1 min, 0.8 GB |
+| `figsupp9_v1_depth_map` | under 15 min, 1.4 GB | 65 min, 20.2 GB |
+| `figsupp10_gratings` | under 15 min, 0.6 GB | 9 min, 2.2 GB |
+| `methods_dataset_tables` | under 15 min, 0.6 GB | 1 min, 0.6 GB |
 
-`figsupp1_vis_stim_sync` and `figure4_receptive_fields` load whole sessions on every run,
-so they need about 20 GB even on the shipped caches.
+</details>
 
 ## Level 3: re-analysis
 
-The scripts below produced the contents of `processed/`. They are kept so that every
-processed file can be traced to the code that made it. They were written for the Crick
-cluster: the `.sh` and `.sbatch` files are Slurm wrappers that need adapting (partition,
-modules, environment, paths), and several scripts take hours per session.
-
-**These scripts write into `processed/`**, replacing or adding to the shipped results. Work
-on a copy if you want to keep the original.
-
-Most of the revision fits work in two steps. The fit writes its result, with a provenance
-`.json`, to a working folder given with `--out-dir`, and leaves the session folder alone. A
-second call with `--merge` (try `--dry-run` first) copies the fitted columns into the
-session's `neurons_df.pickle`: it matches neurons by `roi`, makes a byte-for-byte backup,
-writes atomically, then reloads the file and checks that the merged columns equal the fit
-and that every other column is unchanged.
-
-```bash
-S=v1_depth_map/precompute_data/refit_treadmill_depth.py
-uv run python $S SESSION plateau_single_frames --out-dir WORK            # fit
-uv run python $S SESSION plateau_single_frames --out-dir WORK --merge    # write into neurons_df.pickle
-```
-
-`fit_revision_treadmill.py` writes its fit files into the session folder and has its own
-`--merge`. `refit_rsof_batched.py` writes the same files to `--out-dir`; copy them into the
-session folder and run `fit_revision_treadmill.py --merge --conflicts overwrite`.
-
-| Product in `processed/` | Script |
-|---|---|
-| suite2p ROIs and traces, dF/F | `batch_analysis/batch_preprocess/`, `batch_analysis/batch_preprocess_revisions/` (uses [2p-preprocess](https://github.com/znamlab/2p-preprocess)) |
-| `neurons_df.pickle`: depth tuning, running speed / optic flow and RF fits | `batch_analysis/batch_analysis/` (the `cottage_analysis` analysis pipeline) |
-| Size-control fits | `batch_analysis/batch_size_control/` |
-| `decoder_results.pickle` | `batch_analysis/batch_depth_decoder/` |
-| Eye tracking | `batch_analysis/eye_tracking/` |
-| Deconvolved spikes and `neurons_df_spks.pickle` (RF fits on spikes) | `precompute_data/deconvolve_tau.py`, `precompute_data/rf_fit_spikes.py` |
-| Grating fits: `neurons_df_sftf.pickle` | `batch_analysis/batch_SFTF/`, `precompute_data/rerun_depth_sftf.py` |
-| Treadmill depth tuning (columns `*_treadmill`, `*_treadmill_model` of `neurons_df.pickle`) | `precompute_data/refit_treadmill_depth.py` |
-| Closed-loop depth tuning of the revision sessions | `precompute_data/refit_closedloop_depth.py` |
-| Treadmill and closed-loop running speed / optic flow fits (columns `*_treadmill*` of `neurons_df.pickle`) | `precompute_data/fit_revision_treadmill.py`; `precompute_data/refit_rsof_batched.py` runs the same fits as a Slurm array over batches of neurons |
-| Simulated responses (`simulated_*.parquet`) | `precompute_data/fit_revision_simulation.py`, `precompute_data/rerun_simulation_tdecay2_areanorm.py` |
-| `psth_crossval.pkl`, `rs_stats.pkl` | `precompute_data/make_depth_tuning_raster.py`, `precompute_data/calculate_rs_stats.py` |
-
-`fit_revision_treadmill.py` and `fit_revision_simulation.py` check which copy of the data
-they are about to write to. Outside the Crick, pass `--site other`, which accepts any data
-root and prints it before running:
-
-```bash
-uv run python v1_depth_map/precompute_data/fit_revision_treadmill.py --site other --only treadmill --method plateau
-```
-
-`v1_depth_map/revisions/rf_spike_tau/` contains the analysis behind the deconvolution time
-constant and the 2-frame lag used for the receptive field fits on spikes.
+The per-session files in `processed/` (suite2p traces, `neurons_df*.pickle` with the depth,
+running speed / optic flow and receptive field fits, decoder results, simulations) were
+produced by the scripts in `v1_depth_map/batch_analysis/` and
+`v1_depth_map/precompute_data/`. They are slow model fits written for the Crick Slurm
+cluster, and they write into `processed/`. They are provided to document how the processed
+data was made; [REANALYSIS.md](REANALYSIS.md) lists which script made which file and how
+to run them.
 
 ## Repository layout
 
@@ -310,16 +245,6 @@ The statistics tests need no data:
 uv run pytest v1_depth_map/stats/tests/
 ```
 
-## Conventions
-
-- All fits use traces with `anatomical_only=3` and `ast_neuropil=False` (main dataset) or
-  the curated `annotated` masks (revision dataset).
-- Depth-selective neurons: `iscell` and one-sided Spearman p < 0.05 on the cross-validated
-  depth tuning fit.
-- Receptive field panels and statistics use the fits on deconvolved spikes
-  (`neurons_df_spks.pickle`), with a 2-frame stimulus lag. Everything else uses dF/F with
-  no lag.
-
 ## Licence and citation
 
 Code: MIT, see [LICENSE](LICENSE). Please cite the paper if you use this code or data:
@@ -332,6 +257,9 @@ Code: MIT, see [LICENSE](LICENSE). Please cite the paper if you use this code or
 
 Fits and bootstraps are seeded, but regenerated values can differ from the shipped ones across platforms and library versions.
 
+<details>
+<summary>Frame matching between stimulus log and monitor frames</summary>
+
 The stimulus shown on each monitor frame is read from the frame log by row number. In a
 few recordings the log starts at `FrameIndex` 1, so the stimulus is read one monitor frame
 (7 ms) late. `v1_depth_map` keeps this matching (`ROW_MATCHED_PROJECTS`, set in
@@ -341,3 +269,5 @@ A few shipped results were computed with `FrameIndex` matching and change margin
 recomputed: the depth decoders of 13 original sessions and, for
 `PZAG16.3c_S20250401`, the trial-average running speed and optic flow fits and the fits
 on simulated responses (counts change by one or two cells).
+
+</details>
