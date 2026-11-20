@@ -200,9 +200,6 @@ Expected cost on a laptop (Apple M1 Pro, data on an external hard drive):
 | Fig. S2 eye-tracking cache | about 11 min | 4.6 GB |
 | Fig. S10 gratings tables (`RELOAD`) | 25 to 30 min | under 3 GB |
 
-Fits and bootstraps are seeded, but regenerated values can differ from the shipped ones in
-the last digits across platforms and library versions.
-
 ## Level 3: re-analysis
 
 The scripts below produced the contents of `processed/`. They are kept so that every
@@ -253,17 +250,6 @@ root and prints it before running:
 uv run python v1_depth_map/precompute_data/fit_revision_treadmill.py --site other --only treadmill --method plateau
 ```
 
-**Frame matching.** The stimulus shown on each monitor frame is read from the frame log,
-matched by row number. A few recordings have a frame log that starts at `FrameIndex` 1, so
-there the stimulus is read one monitor frame (7 ms) late. The shipped results were
-computed that way, and `v1_depth_map` keeps this matching so that they are reproduced
-exactly (`ROW_MATCHED_PROJECTS` in `cottage_analysis.preprocessing.synchronisation`, set
-in `v1_depth_map/__init__.py`). The effect is small: with `FrameIndex` matching, the PSTH
-of a cell correlates at 0.95 or more with the shipped one, and none of 60 cells refitted in
-the most affected session changed depth-selective status. The PZAG22 mouse is the
-exception: their frame logs start hundreds of frames in, and they are matched by
-`FrameIndex`.
-
 `v1_depth_map/revisions/rf_spike_tau/` contains the analysis behind the deconvolution time
 constant and the 2-frame lag used for the receptive field fits on spikes.
 
@@ -303,3 +289,18 @@ uv run pytest v1_depth_map/stats/tests/
 ## Licence and citation
 
 Code: MIT, see [LICENSE](LICENSE). Please cite the paper if you use this code or data: `<CITATION>`.
+
+## Note on exact numbers
+
+Fits and bootstraps are seeded, but regenerated values can differ from the shipped ones in
+the last digits across platforms and library versions.
+
+The stimulus shown on each monitor frame is read from the frame log by row number. In a
+few recordings the log starts at `FrameIndex` 1, so the stimulus is read one monitor frame
+(7 ms) late. `v1_depth_map` keeps this matching (`ROW_MATCHED_PROJECTS`, set in
+`v1_depth_map/__init__.py`) so that the shipped results are reproduced exactly; recordings
+of the PZAG22 mouse, whose logs start hundreds of frames in, are matched by `FrameIndex`.
+A few shipped results were computed with `FrameIndex` matching and change marginally when
+recomputed: the depth decoders of 13 original sessions (accuracy within 0.006) and, for
+`PZAG16.3c_S20250401`, the trial-average running speed and optic flow fits, the treadmill
+receptive fields on spikes and the fits on simulated responses.
