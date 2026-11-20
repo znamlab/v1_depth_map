@@ -297,7 +297,10 @@ Code: MIT, see [LICENSE](LICENSE). Please cite the paper if you use this code or
 ## Note on exact numbers
 
 Fits and bootstraps are seeded, but regenerated values can differ from the shipped ones in
-the last digits across platforms and library versions.
+the last digits across platforms and library versions. Refits can differ more: when the
+trial-average running speed and optic flow fits of one session were rerun on another
+machine, about 3% of the cells converged to a different optimum than in the shipped fits,
+while the receptive field fits were reproduced exactly.
 
 The stimulus shown on each monitor frame is read from the frame log by row number. In a
 few recordings the log starts at `FrameIndex` 1, so the stimulus is read one monitor frame
@@ -305,6 +308,7 @@ few recordings the log starts at `FrameIndex` 1, so the stimulus is read one mon
 `v1_depth_map/__init__.py`) so that the shipped results are reproduced exactly; recordings
 of the PZAG22 mouse, whose logs start hundreds of frames in, are matched by `FrameIndex`.
 A few shipped results were computed with `FrameIndex` matching and change marginally when
-recomputed: the depth decoders of 13 original sessions (accuracy within 0.006) and, for
-`PZAG16.3c_S20250401`, the trial-average running speed and optic flow fits, the treadmill
-receptive fields on spikes and the fits on simulated responses.
+recomputed: the depth decoders of 13 original sessions (the median difference in decoding
+error between open and closed loop goes from 0.31 to 0.28 octaves) and, for
+`PZAG16.3c_S20250401`, the trial-average running speed and optic flow fits and the fits
+on simulated responses (counts change by one or two cells).
