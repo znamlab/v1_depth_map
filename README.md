@@ -288,7 +288,11 @@ uv run pytest v1_depth_map/stats/tests/
 
 ## Licence and citation
 
-Code: MIT, see [LICENSE](LICENSE). Please cite the paper if you use this code or data: `<CITATION>`.
+Code: MIT, see [LICENSE](LICENSE). Please cite the paper if you use this code or data:
+
+> He Y, Colas Nieto A, Blot A, Znamenskiy P (2024). A depth map of visual space in the
+> primary visual cortex. *bioRxiv* 2024.09.27.615442.
+> https://doi.org/10.1101/2024.09.27.615442
 
 ## Note on exact numbers
 
