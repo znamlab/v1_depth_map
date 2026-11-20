@@ -11,7 +11,7 @@ What a run does:
      `v1_depth_map/figures/` except `unused_*.ipynb`, plus
      `v1_depth_map/figure_utils/methods_dataset_tables.ipynb`) and orders them so that
      each runs after the notebooks whose caches it reads (`DEPENDENCIES`), alphabetically
-     otherwise.
+     otherwise, with the slow `RUN_LAST` notebooks at the end.
   2. Executes each with `jupyter nbconvert --execute`, using the Python interpreter that
      runs this script (run it with `uv run python run_figures_pipeline.py`). A copy with
      a `kernelspec` patched in is written to a temp dir first, because several notebooks
@@ -78,6 +78,9 @@ DEPENDENCIES = {
         "figsupp10_gratings.ipynb",
     ],
 }
+# Notebooks run after all the others: slow under --reload (bootstraps, about 2.5 hours)
+# and no other notebook reads their caches.
+RUN_LAST = ["figsupp5_rsof.ipynb"]
 
 # Flags set to True by --reload: rebuild the notebook caches under the analysis root
 # from the processed data. Each must be assigned exactly once at the top level of a
@@ -109,15 +112,16 @@ POLL_INTERVAL = 0.2  # Interval in seconds to poll memory/process status
 # depends on the mode: reading the caches, rebuilding them (--reload), or also recomputing
 # the per-session PSTHs and running-speed statistics (--recompute-deep).
 TIMEOUT_SECONDS = 900
-TIMEOUT_SECONDS_RELOAD = 3600
-TIMEOUT_SECONDS_DEEP = 4 * 3600
+TIMEOUT_SECONDS_RELOAD = 4 * 3600
+TIMEOUT_SECONDS_DEEP = 6 * 3600
 
 
 def order_notebooks(notebooks):
     """Sort notebooks so that each comes after its selected `DEPENDENCIES`.
 
-    Ties are broken alphabetically by file name. Prerequisites that are not selected
-    are only reported: their caches are expected to exist already.
+    Ties are broken alphabetically by file name, with the `RUN_LAST` notebooks after
+    all the others. Prerequisites that are not selected are only reported: their caches
+    are expected to exist already.
     """
     by_name = {nb.name: nb for nb in notebooks}
     deps = {
@@ -134,8 +138,9 @@ def order_notebooks(notebooks):
         ready = sorted(n for n in remaining if all(d in ordered for d in deps[n]))
         if not ready:
             raise ValueError(f"Circular DEPENDENCIES among {sorted(remaining)}")
-        ordered.append(ready[0])
-        remaining.remove(ready[0])
+        first = [n for n in ready if n not in RUN_LAST] or ready
+        ordered.append(first[0])
+        remaining.remove(first[0])
     return [by_name[n] for n in ordered]
 
 

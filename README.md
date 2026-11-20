@@ -178,7 +178,7 @@ The flags are set in a temporary copy of each notebook; the notebooks on disk ar
 modified. To rebuild one cache by hand, set the flag at the top of the notebook
 (`recompute_summary`, `regenerate_cached_files`, `RELOAD`, ...; the full list is
 `RELOAD_FLAGS` in `run_figures_pipeline.py`) to `True`. Each notebook has a time limit:
-15 minutes by default, 1 hour with `--reload` and 4 hours with `--recompute-deep`; change it
+15 minutes by default, 4 hours with `--reload` and 6 hours with `--recompute-deep`; change it
 with `--timeout SECONDS`.
 
 Some caches are shared, which is why the pipeline runs the notebooks in a fixed order:
@@ -199,6 +199,11 @@ Expected cost on a laptop (Apple M1 Pro, data on an external hard drive):
 | Fig. 2 closed-loop table | about 5 min | 1.4 GB |
 | Fig. S2 eye-tracking cache | about 11 min | 4.6 GB |
 | Fig. S10 gratings tables (`RELOAD`) | 25 to 30 min | under 3 GB |
+
+Two notebooks take much longer under `--reload`. On a Linux cluster node, with the data
+on a network file system, `figsupp9_v1_depth_map` took about 65 minutes (20 GB peak RAM)
+and `figsupp5_rsof`, which recomputes five hierarchical bootstraps of 20,000 resamples,
+about 2.5 hours (2 GB). The pipeline runs `figsupp5_rsof` last.
 
 ## Level 3: re-analysis
 
