@@ -4,7 +4,7 @@ Analysis and figure code for "A depth map of visual space in the primary visual 
 (Znamenskiy lab, The Francis Crick Institute).
 
 This repository draws every figure and computes every number of the manuscript from the
-accompanying data package (`<DATA_PACKAGE_URL>`). The core analysis library (fits,
+accompanying data package. The core analysis library (fits,
 synchronisation, plotting helpers) is
 [`cottage_analysis`](https://github.com/znamlab/cottage_analysis); this repository holds the
 figure notebooks, the project-specific helpers they use, and the scripts that produced the
@@ -69,7 +69,7 @@ copy, set `COTTAGE_FONT_DIR` to a folder containing the Arial `.ttf` files.
 
 ## Data package
 
-Download and unpack the data package (`<DATA_PACKAGE_URL>`). Its layout is:
+Download and unpack the data package. Its layout is:
 
 ```
 v1_depth_map_data/
@@ -295,8 +295,8 @@ uv run pytest v1_depth_map/stats/tests/
 
 Code: MIT, see [LICENSE](LICENSE). Please cite the paper if you use this code or data:
 
-> He Y, Colas Nieto A, Blot A, Znamenskiy P (2024). A depth map of visual space in the
-> primary visual cortex. *bioRxiv* 2024.09.27.615442.
+> Blot A, He Y, Colas Nieto A, Cypranowska C, Znamenskiy P. A depth map of visual space
+> in the primary visual cortex. *bioRxiv* 2024.09.27.615442.
 > https://doi.org/10.1101/2024.09.27.615442
 
 ## Note on exact numbers

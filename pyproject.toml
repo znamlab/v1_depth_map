@@ -10,6 +10,8 @@ license = { text = "MIT" }
 authors = [
     { name = "Antonin Blot" },
     { name = "Yiran He", email = "yiran.he@crick.ac.uk" },
+    { name = "Antonio Colas Nieto" },
+    { name = "Caroline Cypranowska" },
     { name = "Petr Znamenskiy" },
 ]
 urls = { Homepage = "https://github.com/znamlab/v1_depth_map" }
