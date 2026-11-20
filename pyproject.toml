@@ -59,6 +59,9 @@ where = ["."]
 version_file = "v1_depth_map/_version.py"
 version_scheme = "no-guess-dev"
 local_scheme = "no-local-version"
+# Only version tags (vX.Y.Z) define the version; other tags, such as the one marking the
+# code of a paper, are ignored.
+git_describe_command = ["git", "describe", "--dirty", "--tags", "--long", "--match", "v[0-9]*.[0-9]*"]
 
 [tool.uv]
 # The lab packages list each other by SSH URL; these pins make every one of them install over
