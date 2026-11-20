@@ -111,7 +111,7 @@ POLL_INTERVAL = 0.2  # Interval in seconds to poll memory/process status
 # Per-notebook execution timeout in seconds, overridable via --timeout. The default
 # depends on the mode: reading the caches, rebuilding them (--reload), or also recomputing
 # the per-session PSTHs and running-speed statistics (--recompute-deep).
-TIMEOUT_SECONDS = 900
+TIMEOUT_SECONDS = 2 * 3600
 TIMEOUT_SECONDS_RELOAD = 4 * 3600
 TIMEOUT_SECONDS_DEEP = 6 * 3600
 
@@ -554,6 +554,15 @@ async def main():
 
     # Run notebooks one-by-one to safely monitor resource usage and avoid system memory exhaustion
     for nb_path in notebooks:
+        failed = [
+            d
+            for d in DEPENDENCIES.get(nb_path.name, [])
+            if readme_agent.results.get(d, {}).get("status") == "Failed"
+        ]
+        if failed:
+            print(f"[Executor] Skipping {nb_path.name}: {failed} failed in this run")
+            readme_agent.update_status(nb_path.name, "Failed", 0.0, 0.0)
+            continue
         await execute_notebook(
             nb_path, readme_agent, resource_manager, flags=run_flags[nb_path.name]
         )

@@ -18,8 +18,8 @@ stop at whichever level you need.
 
 | Level | What it does | Reads | Writes | Cost |
 |---|---|---|---|---|
-| 1. Draw the figures | Runs the figure notebooks on the shipped caches | `analysis/` | figures in `analysis/`, statistics in this repository | About 1 hour for all figures on a laptop, about 6 GB of RAM |
-| 2. Regenerate the caches | Rebuilds the notebook caches from the per-session data | `processed/`, `raw/` | `analysis/` | Laptop; under an hour, or several hours with the deep option (see below) |
+| 1. Draw the figures | Runs the figure notebooks on the shipped caches | `analysis/` | figures in `analysis/`, statistics in this repository | About 1 hour for all figures on a laptop, up to 20 GB of RAM |
+| 2. Regenerate the caches | Rebuilds the notebook caches from the per-session data | `processed/`, `raw/` | `analysis/` | Laptop; several hours, more with the deep option (see below) |
 | 3. Re-analyse | Reruns preprocessing and the model fits | `raw/`, `processed/` | `processed/` | Slow; written for a Slurm cluster |
 
 **Level 1, drawing the figures.** Each notebook in `v1_depth_map/figures/` draws one
@@ -109,6 +109,10 @@ project_paths:
   colasa_3d-vision_revisions:
     raw: /path/to/v1_depth_map_data/raw
     processed: /path/to/v1_depth_map_data/processed
+enforce_dataset_types: false
+conda_envs:
+  dlc: dlc
+  cottage_analysis: cottage_analysis
 ```
 
 Both projects must point to the same `raw` and `processed` folders. The notebooks read and
@@ -178,7 +182,7 @@ The flags are set in a temporary copy of each notebook; the notebooks on disk ar
 modified. To rebuild one cache by hand, set the flag at the top of the notebook
 (`recompute_summary`, `regenerate_cached_files`, `RELOAD`, ...; the full list is
 `RELOAD_FLAGS` in `run_figures_pipeline.py`) to `True`. Each notebook has a time limit:
-15 minutes by default, 4 hours with `--reload` and 6 hours with `--recompute-deep`; change it
+2 hours by default, 4 hours with `--reload` and 6 hours with `--recompute-deep`; change it
 with `--timeout SECONDS`.
 
 Some caches are shared, which is why the pipeline runs the notebooks in a fixed order:
@@ -204,6 +208,31 @@ Two notebooks take much longer under `--reload`. On a Linux cluster node, with t
 on a network file system, `figsupp9_v1_depth_map` took about 65 minutes (20 GB peak RAM)
 and `figsupp5_rsof`, which recomputes five hierarchical bootstraps of 20,000 resamples,
 about 2.5 hours (2 GB). The pipeline runs `figsupp5_rsof` last.
+
+Peak memory of each notebook (GB), measured by the pipeline on a Linux cluster node:
+
+| Notebook | Level 1 | Level 2 (`--reload`) |
+|---|---|---|
+| `figure1_depth_selectivity` | 9.6 | 9.6 |
+| `figure2_openloop` | 9.0 | 8.7 |
+| `figure2_rsof_integration` | 2.0 | 2.6 |
+| `figure3_depth_cells` | 4.0 | 5.0 |
+| `figure4_receptive_fields` | 18.0 | 19.0 |
+| `figsupp1_vis_stim_sync` | 20.2 | 20.5 |
+| `figsupp2_speed` | 4.9 | 5.4 |
+| `figsupp3_depth_pop` | 1.9 | 1.7 |
+| `figsupp4_size_control` | 1.4 | 1.4 |
+| `figsupp5_rsof` | 1.9 | 1.9 |
+| `figsupp6_openloop` | 3.8 | 3.3 |
+| `figsupp7_simulation_control` | 5.0 | 5.1 |
+| `figsupp8_multidepth_receptive_fields` | 7.2 | 8.8 |
+| `figsupp9_rf_distance` | 0.8 | 0.8 |
+| `figsupp9_v1_depth_map` | 1.4 | 20.2 |
+| `figsupp10_gratings` | 0.6 | 2.2 |
+| `methods_dataset_tables` | 0.6 | 0.6 |
+
+`figsupp1_vis_stim_sync` and `figure4_receptive_fields` load whole sessions on every run,
+so they need about 20 GB even on the shipped caches.
 
 ## Level 3: re-analysis
 
